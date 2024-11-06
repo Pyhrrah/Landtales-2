@@ -1,8 +1,8 @@
 #ifndef GAME_MODE_H
 #define GAME_MODE_H
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
-void start_game_mode(SDL_Surface *screen);
+void start_game_mode(SDL_Renderer *renderer);
 
 #endif

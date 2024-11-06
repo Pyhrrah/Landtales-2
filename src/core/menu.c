@@ -1,66 +1,73 @@
-#include <SDL/SDL.h>
-#include <SDL/SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
-#include "menu.h"
-#include "./../../include/game.h"
 #include "./../../include/editor.h"
 #include "./../../include/multiplayer.h"
 #include "./../../include/settings.h"
+#include "./../../include/game.h"
 
 #define TILE_SIZE 32
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 960
 
-void render_text(SDL_Surface *screen, const char *text, int x, int y, TTF_Font *font, SDL_Color color) {
+void render_text(SDL_Renderer *renderer, const char *text, int x, int y, TTF_Font *font, SDL_Color color) {
     SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, color);
-    if (text_surface != NULL) {
-        SDL_Rect text_location = {x, y, 0, 0}; 
-        SDL_BlitSurface(text_surface, NULL, screen, &text_location); 
-        SDL_FreeSurface(text_surface); 
+    SDL_Texture *text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+    
+    if (text_texture) {
+        SDL_Rect text_location = {x, y, text_surface->w, text_surface->h};
+        SDL_RenderCopy(renderer, text_texture, NULL, &text_location);
+        SDL_DestroyTexture(text_texture);
     }
+    SDL_FreeSurface(text_surface);
 }
 
-void render_menu(SDL_Surface *screen, int selected_option) {
-    SDL_Color white = {255, 255, 255,0};
-    SDL_Color black = {0, 0, 0,0};
+void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *background, TTF_Font *font) {
+    SDL_Color white = {255, 255, 255, 255};
+    SDL_Color black = {0, 0, 0, 255};
 
-    if (TTF_Init() == -1) {
-        fprintf(stderr, "Erreur lors de l'initialisation de SDL_ttf : %s\n", TTF_GetError());
-        return;
-    }
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, background, NULL, NULL); 
 
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
-    if (font == NULL) {
-        fprintf(stderr, "Impossible de charger la police : %s\n", TTF_GetError());
-        return;
-    }
+    render_text(renderer, "Landtales 2", 50, 50, font, white);
 
-    SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
-
-    SDL_Rect play_rect = {WINDOW_WIDTH / 2 - 100, 200, 200, 50};
-    SDL_Rect editor_rect = {WINDOW_WIDTH / 2 - 100, 300, 200, 50};
-    SDL_Rect multiplayer_rect = {WINDOW_WIDTH / 2 - 100, 400, 200, 50};
-    SDL_Rect settings_rect = {WINDOW_WIDTH / 2 - 100, 500, 200, 50};
-
-    SDL_Rect *options[] = {&play_rect, &editor_rect, &multiplayer_rect, &settings_rect};
+    int start_y = 200;
+    int spacing = 60;
     const char *labels[] = {"Jouer", "Editeur", "Multijoueur", "Parametres"};
 
     for (int i = 0; i < 4; i++) {
         SDL_Color color = (i == selected_option) ? white : black;
-        render_text(screen, labels[i], options[i]->x, options[i]->y, font, color);
+        render_text(renderer, labels[i], 50, start_y + i * spacing, font, color);
     }
 
-    SDL_Flip(screen);
-
-    TTF_CloseFont(font);
-    TTF_Quit();
+    SDL_RenderPresent(renderer);
 }
 
-void handle_menu(SDL_Surface *screen) {
+void handle_menu(SDL_Renderer *renderer) {
     int running = 1;
     int selected_option = 0;
-
     SDL_Event event;
+
+    SDL_Surface *bg_surface = IMG_Load("./assets/images/wallpaperMenu.jpg");
+    if (!bg_surface) {
+        fprintf(stderr, "Erreur lors du chargement de l'image de fond : %s\n", IMG_GetError());
+        return;
+    }
+    SDL_Texture *background = SDL_CreateTextureFromSurface(renderer, bg_surface);
+    SDL_FreeSurface(bg_surface);
+    
+    if (!background) {
+        fprintf(stderr, "Erreur lors de la création de la texture de fond : %s\n", SDL_GetError());
+        return;
+    }
+
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    if (!font) {
+        fprintf(stderr, "Impossible de charger la police : %s\n", TTF_GetError());
+        SDL_DestroyTexture(background);
+        return;
+    }
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -68,7 +75,32 @@ void handle_menu(SDL_Surface *screen) {
                 case SDL_QUIT:
                     running = 0;
                     break;
-
+                case SDL_MOUSEMOTION:
+                    for (int i = 0; i < 4; i++) {
+                        if (event.motion.x >= 50 && event.motion.x <= 250 &&
+                            event.motion.y >= 200 + i * 60 && event.motion.y <= 200 + i * 60 + 50) {
+                            selected_option = i;
+                        }
+                    }
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        switch (selected_option) {
+                            case 0:
+                                start_game_mode(renderer);
+                                break;
+                            case 1:
+                                start_editor_mode(renderer); 
+                                break;
+                            case 2:
+                                start_multiplayer_mode(renderer); 
+                                break;
+                            case 3:
+                                open_settings(renderer); 
+                                break;
+                        }
+                    }
+                    break;
                 case SDL_KEYDOWN:
                     if (event.key.keysym.sym == SDLK_UP) {
                         selected_option--;
@@ -79,16 +111,16 @@ void handle_menu(SDL_Surface *screen) {
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
                         switch (selected_option) {
                             case 0:
-                                start_game_mode(screen);
+                                start_game_mode(renderer);
                                 break;
                             case 1:
-                                start_editor_mode(screen);
+                                start_editor_mode(renderer); 
                                 break;
                             case 2:
-                                start_multiplayer_mode(screen);
+                                start_multiplayer_mode(renderer); 
                                 break;
                             case 3:
-                                open_settings(screen);
+                                open_settings(renderer); 
                                 break;
                         }
                     }
@@ -96,7 +128,10 @@ void handle_menu(SDL_Surface *screen) {
             }
         }
 
-        render_menu(screen, selected_option);
-        SDL_Delay(100); 
+        render_menu(renderer, selected_option, background, font);
+        SDL_Delay(100);
     }
+
+    SDL_DestroyTexture(background);
+    TTF_CloseFont(font);
 }

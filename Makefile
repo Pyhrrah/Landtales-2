@@ -2,7 +2,7 @@ EXEC = Landtales
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -std=c99 `sdl-config --cflags`
+CFLAGS = -Wall -Wextra -std=c99 -finput-charset=UTF-8 -fexec-charset=UTF-8 `sdl2-config --cflags` 
 
 SRC_DIR = src
 OBJ_DIR = object
@@ -13,11 +13,13 @@ GAME_DIR = $(SRC_DIR)/game
 MULTIPLAYER_DIR = $(SRC_DIR)/multiplayer
 SETTINGS_DIR = $(SRC_DIR)/settings
 
-LIBS = `sdl-config --libs` -lSDL -lSDL_ttf
+LIBS = `sdl2-config --libs` -lSDL2_ttf -lSDL2_image
 
 SRC_FILES = $(CORE_DIR)/main.c \
             $(CORE_DIR)/menu.c \
             $(EDITOR_DIR)/editor.c \
+            $(EDITOR_DIR)/map_test.c \
+			$(EDITOR_DIR)/colors.c \
             $(GAME_DIR)/game.c \
             $(MULTIPLAYER_DIR)/multiplayer.c \
             $(SETTINGS_DIR)/settings.c
@@ -30,11 +32,11 @@ $(EXEC): $(OBJ_FILES)
 	$(CC) -o $@ $^ $(LIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@) # Crée le dossier objet s'il n'existe pas
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
 clean:
-	rm -rf $(OBJ_DIR)/*.o
+	rm -rf $(OBJ_DIR)/*
 
 fclean: clean
 	rm -f $(EXEC)

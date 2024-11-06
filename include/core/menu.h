@@ -1,8 +1,8 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 void handle_menu(SDL_Surface *screen);
 
