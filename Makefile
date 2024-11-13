@@ -1,6 +1,6 @@
 EXEC = Landtales
 
-CC = gcc
+CC = gcc -g
 
 CFLAGS = -Wall -Wextra -std=c99 -finput-charset=UTF-8 -fexec-charset=UTF-8 `sdl2-config --cflags` 
 
@@ -20,6 +20,7 @@ SRC_FILES = $(CORE_DIR)/main.c \
             $(EDITOR_DIR)/editor.c \
             $(EDITOR_DIR)/map_test.c \
 			$(EDITOR_DIR)/colors.c \
+            $(EDITOR_DIR)/grid.c \
             $(GAME_DIR)/game.c \
             $(MULTIPLAYER_DIR)/multiplayer.c \
             $(SETTINGS_DIR)/settings.c

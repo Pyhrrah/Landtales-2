@@ -5,8 +5,9 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "./../../include/map_test.h"
-#include "./../../include/colors.h"
+#include "./../../include/editor/map_test.h"
+#include "./../../include/editor/colors.h"
+#include "./../../include/editor/grid.h"
 
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
@@ -17,7 +18,7 @@
 #define UNDO_STACK_SIZE 100
 #define EMPTY -1  
 
-char *selectedFile = NULL;
+
 
 enum {
     SOL = 1,
@@ -36,299 +37,12 @@ enum {
     SPAWN_PLAYER_2,
 };
 
-
-
-int grid[GRID_WIDTH][GRID_HEIGHT];
 int currentObjectID = SOL; 
 int isDragging = 0;
-int undoStack[UNDO_STACK_SIZE][GRID_WIDTH][GRID_HEIGHT];
-int undoIndex = -1;
 TTF_Font *font = NULL;
-
-void init_grid(const char *file_path) {
-    if (file_path == NULL) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
-                grid[x][y] = SOL;
-            }
-        }
-    } else {
-        FILE *file = fopen(file_path, "r");
-        if (!file) {
-            perror("Erreur lors de l'ouverture du fichier");
-            return;
-        }
-
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
-                if (fscanf(file, "%d", &grid[x][y]) != 1) {
-                    fprintf(stderr, "Erreur lors de la lecture de la grille\n");
-                    fclose(file);
-                    return;
-                }
-            }
-        }
-
-        fclose(file);
-        printf("Grille chargée depuis %s\n", file_path);
-    }
-}
-
-void save_grid(SDL_Renderer *renderer) {
-    if (test_map(renderer, grid)) {
-        struct stat st = {0};
-        if (stat("./data/editor", &st) == -1) {
-            mkdir("./data/editor", 0700);
-        }
-
-        if (!selectedFile) {
-            int map_number = 1;
-            char new_filename[256];
-            FILE *file_check;
-
-            do {
-                snprintf(new_filename, sizeof(new_filename), "./data/editor/map%d.txt", map_number);
-                file_check = fopen(new_filename, "r");
-                if (file_check) {
-                    fclose(file_check);
-                    map_number++;
-                }
-            } while (file_check);
-
-            selectedFile = malloc(strlen(new_filename) + 1);
-            if (selectedFile) {
-                strcpy(selectedFile, new_filename);
-            } else {
-                fprintf(stderr, "Erreur d'allocation mémoire pour le nom du fichier\n");
-                return;
-            }
-        }
-
-        FILE *file = fopen(selectedFile, "w");
-        if (!file) {
-            perror("Erreur lors de l'ouverture du fichier");
-            return;
-        }
-
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
-                fprintf(file, "%d ", grid[x][y]);
-            }
-            fprintf(file, "\n");
-        }
-
-        fclose(file);
-        printf("Grille sauvegardée dans %s\n", selectedFile);
-    }
-}
+int scrollOffset;
 
 
-
-void push_undo() {
-    if (undoIndex < UNDO_STACK_SIZE - 1) {
-        undoIndex++;
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
-                undoStack[undoIndex][x][y] = grid[x][y];
-            }
-        }
-    }
-}
-
-void undo() {
-    if (undoIndex >= 0) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
-                grid[x][y] = undoStack[undoIndex][x][y];
-            }
-        }
-        undoIndex--;
-    }
-}
-
-void reset_grid() {
-    push_undo();
-    init_grid(selectedFile ? selectedFile : "");
-}
-
-void draw(SDL_Renderer *renderer) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderClear(renderer);
-
-size_t colors_count = get_colors_count();
-
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-            SDL_SetRenderDrawColor(renderer, colors[grid[x][y]].r, colors[grid[x][y]].g, colors[grid[x][y]].b, colors[grid[x][y]].a);
-            SDL_RenderFillRect(renderer, &cell);
-        }
-    }
-
-    for (size_t i = 0; i < colors_count; i++) {
-        SDL_Rect item_pos = {i * CELL_SIZE, WINDOW_HEIGHT - CELL_SIZE, CELL_SIZE, CELL_SIZE};
-        SDL_SetRenderDrawColor(renderer, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
-        SDL_RenderFillRect(renderer, &item_pos);
-    }
-
-    SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
-    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
-    SDL_RenderFillRect(renderer, &save_button);
-    
-    SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-    SDL_RenderFillRect(renderer, &reset_button);
-
-    if (font != NULL) {
-        SDL_Surface *save_surface = TTF_RenderText_Solid(font, "Save", (SDL_Color){255, 255, 255, 255});
-        SDL_Texture *save_texture = SDL_CreateTextureFromSurface(renderer, save_surface);
-        SDL_Rect save_rect = {WINDOW_WIDTH - 95, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, save_surface->w, save_surface->h};
-        SDL_RenderCopy(renderer, save_texture, NULL, &save_rect);
-        SDL_FreeSurface(save_surface);
-        SDL_DestroyTexture(save_texture);
-
-        SDL_Surface *reset_surface = TTF_RenderText_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
-        SDL_Texture *reset_texture = SDL_CreateTextureFromSurface(renderer, reset_surface);
-        SDL_Rect reset_rect = {WINDOW_WIDTH - 195, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, reset_surface->w, reset_surface->h};
-        SDL_RenderCopy(renderer, reset_texture, NULL, &reset_rect);
-        SDL_FreeSurface(reset_surface);
-        SDL_DestroyTexture(reset_texture);
-    }
-
-    SDL_RenderPresent(renderer);
-}
-
-char* show_menu(SDL_Renderer *renderer) {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
-    SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60}; 
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
-    SDL_RenderFillRect(renderer, &new_room_button);
-
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
-
-    if (font != NULL) {
-        SDL_Color textColor = {255, 255, 255, 255}; 
-
-        SDL_Surface *textSurface = TTF_RenderUTF8_Blended_Wrapped(font, "Créer une Map", textColor, new_room_button.w);
-        if (textSurface != NULL) {
-            SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            SDL_Rect textRect = {
-                new_room_button.x + (new_room_button.w - textSurface->w) / 2,
-                new_room_button.y + (new_room_button.h - textSurface->h) / 2,
-                textSurface->w,
-                textSurface->h
-            };
-            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
-            SDL_FreeSurface(textSurface);
-            SDL_DestroyTexture(textTexture);
-        } else {
-            fprintf(stderr, "Erreur lors du rendu du texte : %s\n", TTF_GetError());
-        }
-
-        FILE *fp = popen("ls ./data/editor", "r");
-        if (fp == NULL) {
-            fprintf(stderr, "Erreur lors de l'ouverture du dossier\n");
-            TTF_CloseFont(font);
-            return NULL;
-        }
-
-        char filename[256];
-        int y_offset = 100;
-        SDL_Rect fileRects[100];
-        SDL_Rect delete_buttons[100]; 
-        char fileNames[100][256];
-        int fileCount = 0;
-
-
-        while (fgets(filename, sizeof(filename), fp) != NULL) {
-            filename[strcspn(filename, "\n")] = 0; 
-            strncpy(fileNames[fileCount], filename, 256);
-
-            SDL_Surface *fileSurface = TTF_RenderUTF8_Blended_Wrapped(font, filename, textColor, 200); 
-            if (fileSurface != NULL) {
-                SDL_Texture *fileTexture = SDL_CreateTextureFromSurface(renderer, fileSurface);
-                SDL_Rect fileRect = {50, y_offset, fileSurface->w, fileSurface->h};
-                fileRects[fileCount] = fileRect;
-                SDL_RenderCopy(renderer, fileTexture, NULL, &fileRect);
-                SDL_FreeSurface(fileSurface);
-                SDL_DestroyTexture(fileTexture);
-            } else {
-                fprintf(stderr, "Erreur lors du rendu du texte de fichier : %s\n", TTF_GetError());
-            }
-
-            delete_buttons[fileCount] = (SDL_Rect) {WINDOW_WIDTH - 100, y_offset, 80, 30}; 
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
-            SDL_RenderFillRect(renderer, &delete_buttons[fileCount]);
-
-            SDL_Surface *deleteTextSurface = TTF_RenderUTF8_Blended_Wrapped(font, "Effacer", textColor, delete_buttons[fileCount].w);
-            if (deleteTextSurface != NULL) {
-                SDL_Texture *deleteTextTexture = SDL_CreateTextureFromSurface(renderer, deleteTextSurface);
-                SDL_Rect deleteTextRect = {
-                    delete_buttons[fileCount].x + (delete_buttons[fileCount].w - deleteTextSurface->w) / 2,
-                    delete_buttons[fileCount].y + (delete_buttons[fileCount].h - deleteTextSurface->h) / 2,
-                    deleteTextSurface->w,
-                    deleteTextSurface->h
-                };
-                SDL_RenderCopy(renderer, deleteTextTexture, NULL, &deleteTextRect);
-                SDL_FreeSurface(deleteTextSurface);
-                SDL_DestroyTexture(deleteTextTexture);
-            } else {
-                fprintf(stderr, "Erreur lors du rendu du texte 'Effacer' : %s\n", TTF_GetError());
-            }
-
-            y_offset += 50;
-            fileCount++;
-        }
-        pclose(fp);
-
-        SDL_RenderPresent(renderer);
-
-        char *selectedFile = NULL;
-        int running = 1;
-
-        while (running) {
-            SDL_Event event;
-            while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {
-                    running = 0;
-                } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-                    int x = event.button.x;
-                    int y = event.button.y;
-
-                    if (event.button.button == SDL_BUTTON_LEFT &&
-                        x >= new_room_button.x && x <= new_room_button.x + new_room_button.w &&
-                        y >= new_room_button.y && y <= new_room_button.y + new_room_button.h) {
-                        running = 0; 
-                    }
-
-                    for (int i = 0; i < fileCount; i++) {
-                        if (x >= fileRects[i].x && x <= fileRects[i].x + fileRects[i].w &&
-                            y >= fileRects[i].y && y <= fileRects[i].y + fileRects[i].h) {
-                            selectedFile = malloc(strlen("./data/editor/") + strlen(fileNames[i]) + 1);
-                            sprintf(selectedFile, "./data/editor/%s", fileNames[i]);
-                            running = 0;
-                            break;
-                        }
-
-                        if (x >= delete_buttons[i].x && x <= delete_buttons[i].x + delete_buttons[i].w &&
-                            y >= delete_buttons[i].y && y <= delete_buttons[i].y + delete_buttons[i].h) {
-                            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Confirmation", "Êtes-vous sûr de vouloir supprimer ce fichier?", NULL);
-                        }
-                    }
-                }
-            }
-        }
-
-        TTF_CloseFont(font);
-        return selectedFile;
-    } else {
-        fprintf(stderr, "Erreur lors de l'ouverture de la police : %s\n", TTF_GetError());
-    }
-
-    return NULL;
-}
 
 void handle_editor_events(SDL_Renderer *renderer, int *running) {
     SDL_Event event;
@@ -391,9 +105,277 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
             if (isDragging) {
                 grid[x][y] = currentObjectID;
             }
-        }
+    }
+
+}   
+}
+void launch_editor(SDL_Renderer *renderer) {
+    draw(renderer);
+
+    int running = 1;
+    while (running) {
+        handle_editor_events(renderer, &running);
+        draw(renderer);
     }
 }
+
+
+void render_button(SDL_Renderer *renderer, SDL_Rect *button, const char *text, SDL_Color textColor, TTF_Font *font) {
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
+    SDL_RenderFillRect(renderer, button);
+
+    SDL_Surface *textSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, button->w);
+    if (textSurface) {
+        SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        SDL_Rect textRect = {
+            button->x + (button->w - textSurface->w) / 2,
+            button->y + (button->h - textSurface->h) / 2,
+            textSurface->w,
+            textSurface->h
+        };
+        SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+        SDL_FreeSurface(textSurface);
+        SDL_DestroyTexture(textTexture);
+    } else {
+        fprintf(stderr, "Erreur lors du rendu du texte : %s\n", TTF_GetError());
+    }
+}
+
+int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *scrollOffset) {
+    SDL_Color textColor = {255, 255, 255, 255};
+    FILE *fp = popen("ls ./data/editor", "r");
+    if (!fp) {
+        fprintf(stderr, "Erreur lors de l'ouverture du dossier\n");
+        return 0;
+    }
+
+    int scroll_start_y = 100;
+    int scroll_end_y = WINDOW_HEIGHT - 100;
+    int visible_height = scroll_end_y - scroll_start_y;
+    int file_spacing = 50;
+
+    char filename[256];
+    int y_offset = scroll_start_y - *scrollOffset; 
+    int fileCount = 0;
+    int maxWidth = WINDOW_WIDTH - 150;
+
+    while (fgets(filename, sizeof(filename), fp) != NULL) {
+        filename[strcspn(filename, "\n")] = 0;  
+        strncpy(fileNames[fileCount], filename, 256);
+
+        SDL_Surface *fileSurface = TTF_RenderUTF8_Blended_Wrapped(font, filename, textColor, maxWidth);
+        if (fileSurface) {
+            SDL_Texture *fileTexture = SDL_CreateTextureFromSurface(renderer, fileSurface);
+
+            if (y_offset >= scroll_start_y && y_offset + fileSurface->h <= scroll_end_y) {
+                SDL_Rect fileRect = {50, y_offset, fileSurface->w, fileSurface->h};
+                fileRects[fileCount] = fileRect;
+                SDL_RenderCopy(renderer, fileTexture, NULL, &fileRect);
+            }
+
+            SDL_FreeSurface(fileSurface);
+            SDL_DestroyTexture(fileTexture);
+        }
+
+        if (y_offset >= scroll_start_y && y_offset + 30 <= scroll_end_y) {
+            deleteButtons[fileCount] = (SDL_Rect) {WINDOW_WIDTH - 100, y_offset, 80, 30};
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderFillRect(renderer, &deleteButtons[fileCount]);
+        }
+
+        y_offset += file_spacing;
+        fileCount++;
+
+        if (y_offset > scroll_end_y) {
+            break;
+        }
+    }
+
+    pclose(fp);
+
+    int total_list_height = fileCount * file_spacing;
+
+    if (total_list_height <= visible_height) {
+        *scrollOffset = 0;  
+    } else if (*scrollOffset > total_list_height - visible_height) {
+        *scrollOffset = total_list_height - visible_height;  
+    }
+
+    SDL_Rect clip_rect = {0, scroll_start_y, WINDOW_WIDTH, scroll_end_y - scroll_start_y};
+    SDL_RenderSetClipRect(renderer, &clip_rect);
+    SDL_RenderSetClipRect(renderer, NULL);
+
+    return fileCount;
+}
+
+
+char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *fileCount) {
+    SDL_Event event;
+    char *fichier = NULL;  
+    int running = 1;
+
+    SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
+
+    while (running) {
+
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
+        SDL_RenderClear(renderer);
+
+        SDL_Color textColor = {255, 255, 255, 255}; 
+        render_button(renderer, new_room_button, "Créer une Map", textColor, font);
+        render_button(renderer, &quit_button, "Quitter", textColor, font);
+        render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
+
+
+
+
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0;
+            } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                int x = event.button.x;
+                int y = event.button.y;
+
+                if (event.button.button == SDL_BUTTON_LEFT &&
+                    x >= new_room_button->x && x <= new_room_button->x + new_room_button->w &&
+                    y >= new_room_button->y && y <= new_room_button->y + new_room_button->h) {
+                    fichier = "nouvelle_map"; 
+                    printf("new_room_button clicked\n"); 
+                    running = 0;  
+                }
+
+                for (int i = 0; i < *fileCount; i++) {
+                    if (x >= fileRects[i].x && x <= fileRects[i].x + fileRects[i].w &&
+                        y >= fileRects[i].y && y <= fileRects[i].y + fileRects[i].h) {
+                            if (fichier) free(fichier);
+                        fichier = malloc(strlen("./data/editor/") + strlen(fileNames[i]) + 1);
+                        sprintf(fichier, "./data/editor/%s", fileNames[i]);  
+                        printf("Fichier sélectionné : %s\n", fichier);
+                        running = 0;  
+                        break;
+                    }
+
+                    if (x >= deleteButtons[i].x && x <= deleteButtons[i].x + deleteButtons[i].w &&
+                        y >= deleteButtons[i].y && y <= deleteButtons[i].y + deleteButtons[i].h) {
+                        
+                        SDL_MessageBoxButtonData buttons[2] = {
+                            {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Oui"},
+                            {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "Non"}
+                        };
+
+                        SDL_MessageBoxData messageboxdata = {
+                            SDL_MESSAGEBOX_INFORMATION,
+                            NULL,
+                            "Confirmation",
+                            "Êtes-vous sûr de vouloir supprimer ce fichier ?",
+                            SDL_arraysize(buttons),
+                            buttons,
+                            NULL
+                        };
+
+                        int button_id;
+                        SDL_ShowMessageBox(&messageboxdata, &button_id);
+
+                        if (button_id == 0) {  
+                                char filePath[512];
+                                sprintf(filePath, "./data/editor/%s", fileNames[i]);
+                                if (remove(filePath) == 0) {
+                                    printf("Fichier '%s' supprimé avec succès.\n", fileNames[i]);
+                                    *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);  
+                            
+                                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
+                                    SDL_RenderClear(renderer);  
+
+                                    SDL_Color textColor = {255, 255, 255, 255}; 
+                                    render_button(renderer, new_room_button, "Créer une Map", textColor, font);
+                                    render_button(renderer, &quit_button, "Quitter", textColor, font);
+                                    render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
+
+                                    SDL_RenderPresent(renderer);  
+                                } else {
+                                    printf("Erreur lors de la suppression du fichier '%s'.\n", fileNames[i]);
+                                }
+                                break;  
+                            }
+                    }
+                }
+
+                if (x >= quit_button.x && x <= quit_button.x + quit_button.w &&
+                    y >= quit_button.y && y <= quit_button.y + quit_button.h) {
+                    running = 0; 
+                }
+            }
+
+             else if (event.type == SDL_MOUSEWHEEL) {
+                if (event.wheel.y > 0) {
+                    scrollOffset -= 50; 
+                    printf("scrollOffset : %d\n", scrollOffset);
+                    if (scrollOffset < 0) scrollOffset = 0;  
+                } else if (event.wheel.y < 0) {
+                    scrollOffset += 50; 
+                    printf("scrollOffset : %d\n", scrollOffset);
+                }
+
+                *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
+            }
+
+
+        
+        }
+
+        SDL_RenderPresent(renderer);
+
+    }
+
+    return fichier;  
+}
+
+void show_menu(SDL_Renderer *renderer) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
+    SDL_RenderClear(renderer);
+
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    if (!font) {
+        fprintf(stderr, "Erreur lors de l'ouverture de la police : %s\n", TTF_GetError());
+        return;
+    }
+
+    SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
+    SDL_Color textColor = {255, 255, 255, 255}; 
+    render_button(renderer, &new_room_button, "Créer une Map", textColor, font);
+
+    SDL_Rect fileRects[100], deleteButtons[100];
+    char fileNames[100][256];
+    int fileCount = 0;
+    fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
+
+    SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
+    render_button(renderer, &quit_button, "Quitter", textColor, font);
+
+    SDL_RenderPresent(renderer);
+
+    char *selectedFile = handle_menu_events(renderer, &new_room_button, fileRects, deleteButtons, fileNames, &fileCount);
+
+    TTF_CloseFont(font);
+
+    if (selectedFile) {
+        if (strcmp(selectedFile, "nouvelle_map") == 0) {
+            init_grid("");  
+            launch_editor(renderer);
+        } else {
+            printf("Fichier sélectionné : %s\n", selectedFile);
+            init_grid(selectedFile);  
+            launch_editor(renderer);  
+        }
+    } else {
+        free(selectedFile);
+        selectedFile = NULL;
+        printf("Menu quitté sans sélection\n");
+    }
+
+}
+
 
 void start_editor_mode(SDL_Renderer *renderer) {
     if (TTF_Init() == -1) {
@@ -407,20 +389,9 @@ void start_editor_mode(SDL_Renderer *renderer) {
         return;
     }
 
-    selectedFile = show_menu(renderer);
+    show_menu(renderer);
 
-    init_grid(selectedFile);
-    
-    
     printf("Mode éditeur lancé\n");
-
-    int running = 1;
-    while (running) {
-        handle_editor_events(renderer, &running);
-        draw(renderer);
-    }
-
-    free(selectedFile);
 
     TTF_CloseFont(font);
     TTF_Quit();

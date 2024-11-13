@@ -2,7 +2,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
-#include "./../../include/editor.h"
+#include "./../../include/editor/editor.h"
 #include "./../../include/multiplayer.h"
 #include "./../../include/settings.h"
 #include "./../../include/game.h"

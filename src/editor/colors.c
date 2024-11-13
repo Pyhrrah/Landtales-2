@@ -1,4 +1,4 @@
-#include "./../../include/colors.h"
+#include "./../../include/editor/colors.h"
 
 SDL_Color colors[] = {
     {100, 255, 100, 255}, 

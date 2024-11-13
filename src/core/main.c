@@ -3,7 +3,7 @@
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "menu.h"
+#include "./../../include/core/menu.h"
 
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
