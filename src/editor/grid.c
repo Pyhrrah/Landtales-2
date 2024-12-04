@@ -41,6 +41,9 @@ enum {
 extern TTF_Font *font;
 extern int currentObjectID;
 
+// Tentative de gestion pour Windows et Linux
+
+
 int directory_exists(const char *path) {
     char command[256];
 
@@ -66,6 +69,8 @@ void create_directory(const char *path) {
     }
 }
 
+
+// Initialisation de la grille 
 void init_grid(const char *file_path) {
     if (strcmp(file_path, "") == 0) {
         printf("ici\n");
@@ -78,7 +83,7 @@ void init_grid(const char *file_path) {
         printf("%s\n", file_path);
         FILE *file = fopen(file_path, "r");
         if (!file) {
-            perror("Erreureeee lors de l'ouverture du fichier");
+            perror("Erreur lors de l'ouverture du fichier");
             return;
         }
 
@@ -93,14 +98,13 @@ void init_grid(const char *file_path) {
         }
 
         fclose(file);
-        printf("Grille chargée depuis %s\n", file_path);
 
         selectedFile = malloc(strlen(file_path) + 1);
         selectedFile = strcpy(selectedFile, file_path);
-        printf("selectedFile : %s\n", selectedFile);
     }
 }
 
+// Sauvegarde de la grille
 void save_grid(SDL_Renderer *renderer) {
     if (test_map(renderer, grid)) {
         create_directory("./data/editor");
@@ -118,10 +122,7 @@ void save_grid(SDL_Renderer *renderer) {
                     fclose(file_check);
                     map_number++;
                 }
-            } while (file_check);
-
-            printf("Sauvegarde de la grilles dans %s\n", new_filename);
-            
+            } while (file_check);            
             
                 selectedFile = malloc(strlen(new_filename) + 1);
                 if (selectedFile) {
@@ -133,7 +134,6 @@ void save_grid(SDL_Renderer *renderer) {
             
         }
 
-        printf("Sauvegarde de la grille dans %s\n", selectedFile);
         FILE *file = fopen(selectedFile, "w");
         if (!file) {
             perror("Erreurs lors de l'ouverture du fichier");
@@ -148,7 +148,6 @@ void save_grid(SDL_Renderer *renderer) {
         }
 
         fclose(file);
-        printf("Grille sauvegardée dans %s\n", selectedFile);
 
         if (selectedFile) {
             free(selectedFile);
@@ -157,6 +156,7 @@ void save_grid(SDL_Renderer *renderer) {
     }
 }
 
+// Empile la grille actuelle dans la pile d'annulation
 void push_undo() {
     if (undoIndex < UNDO_STACK_SIZE - 1) {
         undoIndex++;
@@ -168,6 +168,7 @@ void push_undo() {
     }
 }
 
+// Annule la dernière action
 void undo() {
     if (undoIndex >= 0) {
         for (int x = 0; x < GRID_WIDTH; x++) {
@@ -179,6 +180,7 @@ void undo() {
     }
 }
 
+// Réinitialise la grille
 void reset_grid() {
     push_undo();
     init_grid(selectedFile ? selectedFile : "");
@@ -186,6 +188,8 @@ void reset_grid() {
 
 int selectedColorIndex = -1;
 
+
+// Dessine la grille et les boutons
 void draw(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);

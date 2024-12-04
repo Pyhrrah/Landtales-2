@@ -1,5 +1,7 @@
 #include "./../../include/editor/colors.h"
 
+// Couleurs des tuiles
+
 SDL_Color colors[] = {
     {100, 255, 100, 255}, 
     {70, 200, 70, 255}, 

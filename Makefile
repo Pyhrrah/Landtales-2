@@ -12,8 +12,9 @@ EDITOR_DIR = $(SRC_DIR)/editor
 GAME_DIR = $(SRC_DIR)/game
 MULTIPLAYER_DIR = $(SRC_DIR)/multiplayer
 SETTINGS_DIR = $(SRC_DIR)/settings
+LOGIC_DIR = $(SRC_DIR)/logic
 
-LIBS = `sdl2-config --libs` -lSDL2_ttf -lSDL2_image
+LIBS = `sdl2-config --libs` -lSDL2_ttf -lSDL2_image -lSDL2_net
 
 SRC_FILES = $(CORE_DIR)/main.c \
             $(CORE_DIR)/menu.c \
@@ -23,7 +24,10 @@ SRC_FILES = $(CORE_DIR)/main.c \
             $(EDITOR_DIR)/grid.c \
             $(GAME_DIR)/game.c \
             $(MULTIPLAYER_DIR)/multiplayer.c \
-            $(SETTINGS_DIR)/settings.c
+            $(MULTIPLAYER_DIR)/server.c \
+            $(MULTIPLAYER_DIR)/client.c \
+            $(SETTINGS_DIR)/settings.c \
+            $(LOGIC_DIR)/check_maze.c
 
 OBJ_FILES = $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
