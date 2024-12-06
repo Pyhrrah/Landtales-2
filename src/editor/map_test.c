@@ -25,6 +25,8 @@
 int player_x = -1;  
 int player_y = -1;  
 
+
+// Vérifie si un mouvement est valide (en fonction de la tuile concernée)
 int is_valid_move(int x, int y, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
         return 0; 
@@ -38,6 +40,7 @@ int is_valid_move(int x, int y, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     return 1; 
 }
 
+// Dessine la carte de test
 void draw_test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
     SDL_RenderClear(renderer);
@@ -64,6 +67,8 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     SDL_RenderPresent(renderer); 
 }
 
+// Test de la carte
+// Gestion d'un joueur pour tester la map
 int test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     int found_spawn = 0, target_spawn = 0;
 
@@ -122,11 +127,9 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
         }
 
         if (grid[player_x][player_y] == TARGET_SPAWN) {
-            printf("Le joueur a atteint la cible, sauvegarde en cours...\n");
             return 1; 
         }
     }
 
-    printf("Test de la carte annulé.\n");
     return 0;
 }

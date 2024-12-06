@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
@@ -18,8 +17,7 @@
 #define UNDO_STACK_SIZE 100
 #define EMPTY -1  
 
-
-
+// Initialisation de la grille
 enum {
     SOL = 1,
     SOL_VARIANT_1,
@@ -43,7 +41,7 @@ TTF_Font *font = NULL;
 int scrollOffset;
 
 
-
+// Initialisation de la grille
 void handle_editor_events(SDL_Renderer *renderer, int *running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -109,6 +107,8 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
 
 }   
 }
+
+// Dessine la grille et les boutons
 void launch_editor(SDL_Renderer *renderer) {
     draw(renderer);
 
@@ -119,7 +119,7 @@ void launch_editor(SDL_Renderer *renderer) {
     }
 }
 
-
+// Rendu des boutons (à l'avenir réuni dans un fichier séparé)
 void render_button(SDL_Renderer *renderer, SDL_Rect *button, const char *text, SDL_Color textColor, TTF_Font *font) {
     SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
     SDL_RenderFillRect(renderer, button);
@@ -141,6 +141,7 @@ void render_button(SDL_Renderer *renderer, SDL_Rect *button, const char *text, S
     }
 }
 
+// Affichage de la liste des fichiers
 int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *scrollOffset) {
     SDL_Color textColor = {255, 255, 255, 255};
     FILE *fp = popen("ls ./data/editor", "r");
@@ -208,7 +209,7 @@ int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects
     return fileCount;
 }
 
-
+// Gestion des événements du menu
 char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *fileCount) {
     SDL_Event event;
     char *fichier = NULL;  
@@ -226,9 +227,6 @@ char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_
         render_button(renderer, new_room_button, "Créer une Map", textColor, font);
         render_button(renderer, &quit_button, "Quitter", textColor, font);
         render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
-
-
-
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -320,17 +318,15 @@ char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_
                 *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
             }
 
-
-        
         }
 
         SDL_RenderPresent(renderer);
-
     }
 
     return fichier;  
 }
 
+// Affichage du menu
 void show_menu(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
     SDL_RenderClear(renderer);
@@ -376,7 +372,7 @@ void show_menu(SDL_Renderer *renderer) {
 
 }
 
-
+// Lancement du mode éditeur
 void start_editor_mode(SDL_Renderer *renderer) {
     if (TTF_Init() == -1) {
         fprintf(stderr, "Erreur lors de l'initialisation de TTF: %s\n", TTF_GetError());
