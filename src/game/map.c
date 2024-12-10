@@ -3,11 +3,12 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
-#include <errno.h>
 #define save "./save1"
+#define ETAGE_DEFAULT 1
 
 
 
+void pass(){};
 
 char ecrireErreur(char * msg) {
     FILE * fichier = NULL;
@@ -47,7 +48,7 @@ char ecrireFichierINT(char * nomFichier, int nombre, char * msgErreur) {
         ecrireErreur(msgErreur);
         return 0;
     } else {
-        printf("%d\n", nombre);
+        //printf("%d\n", nombre);   /*en général lors de l'écriture d'un fichier je préfère afficher dans la console ce qui va être écrit dans le fichier, mais pour la seed on peut s'en passer, c'est mieux*/
         fprintf(fichier, "%d", nombre);
         fclose(fichier);
         fichier = NULL;
@@ -97,7 +98,6 @@ char estPremier(int nombre){
 
 char afficherGrille(char * grille, char X, char Y){
     /*affiche les elements d'une grille dans la console selon la longueur X et la largeur Y de la grille*/
-    printf("afficherGrille : debut de la fonction\n");
     for (char i = 0; i<Y; i++) {
         printf("[");
         for (char j = 0; j<X; j++) {
@@ -111,7 +111,6 @@ char afficherGrille(char * grille, char X, char Y){
         }
     }
     printf("\n");
-    printf("afficherGrille : fin de la fonction\n");
     return 1;
 }
 
@@ -136,11 +135,9 @@ char nbPremiers(int n, int * premiers) {
 void troupleNombresPremiers(int n, int nxy[3]) {
     /*ecrits dans nxy les trois derniers nombres premiers inférieurs ou égaux à n
     il faut que le n soit strictement plus grand que 5, sinon la fonction precedente ne générera pas au moins 2 nombrs premiers*/
-    printf("troupleNombresPremiers : test1\n");
     if(n<=5) {
         nbPremiers(5+1,nxy);
     } else {
-        printf("troupleNombresPremiers : test2\n");
         nbPremiers(n,nxy);
     }
 }
@@ -198,8 +195,6 @@ char detecterSalle(char map[121], char n, char retour[2]) {
 
 char creerLabyrinthe(char map[121]) {
     /*creer la map à 1 dimension selon les éléments de la seed sauvegardés en amont dans le fichier /map/seed.txt*/
-    //char map[121];
-    printf("creerLabyrinthe : avant la construction du contenu basique du labyrinthe\n");
     for (char i=0; i<11; i++) {
         if (i%2==0) {
             for (char j=0; j<11; j++) map[i*11+j] = j%2==0 ?(j/2+1)+(6*(i/2)) : -1;
@@ -210,9 +205,7 @@ char creerLabyrinthe(char map[121]) {
     char mursRestant = 35;
     int nxy[3];
     lireTrouple(nxy);
-    printf("%d %d %d\n",nxy[0],nxy[1],nxy[2]);
     char mur = (nxy[1]*nxy[2])%60+1;
-    printf("creerLabyrinthe : avant pose des murs\n");
     while (mursRestant > 0) {
         mur = (mur-1+nxy[0])%60+1; //+1 au modulo pour etre sur d'avoir un nombre entre 1 et 60 compris, et -1 au mur+n pour retirer ce qu'on avait ajouté au modulo, pcq sinon ca ferait en gros une boucle infinie
         char salles[2];
@@ -225,7 +218,6 @@ char creerLabyrinthe(char map[121]) {
             }
         }
     }
-    printf("creerLabyrinthe : apres la pose des murs/fin de la fonction\n");
     return 1;
 }
 
@@ -301,16 +293,10 @@ char salleAutourSalleListe36(char n, char * retour) {
 
 char mapRandomizer(int seed, char map[121]) {
     /*melange les numéros des salles dans la map et renvoie la map*/
-    printf("mapRandomizer : test1\n");
     int nxy[3];
-    printf("mapRandomizer : test2\n");
     troupleNombresPremiers(seed,nxy);   //la fonction utilise soit malloc, soit realloc, donc il faut free l'espace demandé
-    printf("mapRandomizer : test3\n");
     sauvegarderTrouple(nxy);
-    printf("mapRandomizer : test4\n");
-    //char map[121];
     creerLabyrinthe(map);
-    printf("mapRandomizer : test5 : apres la creation du labyrinthe\n");
     char liste[36];
     char pos;
     for (char i = 0; i<36; i++) {
@@ -347,9 +333,7 @@ char sauvegarderMap(int seed) {
     else seed = creerSeed(seed);
 
     char map[121];
-    printf("SauvegarderMap : test\n");
     mapRandomizer(seed,map);
-    printf("SauvegarderMap : apres map randomizer\n");
 
     char * nomFichierChemin = "/map/map.txt";
     char nomFichier[strlen(save)+strlen(nomFichierChemin)+1];
@@ -378,9 +362,7 @@ char lireMap(char map[121]) {
         ecrireErreur("Erreur lors de la lecture de la map\n");
         return 0;
     } else {
-        printf("lireMap : test\n");
         for (char i = 0; i<121; i++) fscanf(fichier, " %hhd", &map[i]);
-        printf("lireMap test2\n");
         fclose(fichier);
         fichier = NULL;
         return 1;
@@ -402,8 +384,6 @@ char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]) {
     if (retour[3]) retour[3] = map[n-1] == 0 ? 1 : 0;
     return 1;
 }
-
-// getTileAdjacente a été développée mais non utilisée, donc elle n'a pas été implémentée dans la version C
 
 short positionLxltoOneLinePos(char X, char x, char y) {
     /*X la longueur de la grille
@@ -471,7 +451,6 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
     char nbPointsDirecteurs = longueur / 3 + largeur / 3 + 2;
     short posPointsDirecteurs[nbPointsDirecteurs];
 
-    afficherGrille(*espaceLac, longueur, largeur);
 
     short pos;
     for (char i = 0; i < nbPointsDirecteurs; i++) {
@@ -479,7 +458,6 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
         (*espaceLac)[pos] = idBlockEau;
         posPointsDirecteurs[i] = pos;
     }
-    afficherGrille(*espaceLac, longueur, largeur);
 
     for (char i = 0; i < nbPointsDirecteurs - 1; i++) {
         char point1[2], point2[2];
@@ -531,7 +509,6 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
         }
     }
 
-    afficherGrille(*espaceLac, longueur, largeur);
 
     return 1;
 }
@@ -628,18 +605,9 @@ char racineNieme(char nMob, char numeroSalle, short retour[nMob]) {
         coorY[i] = (char)round(sin((angle + (M_PI * i)) * 2 / nMob) * homothetie + transY);
     }
 
-    for (char i = 0; i<nMob; i++) {
-        retour[i] = positionLxltoOneLinePos(21,coorX[i],coorY[i]);
-        printf("Coord 0 %d\n",retour[i]);
-    }
+    for (char i = 0; i<nMob; i++) retour[i] = positionLxltoOneLinePos(21,coorX[i],coorY[i]);
 
     return 1;
-}
-
-short placer1Mob(char salle[21*15], short placement) {
-    /*test si le mob peut etre placé sur une case, et renvoie la position en conséquence*/
-    if (salle[placement] <= 4 ) return placement;
-    else return placer1Mob(salle,(placement+1)%(21*15));
 }
 
 char posInPosTab(short pos, char taille, short posTab[taille]) {
@@ -651,12 +619,9 @@ char posInPosTab(short pos, char taille, short posTab[taille]) {
     return c;
 }
 
-char placer2Mob(char salle[21*15], short placement, char taille, short mobsPos[taille], char indice) {
+char placer1Mob(char salle[21*15], short placement, char taille, short mobsPos[taille], char indice) {
     char c = 0;
-    while((posInPosTab(placement,taille,mobsPos) >= 1) ||  (!(salle[placement] <=4 && salle[placement] > 0))) {
-        /*printf("Placement suggeré par placer2Mob : %d\n",*/placement++;
-        printf("%d\n",posInPosTab(placement,taille,mobsPos));
-        }
+    while((posInPosTab(placement,taille,mobsPos) >= 1) ||  (!(salle[placement] <=4 && salle[placement] > 0))) placement++;
     mobsPos[indice] = placement;
     return 1; 
 }
@@ -734,7 +699,7 @@ char creerSalle(char identifiantSalle, char etage) {
 
     /*Génération de la base d'une salle OK, maintenant il faut faire les spécificités de la salle*/
 
-    if (identifiantSalle == 1) printf("Salle de spawn\n");         /*salle de base/spawn*/
+    if (identifiantSalle == 1) pass();         /*salle de base/spawn*/
 
     else if (identifiantSalle == 2) {       /*salle du boss*/
         short positionBasesPilliers[4] = {21*3+4, 21*3+15, 21*10+15, 21*10+4};
@@ -746,18 +711,14 @@ char creerSalle(char identifiantSalle, char etage) {
         }
         nbMob = 5;
         allocEspaceMobTab(&mobs,nbMob);
-        printf("allocEspaceMobTab salle 2\n");
         mobs[0] = 1;
         for (char i = 1; i<nbMob; i++) mobs[i] = (seed+etage+i+((seed+etage)%2))%2 + 2; /*equivalent à la ternaire (seed+etage)%2 ? (seed+etage+i)%2 + 2 : (seed+etage+i+1)%2 + 2; pour que les mobs soient organisé comme ca [1,2,3,2,3] ou ca [1,3,2,3,2]*/
         allocEspaceMobPosTab(&mobsPositions,nbMob);
-        printf("allocEspaceMobPosTab salle 2\n");
         mobsPositions[0] = 21*7+10;     /* position centrale pour le boss*/
-        printf("test\n");
         for (char i = 0; i<4; i++) mobsPositions[i+1] = positionCarreCentre[i];
-        printf("fin salle 2\n");
     }
 
-    else if (identifiantSalle >= 3 && identifiantSalle <= 6) {      /* salle avec mini-boss
+    else if (identifiantSalle >= 3 && identifiantSalle <= 6) {      /* salle avec mini-boss */
         nbMob = 4;
         allocEspaceMobTab(&mobs,nbMob);
         mobs[0] = 6; mobs[1] = mobs[3] = identifiantSalle%2+2; mobs[2] =(identifiantSalle+1)%2+2;
@@ -782,9 +743,7 @@ char creerSalle(char identifiantSalle, char etage) {
             for (char i = 0; i<6; i++) mobs[i] = 9;
             allocEspaceMobPosTab(&mobsPositions,nbMob);
             racineNieme(nbMob,identifiantSalle,mobsPositions);
-            for (int i=0; i<nbMob; printf("Position %d : %d\n",i++,mobsPositions[i]));
-            for (char i = 0; i<nbMob; i++) placer2Mob(salle,mobsPositions[i],nbMob,mobsPositions,i);
-              //mobsPositions[i] = placer1Mob(salle,mobsPositions[i]);
+            for (char i = 0; i<nbMob; i++) placer1Mob(salle,mobsPositions[i],nbMob,mobsPositions,i);
         }
     }
 
@@ -797,19 +756,15 @@ char creerSalle(char identifiantSalle, char etage) {
             noEnnemies = 1;
         } else probEau = 1;
 
-        printf("avant placement du lac\n");
 
         if ((seed+identifiantSalle+etage)%6 < probEau) {
             char *espaceLac;
             char dimensionsLac[2];
             fairePetitLac(identifiantSalle, &espaceLac,dimensionsLac);
             char L = dimensionsLac[0], l = dimensionsLac[1];
-            printf("C'est ici le probleme\n");
-            //afficherGrille(espaceLac,L,l);
             char departX = seed % (17 - L) + 2 ;    /*+2 pour ecarter des bords de la map*/
             char departY = seed % (11 - l) + 2;
             for (short i = 0; i<((short)L*l); i++) {
-                //printf("Tile lac : %d\n",espaceLac[i]);
                 salle[tileDecentraliseLxlto21x15(i,L,positionLxltoOneLinePos(21, departX+1, departY+1))] = espaceLac[i];
             }
             //free(espaceLac);    /*la fonction fairePetitLac utilise malloc sur espaceLac, comme nous avons fini d'utiliser espaceLac, il faut libéré la mémoire*/
@@ -817,7 +772,6 @@ char creerSalle(char identifiantSalle, char etage) {
 
         }
 
-        printf("Avant placement des obstacles\n");
         for (char i = 0; i<((seed%12)+3); i++) {    /*pour placer des obstacles sur la map, 3 minimum et 14 maximum*/
             char placed = 0;
             short placement = (x * (i + 1) % (17 * 11));
@@ -830,10 +784,8 @@ char creerSalle(char identifiantSalle, char etage) {
             }
         }
 
-        afficherGrille(salle,21,15);
 
         if (!noEnnemies) {      /*22*2+15*3+7*4+6*5 = 147 et nous avons 14 salles avec des monstres*/
-            printf("Production des ennemis\n");
             char mobsTemp[5] = {0,0,0,0,0};
             genMobs(identifiantSalle,mobsTemp);
             mobsShuffle(mobsTemp);
@@ -844,42 +796,23 @@ char creerSalle(char identifiantSalle, char etage) {
             allocEspaceMobPosTab(&mobsPositions,nbMob);
             short mobsPositionsTemp[nbMob];
             racineNieme(nbMob,identifiantSalle,mobsPositionsTemp);
-            for (int i=0; i<nbMob; printf("Position %d : %d\n",i++,mobsPositionsTemp[i]));
-            printf("Avant le placer2Mob\n");
-            for (char i = 0; i<nbMob; i++) {/*
-                char placed = 0;
-                short pos = placer1Mob(salle,mobsPositionsTemp[i]);
-                printf("Avant placement du mob %d\n",i);
-                while (!placed) {
-                    printf("pos in tab %d\n",posInPosTab(pos,nbMob,mobsPositionsTemp));
-                    //break;
-                    if (!posInPosTab(pos,nbMob,mobsPositionsTemp)) {
-                        mobsPositions[i] = pos;
-                        placed = 1;
-                    } else pos = placer1Mob(salle,mobsPositionsTemp[i]+1);
-                }
-
-                mobsPositions[i] = placer1Mob(salle,mobsPositions[i]);*/
-                placer2Mob(salle,mobsPositionsTemp[i],nbMob,mobsPositions,i);
+            for (char i = 0; i<nbMob; i++) {
+                placer1Mob(salle,mobsPositionsTemp[i],nbMob,mobsPositions,i);
             } /*placement des mobs terminé*/
-            //afficherGrille(mobsPositions,nbMob,1);
         }
     }
 
 
     /*Sauvegarde de la salle dans le fichier*/
-    printf("Avant determination du folder de la salle\n");
     char tailleTile = 16;
     char tempSTR[3];
     sprintf(tempSTR,"%02d",identifiantSalle);
-    printf("%s\n",tempSTR);
     char salleFolderSTR[strlen("/Salle")+strlen(tempSTR)+1];
     strcpy(salleFolderSTR,"/Salle");
     strcat((salleFolderSTR),tempSTR);
     char folder[strlen(save)+strlen("/Salle")+strlen(tempSTR)+1];
     strcpy(folder,save);
     strcat(folder,salleFolderSTR);
-    printf("%s\n",folder);
     creerFolder(folder);
 
     char nomFichierSalle[strlen(folder)+strlen(tempSTR)+strlen("/salle.txt")+1];
@@ -897,19 +830,15 @@ char creerSalle(char identifiantSalle, char etage) {
             fprintf(fichierSalle,"%d %d %d\n",X,Y,salle[i]);
         }
         fclose(fichierSalle);
-        //free(fichierSalle);
         fichierSalle = NULL;
     }
 
-    printf("Avant if mob\n");
 
     if (nbMob > 0) {
-        printf("Avant ouverture du fichier Mob\nnbMob : %d\n",nbMob);
         char nomFichierMob[strlen(folder)+strlen(tempSTR)+strlen("/mobs.txt")+1];
         strcpy(nomFichierMob,folder);
         strcat(strcat(strcat(nomFichierMob,"/mobs"),tempSTR),".txt");
         FILE * fichierMob = NULL;
-        printf("Avant ouverture du fichier Mob\nnbMob : %d\n",nbMob);
         if ((fichierMob = fopen(nomFichierMob, "w"))==NULL) {
             ecrireErreur("Erreur lors de l'edition du fichier des mobs\n");
         } else {
@@ -925,7 +854,6 @@ char creerSalle(char identifiantSalle, char etage) {
             mobs = NULL;
             free(mobsPositions);
             mobsPositions = NULL;
-            printf("Fin ecriture des mobs dans fichiers\n");
         }
     }
 
@@ -936,28 +864,21 @@ int main(int argc, char const *argv[]){
     char salleNum;
     sscanf(argv[1],"%d",&salleNum);
     char chemin[strlen(save)+strlen("/errors")+1];
-    fprintf(stderr, "Creer folder\n");
     creerFolder(strcat(strcpy(chemin,save),"/errors"));
-    fprintf(stderr, "Sauvegarder map\n");
     if(salleNum == 1){
-        sauvegarderMap(0);
+        sauvegarderMap(0);  /*0 pour avoir une seed random*/
     } else {
         int seed = lireSeed();
         sauvegarderMap(seed);
     }
-    //sauvegarderMap(0);  /*0 pour avoir une seed random*/
-    printf("Apres la sauvegarde de la map dans main\n");
     char map[121];
-    fprintf(stderr, "Lire map\n");
     lireMap(map);
-    printf("Apres la lecture de la map dans main\n");
-    fprintf(stderr, "Afficher grille\n");
-    afficherGrille(map,11,11);
-    printf("Apres l'affichage de la map dans le main\n");
-    fprintf(stderr, "Creer salle\n");
-    /*char salleNum;
-    sscanf(argv[1],"%d",salleNum);*/
-    creerSalle(salleNum,1);
-    printf("Totalité du code fonctionne !\n");
+    if (argc>2){
+        char etage;
+        sscanf(argv[2],"%d",&etage);
+        creerSalle(salleNum,etage);
+    } else {
+        creerSalle(salleNum,ETAGE_DEFAULT);
+        }
     exit(EXIT_SUCCESS);
 }
