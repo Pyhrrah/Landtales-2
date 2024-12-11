@@ -102,7 +102,7 @@ char afficherGrille(char * grille, char X, char Y){
         printf("[");
         for (char j = 0; j<X; j++) {
             char nombre[4];  /*+3 pour les caracteres]\n\0*/
-            sprintf(nombre,"%d",grille[(short)i*X+j]);
+            sprintf(nombre,"%hhd",grille[(short)i*X+j]);
             char affichage[7] = "";
             if (strlen(nombre) < 2) strcat(affichage," ");
             strcat(affichage,nombre);
@@ -161,7 +161,7 @@ char sauvegarderTrouple(int nxy[3]) {
 }
 
 char lireTrouple(int nxy[3]) {
-    /*lit le fichier nombresDirecteurs.txt et renvoie les trois nombres premiers incrits dedans sous forme de tuple*/
+    /*lit le fichier nombresDirecteurs.txt et renvoie les trois nombres premiers*/
     char * nomFichierChemin = "/map/nombresDirecteurs.txt";
     char nomFichier[strlen(save)+strlen(nomFichierChemin)+1];
     strcpy(nomFichier, save);
@@ -280,7 +280,7 @@ int lireSeed() {
 
 char salleAutourSalleListe36(char n, char * retour) {
     /*renvoie les indices des salles [N,E,S,W] autour de la salle donnée, dans la liste de 36 elements (juste les salles sans les murs)
-    renvoie dons l'indice de la salle dans la map
+    renvoie donc l'indice de la salle dans la map
     renvoie -1 si pas de salle voisine sur le coté concerné
     le renvoie est, bien évidement, effectué par le tableau retour*/
     for (char i = 0; i<4;retour[i++] = -1);
@@ -291,7 +291,7 @@ char salleAutourSalleListe36(char n, char * retour) {
     return 1;
 }
 
-char mapRandomizer(int seed, char map[121]) {
+char mapRandomizer(int seed, char map[121], char etage) {
     /*melange les numéros des salles dans la map et renvoie la map*/
     int nxy[3];
     troupleNombresPremiers(seed,nxy);   //la fonction utilise soit malloc, soit realloc, donc il faut free l'espace demandé
@@ -300,7 +300,7 @@ char mapRandomizer(int seed, char map[121]) {
     char liste[36];
     char pos;
     for (char i = 0; i<36; i++) {
-        liste[i] = ((((long)(i + nxy[0]) * nxy[1]) * nxy[2]) % 36) + 1;     //transformer en long l'operation, sinon je finis avec des nombres negatif
+        liste[i] = ((((long)(etage + i + nxy[0]) * nxy[1]) * nxy[2]) % 36) + 1;     //transformer en long l'operation, sinon je finis avec des nombres negatif
         if (liste[i] == 1) pos = i;
     }
     char pos2,temp;
@@ -324,7 +324,7 @@ char mapRandomizer(int seed, char map[121]) {
     return 1;
 }
 
-char sauvegarderMap(int seed) {
+char sauvegarderMap(int seed, char etage) {
     /* creer et sauvegarde la map à une dimension dans le fichier /saveX/map/map.txt*/
     char nomFolder[strlen(save)+strlen("/map")+1];
     strcpy(nomFolder, save);
@@ -333,7 +333,7 @@ char sauvegarderMap(int seed) {
     else seed = creerSeed(seed);
 
     char map[121];
-    mapRandomizer(seed,map);
+    mapRandomizer(seed,map,etage);
 
     char * nomFichierChemin = "/map/map.txt";
     char nomFichier[strlen(save)+strlen(nomFichierChemin)+1];
@@ -423,6 +423,7 @@ short tileCentraliseLxlto21x15(short n, char L) {
     short baseX = baseY * 21 ;
     return tileDecentraliseLxlto21x15(n,L,baseX+baseY);
 }
+
 char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
     /*Créé un petit lac dans une grille
     Renvoie la grille dans espaceLac et sa longueur et sa largeur dans dimensionLac
@@ -512,6 +513,7 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
 
     return 1;
 }
+
 char sommeTableau(char * tab, char taille) {      /*return char car je sais que l'appel renvoie une somme inférieur à 16, la fonction n'est pas garanti pour tous les usages autres que celui prévu à la base*/
     /*renvoie la somme des elements du tableau*/
     char somme = 0;
@@ -807,10 +809,10 @@ char creerSalle(char identifiantSalle, char etage) {
     char tailleTile = 16;
     char tempSTR[3];
     sprintf(tempSTR,"%02d",identifiantSalle);
-    char salleFolderSTR[strlen("/Salle")+strlen(tempSTR)+1];
-    strcpy(salleFolderSTR,"/Salle");
+    char salleFolderSTR[strlen("/map/Salle")+strlen(tempSTR)+1];
+    strcpy(salleFolderSTR,"/map/Salle");
     strcat((salleFolderSTR),tempSTR);
-    char folder[strlen(save)+strlen("/Salle")+strlen(tempSTR)+1];
+    char folder[strlen(save)+strlen("/map/Salle")+strlen(tempSTR)+1];
     strcpy(folder,save);
     strcat(folder,salleFolderSTR);
     creerFolder(folder);
@@ -860,25 +862,31 @@ char creerSalle(char identifiantSalle, char etage) {
     return 1;
 }
 
-int main(int argc, char const *argv[]){
-    char salleNum;
-    sscanf(argv[1],"%d",&salleNum);
+char creerSave(){
+    /*creer le folder de la save donnée*/
     char chemin[strlen(save)+strlen("/errors")+1];
     creerFolder(strcat(strcpy(chemin,save),"/errors"));
-    if(salleNum == 1){
-        sauvegarderMap(0);  /*0 pour avoir une seed random*/
-    } else {
-        int seed = lireSeed();
-        sauvegarderMap(seed);
+}
+
+char creerEtageEntier(char numEtage){
+    /*creer un etage entier*/
+
+    creerSave();
+
+    int seed;
+    if ((seed = lireSeed())==-1){
+        seed = creerSeed(0);
     }
-    char map[121];
-    lireMap(map);
-    if (argc>2){
-        char etage;
-        sscanf(argv[2],"%d",&etage);
-        creerSalle(salleNum,etage);
-    } else {
-        creerSalle(salleNum,ETAGE_DEFAULT);
-        }
-    exit(EXIT_SUCCESS);
+    sauvegarderMap(seed,numEtage);
+
+    for(char salleNum = 1; salleNum <= 36 ; salleNum++){
+        creerSalle(salleNum,numEtage);
+    }
+}
+
+char supprimerEtage(){      //supprime toutes les données de l'étage sauf la seed
+    char * commandTemp = "rm -fr /map/S*";
+    char command[strlen(save) + strlen(commandTemp) + 1];
+    strcat(strcat(strcpy(command,"rm -fr "),save),"/map/S*");
+    system(command);
 }
