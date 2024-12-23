@@ -866,6 +866,7 @@ char creerSave(){
     /*creer le folder de la save donnée*/
     char chemin[strlen(save)+strlen("/errors")+1];
     creerFolder(strcat(strcpy(chemin,save),"/errors"));
+    return 1;
 }
 
 char creerEtageEntier(char numEtage){
@@ -882,6 +883,7 @@ char creerEtageEntier(char numEtage){
     for(char salleNum = 1; salleNum <= 36 ; salleNum++){
         creerSalle(salleNum,numEtage);
     }
+    return 1;
 }
 
 char supprimerEtage(){      //supprime toutes les données de l'étage sauf la seed
@@ -889,6 +891,15 @@ char supprimerEtage(){      //supprime toutes les données de l'étage sauf la s
     char command[strlen(save) + strlen(commandTemp) + 1];
     strcat(strcat(strcpy(command,"rm -fr "),save),"/map/S*");
     system(command);
+    return 1;
+}
+
+char supprimerSave(){
+    char * commandTemp = "rm -fr ";
+    char command[strlen(save) + strlen(commandTemp) + 1];
+    strcat(strcpy(command,commandTemp),save);
+    system(command);
+    return 1;
 }
 
 /*

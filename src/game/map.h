@@ -90,3 +90,5 @@ char creerSave();       //creer le folder de la save donnée
 char creerEtageEntier(char numEtage);       //creer un etage entier
 
 char supprimerEtage();      //supprime toutes les données de l'étage sauf la seed
+
+char supprimerSave();       //supprime la save en definie
