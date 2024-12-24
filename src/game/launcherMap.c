@@ -8,17 +8,18 @@ int main(int argc, char const *argv[]){
 
     char etage = 0;
     if (argc>1) sscanf(argv[1],"%hhd",&etage);
-    printf("Etage : %d\n", etage);
     
     if (etage < 1 || etage > 3) {
         for(char i=1; i<=3; i++){
             supprimerEtage();
+            printf("Etage : %d\n", etage);
             creerEtageEntier(i);
             printf("Génération de l'étage %hhd : OK\n",i);
             printf("La seed est %d\n",lireSeed());
         }
     } else {
         supprimerEtage();
+        printf("Etage : %d\n", etage);
         creerEtageEntier(etage);
         printf("Génération de l'étage %hhd : OK\n",etage);
         printf("La seed est %d\n",lireSeed());

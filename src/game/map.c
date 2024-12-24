@@ -240,6 +240,15 @@ char mapNumeroSalleToIndice(char num) {
     return ligne*11+colonne;
 }
 
+char mapSalleIndice(char numSalle,char map[121]){
+    /*renvoie l'indice de la salle donnée (identifiant) dans la map*/
+    for (char i = 0; i<121 ; i++){
+        if (numSalle == map[i]){
+            return i;
+        }
+    }
+}
+
 int creerSeed(int seed) {
     /*creer la seed de la map et l'ecrit dans le fichier seed.txt*/
     if (seed == 0) {    /*par defaut si on veut du random il faut que seed = 0*/
@@ -369,19 +378,19 @@ char lireMap(char map[121]) {
     }
 }
 
-char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]) {
-    /*n est l'indice de la salle dans la map
+char obtenirEtatPorteByIndiceSalle(char n, char map[121], char retour[4]) {
+    /*n est le numéro/identifiant de la salle
     Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle*/
     for (char i = 0; i<4; i++) retour[i] = 1;
-    char position = mapNumeroSalleToIndice(n);
-    if (position <= 6) retour[0] = 0;
-    else if (position >= 31) retour[2] = 0;
-    if (position%6 == 0) retour[1] = 0;
-    else if (position%6 == 1) retour[3] = 0;
-    if (retour[0]) retour[0] = map[n-11] == 0 ? 1 : 0;
-    if (retour[1]) retour[1] = map[n+1] == 0 ? 1 : 0;
-    if (retour[2]) retour[2] = map[n+11] == 0 ? 1 : 0;
-    if (retour[3]) retour[3] = map[n-1] == 0 ? 1 : 0;
+    char position = mapSalleIndice(n,map);
+    if (position <= 11) retour[0] = 0;
+    else if (position >= 110) retour[2] = 0;
+    if (position%11 == 10) retour[1] = 0;
+    else if (position%11 == 0) retour[3] = 0;
+    if (retour[0]) retour[0] = map[position-11] == 0 ? 1 : 0;
+    if (retour[1]) retour[1] = map[position+1] == 0 ? 1 : 0;
+    if (retour[2]) retour[2] = map[position+11] == 0 ? 1 : 0;
+    if (retour[3]) retour[3] = map[position-1] == 0 ? 1 : 0;
     return 1;
 }
 
@@ -655,8 +664,7 @@ char creerSalle(char identifiantSalle, char etage) {
     creer la salle demandée*/
     char map[121];
     lireMap(map);
-    char indiceSalle;
-    for (char i = 0; i<121; i++) if (map[i] == identifiantSalle) indiceSalle = i;
+    char indiceSalle = mapSalleIndice(identifiantSalle,map);
 
     char salle[21*15];      /*21*15 = 315*/
     for (short i = 0; i<315;i++) salle[i] = 1;
@@ -668,7 +676,7 @@ char creerSalle(char identifiantSalle, char etage) {
 
     /*placement des portes dans la salle*/
     char portes[4];
-    obtenirEtatPorteByIndiceSalle(indiceSalle,map,portes);      /*portes = {N,E,S,W}*/
+    obtenirEtatPorteByIndiceSalle(identifiantSalle,map,portes);      /*portes = {N,E,S,W}*/
     if (portes[0]) salle[10] = 8;
     if (portes[1]) salle[21*8-1] = 10;
     if (portes[2]) salle[21*14+10] = 8;
@@ -884,6 +892,26 @@ char creerEtageEntier(char numEtage){
         creerSalle(salleNum,numEtage);
     }
     return 1;
+}
+
+char lireSalle(char numSalle, short sallePosX[315], short sallePosY[315], char salle[315]) {
+    /*lit la salle donnée dans le fichier correspondant et la transforme en liste à une dimension pour l'exploiter*/
+    char * nomFichierCheminTemp = "/map/Salle00/salle00.txt";
+    char numSalleSTR[5];
+    sprintf(numSalleSTR,"%02hhd",numSalle); 
+    char nomFichier[strlen(save)+strlen(nomFichierCheminTemp)+1];
+    strcpy(nomFichier, save);
+    strcat(strcat(strcat(strcat(strcat(nomFichier,"/map/Salle"),numSalleSTR),"/salle"),numSalleSTR),".txt");
+    FILE * fichier = NULL;
+    if((fichier = fopen(nomFichier,"r"))==NULL) {
+        ecrireErreur("Erreur lors de la lecture de la salle\n");
+        return 0;
+    } else {
+        for (short i = 0; i<315; i++) fscanf(fichier," %hd %hd %hhd",&sallePosX[i], &sallePosY[i], &salle[i]);
+        fclose(fichier);
+        fichier = NULL;
+        return 1;
+    }
 }
 
 char supprimerEtage(){      //supprime toutes les données de l'étage sauf la seed

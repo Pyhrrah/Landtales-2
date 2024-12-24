@@ -39,6 +39,8 @@ char mapIndiceToNumeroSalle(char indice);       //indice = l'indice de la salle 
 
 char mapNumeroSalleToIndice(char num);      //num est la position de la salle dans la map, allant de 1 à 36 compris, et non son numéro, il ne faut pas les confondre. Renvoie l'indice de la salle dans le tableau de la map
 
+char mapSalleIndice(char numSalle, char map[121]);        //renvoie l'indice de la salle donnée (identifiant) dans la map
+
 int creerSeed(int seed);        //creer la seed de la map et l'ecrit dans le fichier seed.txt; par defaut si on veut du random il faut que seed = 0 {
 
 int lireSeed();
@@ -51,7 +53,7 @@ char sauvegarderMap(int seed);      //creer et sauvegarde la map à une dimensio
 
 char lireMap(char map[121]);        //lit la map dans le fichier map.txt et la transforme en liste à une dimension pour l'exploiter
 
-char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]);       //n est l'indice de la salle dans la map; Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle
+char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]);       //n est le numéro/identifiant de la salle; Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle
 
 short positionLxltoOneLinePos(char X, char x, char y);      //X la longueur de la grille; x l'abscisse du point dans la grille; y l'ordonnée du point dans la grille; Renvoie l'indice équivalent pour un tableau à une dimension représentant la grille; Le premier point est x=1 et y=1 dans la grille
 
@@ -88,6 +90,8 @@ char creerSalle(char identifiantSalle, char etage);     //identifiantSalle est l
 char creerSave();       //creer le folder de la save donnée
 
 char creerEtageEntier(char numEtage);       //creer un etage entier
+
+char lireSalle(char numSalle, short sallePosX[315], short sallePosY[315], char salle[315]);         //lit la salle donnée dans le fichier correspondant et la transforme en liste à une dimension pour l'exploiter
 
 char supprimerEtage();      //supprime toutes les données de l'étage sauf la seed
 
