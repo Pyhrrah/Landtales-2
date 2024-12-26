@@ -8,7 +8,11 @@
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 
-int main() {
+int main(int argc, char * argv[]) {
+
+    char * throw;
+    sscanf(argv[argc-1], "%ms", &throw);
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "Erreur lors de l'initialisation de la SDL : %s\n", SDL_GetError());
         return 1;

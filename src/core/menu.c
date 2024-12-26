@@ -5,12 +5,13 @@
 #include "./../../include/editor/editor.h"
 #include "./../../include/multiplayer/multiplayer.h"
 #include "./../../include/settings.h"
-#include "./../../include/game.h"
+#include "./../../include/game/game.h"
 
 #define TILE_SIZE 32
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 960
 
+// Fonction pour afficher du texte à l'écran
 void render_text(SDL_Renderer *renderer, const char *text, int x, int y, TTF_Font *font, SDL_Color color) {
     SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, color);
     SDL_Texture *text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
@@ -23,6 +24,7 @@ void render_text(SDL_Renderer *renderer, const char *text, int x, int y, TTF_Fon
     SDL_FreeSurface(text_surface);
 }
 
+// Fonction pour afficher le menu
 void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *background, TTF_Font *font) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color black = {0, 0, 0, 255};
@@ -44,6 +46,7 @@ void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *backg
     SDL_RenderPresent(renderer);
 }
 
+// Fonction pour gérer le menu
 void handle_menu(SDL_Renderer *renderer) {
     int running = 1;
     int selected_option = 0;

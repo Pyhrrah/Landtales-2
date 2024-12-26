@@ -3,13 +3,23 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
-#define save "./save1"
 #define ETAGE_DEFAULT 1
 
+#ifndef  M_PI
+#define  M_PI  3.1415926535897932384626433
+#endif
 
+char save[35] = "./data/game/save1";
 
 void pass(){};
-
+void set_save_path(int save_number) {
+    if (save_number >= 1 && save_number <= 3) {
+        snprintf(save, sizeof(save), "./data/game/save%d", save_number);
+    } else {
+        fprintf(stderr, "Numéro de sauvegarde invalide : %d\n", save_number);
+        exit(EXIT_FAILURE);
+    }
+}
 char ecrireErreur(char * msg) {
     FILE * fichier = NULL;
     char * errorFichierChemin = "/errors/errors.txt";
@@ -814,7 +824,7 @@ char creerSalle(char identifiantSalle, char etage) {
 
 
     /*Sauvegarde de la salle dans le fichier*/
-    char tailleTile = 16;
+    char tailleTile = 32;
     char tempSTR[5];
     sprintf(tempSTR,"%02d",identifiantSalle);
     char salleFolderSTR[strlen("/map/Salle")+strlen(tempSTR)+1];

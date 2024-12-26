@@ -3,11 +3,13 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
-#define save "./save1"
 #define ETAGE_DEFAULT 1
 
 
 //void pass(){};        //commenté car pose des erreurs à la compilation
+
+extern char save[40];
+void set_save_path(int save_number);
 
 char ecrireErreur(char * msg);
 
@@ -39,8 +41,6 @@ char mapIndiceToNumeroSalle(char indice);       //indice = l'indice de la salle 
 
 char mapNumeroSalleToIndice(char num);      //num est la position de la salle dans la map, allant de 1 à 36 compris, et non son numéro, il ne faut pas les confondre. Renvoie l'indice de la salle dans le tableau de la map
 
-char mapSalleIndice(char numSalle, char map[121]);        //renvoie l'indice de la salle donnée (identifiant) dans la map
-
 int creerSeed(int seed);        //creer la seed de la map et l'ecrit dans le fichier seed.txt; par defaut si on veut du random il faut que seed = 0 {
 
 int lireSeed();
@@ -53,7 +53,7 @@ char sauvegarderMap(int seed);      //creer et sauvegarde la map à une dimensio
 
 char lireMap(char map[121]);        //lit la map dans le fichier map.txt et la transforme en liste à une dimension pour l'exploiter
 
-char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]);       //n est le numéro/identifiant de la salle; Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle
+char obtenirEtatPorteByIndiceSalle(char n,char map[121], char retour[4]);       //n est l'indice de la salle dans la map; Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle
 
 short positionLxltoOneLinePos(char X, char x, char y);      //X la longueur de la grille; x l'abscisse du point dans la grille; y l'ordonnée du point dans la grille; Renvoie l'indice équivalent pour un tableau à une dimension représentant la grille; Le premier point est x=1 et y=1 dans la grille
 
@@ -75,11 +75,9 @@ char mobsShuffle(char mobs[5]);     //Melange la place des mobs dans le tableau
 
 double rad(int degre);      //renvoie l'angle en radian
 
-char racineNieme(char nMob, char numeroSalle, short retour[nMob]);      //renvoie la position des mobs selon un cercle
-
-char posInPosTab(short pos, char taille, short posTab[taille]);     //renvoie si la position est dans le tableau des positions
-
-char placer1Mob(char salle[21*15], short placement, char taille, short mobsPos[taille], char indice);
+char racineNieme(char nMob, char numeroSalle, short *retour);
+char posInPosTab(short pos, char taille, short *posTab);
+char placer1Mob(char *salle, short placement, char taille, short *mobsPos, char indice);
 
 char allocEspaceMobTab(char ** mob, char taille);       //alloue l'espace demandé pour le tableau de mob; Il ne faudra pas oublier de free l'espace apres utilisation
 
@@ -90,8 +88,6 @@ char creerSalle(char identifiantSalle, char etage);     //identifiantSalle est l
 char creerSave();       //creer le folder de la save donnée
 
 char creerEtageEntier(char numEtage);       //creer un etage entier
-
-char lireSalle(char numSalle, short sallePosX[315], short sallePosY[315], char salle[315]);         //lit la salle donnée dans le fichier correspondant et la transforme en liste à une dimension pour l'exploiter
 
 char supprimerEtage();      //supprime toutes les données de l'étage sauf la seed
 

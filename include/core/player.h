@@ -3,30 +3,31 @@
 
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <time.h>
+#include "ennemies.h"
 
 typedef struct {
-    int health;
-    int maxHealth;
-    int damage;
-    int defense;
-    SDL_Rect rect;
-    int arrowCount;
-    int maxArrows;
-    Uint32 lastRegenTime;
-    Uint32 lastArrowTime;
-    Uint32 lastLightningUse;
-    int lightningCooldown;
-    bool lightningReady;
-    int id;
+    SDL_Rect rect;              
+    int vie;                    
+    int attaque;               
+    int defense;                
+    char orientation;           
+    int id;                     
+    bool regen_dispo;           
+    time_t last_regen;          
+    int argent;                 
 } Player;
 
-void initPlayer(Player *player, int x, int y, int w, int h);
-void regenerateHealth(Player *player);
-void recoverArrow(Player *player);
-void swordAttack(Player *player);
-void arrowAttack(Player *player);
-void lightningAttack(Player *player);
-void takeDamage(Player *player, int damage);
-void updatePlayer(Player *player);
+typedef struct {
+    SDL_Rect rect;
+} Attack;
+
+void initPlayer(Player *player, int x, int y, int w, int h, int vie);
+
+void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, Enemy enemies[], int *enemyCount, const char *enemyFilename);
+
+void regeneratePlayer(Player *player);
+
+void useLightning(SDL_Renderer *renderer, Player *player);
 
 #endif
