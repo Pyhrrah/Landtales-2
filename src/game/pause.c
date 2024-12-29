@@ -7,18 +7,28 @@ void drawPauseMenu(SDL_Renderer *renderer) {
     SDL_RenderClear(renderer);
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
+    if (!font) {
+        printf("Erreur lors de l'ouverture de la police: %s\n", TTF_GetError());
+        return;
+    }
 
-    SDL_Rect resumeButton = {200, 200, 300, 100};  
-    SDL_Rect quitButton = {200, 350, 300, 100};    
+    int buttonWidth = 200;
+    int buttonHeight = 60;
+    SDL_Rect resumeButton = {640 - buttonWidth - 30, 200, buttonWidth, buttonHeight};
+    SDL_Rect quitButton = {640 - buttonWidth - 30, 300, buttonWidth, buttonHeight};
 
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
-    SDL_RenderFillRect(renderer, &resumeButton);
-    
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &resumeButton);  
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, &quitButton);
 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &resumeButton);
+    SDL_RenderDrawRect(renderer, &quitButton);
+
     SDL_Color textColor = {255, 255, 255, 255};
-    SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Reprendre", textColor);
+    SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, "Reprendre", textColor);
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_FreeSurface(textSurface);
 
@@ -31,7 +41,7 @@ void drawPauseMenu(SDL_Renderer *renderer) {
     SDL_RenderCopy(renderer, textTexture, NULL, &textRectResume);
     SDL_DestroyTexture(textTexture);
 
-    textSurface = TTF_RenderText_Solid(font, "Quitter", textColor);
+    textSurface = TTF_RenderUTF8_Solid(font, "Quitter", textColor);
     textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_FreeSurface(textSurface);
 

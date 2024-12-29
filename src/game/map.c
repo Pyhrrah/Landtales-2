@@ -458,11 +458,17 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
     dimensionLac[0] = longueur; //sauvegarde des dimensions du tableau pour les renvoyer
     dimensionLac[1] = largeur;
 
+    if (longueur <= 0 || largeur <= 0) {
+        ecrireErreur("Dimensions du lac invalides");
+        return 0;
+    }
+
     *espaceLac = (char *)malloc(sizeof(char) * longueur * largeur);
     if (*espaceLac == NULL) {
         ecrireErreur("Erreur lors de l'allocation de mémoire pour la création d'un lac");
         return 0;
     }
+    
 
     for (short i = 0; i < (short)longueur * largeur; i++) {
         (*espaceLac)[i] = 1;
@@ -475,6 +481,14 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
     short pos;
     for (char i = 0; i < nbPointsDirecteurs; i++) {
         pos = (seed + numeroSalle + (x * y * n * i)) % (longueur * largeur);
+
+
+        if (pos < 0 || pos >= longueur * largeur) {
+            ecrireErreur("Index de position hors limites");
+            return 0;
+        }
+
+
         (*espaceLac)[pos] = idBlockEau;
         posPointsDirecteurs[i] = pos;
     }
@@ -669,6 +683,14 @@ char allocEspaceMobPosTab(short ** mobPos, char taille) {
     }
 }
 
+void freeEspaceMobTab(int *mobs) {
+    free(mobs);
+}
+
+void freeEspaceMobPosTab(int *mobsPositions) {
+    free(mobsPositions);
+}
+
 char creerSalle(char identifiantSalle, char etage) {
     /*identifiantSalle est l'identifiant de la salle, pas sa position ni son indice dans map
     creer la salle demandée*/
@@ -747,7 +769,7 @@ char creerSalle(char identifiantSalle, char etage) {
         for (char i = 0; i<3; i++) mobsPositions[i+1] = positionCarreCentre[(identifiantSalle+i)%4];
     }
 
-    else if (identifiantSalle >= 17 && identifiantSalle <= 21) salle[tileCentraliseLxlto21x15(seed%(17*11),17)] = 19;   /*salles de loot*/
+    else if (identifiantSalle >= 17 && identifiantSalle <= 21) salle[tileCentraliseLxlto21x15((seed+etage+(identifiantSalle*13))%(17*11),17)] = 19;   /*salles de loot*/
 
     else if (identifiantSalle == 22) {  /*salle de loot piégée*/
         salle[tileCentraliseLxlto21x15(seed%(17*11),17)] = 20;
@@ -777,20 +799,20 @@ char creerSalle(char identifiantSalle, char etage) {
         } else probEau = 1;
 
 
-        if ((seed+identifiantSalle+etage)%6 < probEau) {
+        /*if ((seed+identifiantSalle+etage)%6 < probEau) {
             char *espaceLac;
             char dimensionsLac[2];
             fairePetitLac(identifiantSalle, &espaceLac,dimensionsLac);
             char L = dimensionsLac[0], l = dimensionsLac[1];
-            char departX = seed % (17 - L) + 2 ;    /*+2 pour ecarter des bords de la map*/
+            char departX = seed % (17 - L) + 2 ;    //+2 pour ecarter des bords de la map
             char departY = seed % (11 - l) + 2;
             for (short i = 0; i<((short)L*l); i++) {
                 salle[tileDecentraliseLxlto21x15(i,L,positionLxltoOneLinePos(21, departX+1, departY+1))] = espaceLac[i];
             }
-            //free(espaceLac);    /*la fonction fairePetitLac utilise malloc sur espaceLac, comme nous avons fini d'utiliser espaceLac, il faut libéré la mémoire*/
+            //free(espaceLac);    //la fonction fairePetitLac utilise malloc sur espaceLac, comme nous avons fini d'utiliser espaceLac, il faut libéré la mémoire
             espaceLac = NULL;
 
-        }
+        }*/
 
         for (char i = 0; i<((seed%12)+3); i++) {    /*pour placer des obstacles sur la map, 3 minimum et 14 maximum*/
             char placed = 0;

@@ -7,9 +7,13 @@
 #include "./../../include/game/game.h"
 #include "./../../include/game/map.h"
 #include "./../../include/game/pause.h"
+#include "./../../include/game/hud.h"
+#include "./../../include/game/game_over.h"
+#include "./../../include/game/file.h"
 #include "./../../include/core/player.h"
 #include "./../../include/core/ennemies.h"
-
+#include "./../../include/game/credit.h"
+#include "./../../include/game/boss.h"
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -17,99 +21,6 @@
 #define TARGET_FPS 60
 #define FRAME_DELAY (1000 / TARGET_FPS)
 
-// Fonction pour charger les données de la map de l'étage depuis un fichier
-int loadMap(const char* filename, int data[11][11]) {
-    FILE* file = fopen(filename, "r");
-    if (!file) {
-        printf("Erreur lors de l'ouverture du fichier %s\n", filename);
-        return -1;
-    }
-
-    int i = 0, j = 0;
-    while (fscanf(file, "%d", &data[i][j]) == 1) {
-        j++;
-        if (j >= 11) {
-            j = 0;
-            i++;
-        }
-
-        if (i >= 11) {
-            printf("Le fichier contient plus de données que prévu. Seules les 121 premières valeurs ont été lues.\n");
-            break;
-        }
-    }
-
-    printf("Données de la map chargées avec succès !\n");
-    for (int i = 0; i < 11; i++) {
-        for (int j = 0; j < 11; j++) {
-            printf("%4d ", data[i][j]);
-        }
-        printf("\n");
-    }
-
-    fclose(file);
-    return (i * 11 + j); 
-}
-
-// Fonction pour créer une salle entière
-void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
-    SDL_Color colors[18] = {
-        {50, 205, 50, 255},   // 1 : tile sol normal
-        {60, 179, 113, 255},  // 2 : tile sol variation 1
-        {34, 139, 34, 255},   // 3 : tile sol variation 2
-        {46, 139, 87, 255},   // 4 : tile sol variation 3
-        {139, 69, 19, 255},   // 5 : mur haut et bas map
-        {139, 69, 19, 255},   // 6 : mur gauche
-        {139, 69, 19, 255},   // 7 : mur droite
-        {210, 105, 30, 255},  // 8 : porte mur haut et bas map
-        {210, 105, 30, 255},  // 9 : porte mur gauche
-        {210, 105, 30, 255},  // 10: porte mur droite
-        {30, 144, 255, 255},  // 11: tile bloc d'eau
-        {169, 169, 169, 255}, // 12: rocher
-        {139, 69, 19, 255},   // 13: souche d'arbre
-        {128, 128, 128, 255}, // 14: débris
-        {192, 192, 192, 255}, // 15: pilier haut gauche (hg)
-        {192, 192, 192, 255}, // 16: pilier haut droit (hd)
-        {192, 192, 192, 255}, // 17: pilier bas droit (bd)
-        {192, 192, 192, 255}  // 18: pilier bas gauche (bg)
-    };
-
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            int tileId = room[i][j];  
-            SDL_Color tileColor = colors[tileId - 1]; 
-
-            SDL_Rect tileRect = { j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE };
-            SDL_SetRenderDrawColor(renderer, tileColor.r, tileColor.g, tileColor.b, tileColor.a);
-            SDL_RenderFillRect(renderer, &tileRect);
-        }
-    }
-}
-
-// Fonction pour charger les données d'une salle depuis un fichier
-void loadRoomData(const char* filename, int room[ROWS][COLS]) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        printf("Erreur d'ouverture du fichier %s\n", filename);
-        return;
-    }
-
-    int x, y, value;
-    int i = 0, j = 0;
-    
-    while (fscanf(file, "%d %d %d", &x, &y, &value) == 3) {
-        if (i < ROWS && j < COLS) {
-            room[i][j] = value;
-            j++;
-            if (j == COLS) {
-                j = 0;
-                i++;
-            }
-        }
-    }
-
-    fclose(file);
-}
 
 // Fonction pour vérifier la collision du joueur avec les murs et les ennemis
 bool checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int enemyCount) {
@@ -132,17 +43,13 @@ bool checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], in
             return true; 
         }
     }
-
-    printf("%d\n", player->vie);
-
     return false;
 }
 
 // Fonction pour gérer la transition de porte (redirection vers la bonne salle etc.)
-bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][11], int *currentRoom, int saveNumber) {
+bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][11], int *currentRoom, int saveNumber, int *etage) {
     int tileX = player->rect.x / TILE_SIZE;
     int tileY = player->rect.y / TILE_SIZE;
-
     if (tileX >= 0 && tileX < COLS && tileY >= 0 && tileY < ROWS) {
         int tileId = mapRoom[tileY][tileX];
 
@@ -182,15 +89,18 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
             } else if (tileId == 10) {
 
                 if (*currentRoom == 0) {
-                    nextRoom = 1;
-                    creerEtageEntier(1);
+                    if (*etage == 4) {
+                        nextRoom = 100;
+                    } else {
+                        nextRoom = 1;
+                    }
                 } else if (tileX == COLS - 1 && currentRoomX < 9) { 
                     nextRoom = data[currentRoomY][currentRoomX + 2];
                     printf("droite\n");
                 }
             }
 
-            if (nextRoom > 0) { 
+            if (nextRoom > 0 && nextRoom < 100) { 
                 *currentRoom = nextRoom;
                 char roomFilename[100];
                 sprintf(roomFilename, "./data/game/save%d/map/Salle%02d/salle%02d.txt", saveNumber, *currentRoom, *currentRoom);
@@ -201,12 +111,25 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
                 } else if (tileId == 9) { 
                     player->rect.x = TILE_SIZE * (COLS - 1);
                 } else if (tileId == 10) {
-                    player->rect.x = 0;
+                    player->rect.x = 32;
                 }
 
                 return true;
-            } else {
+            } else  if (nextRoom == 100) {
+
+                printf("Le boss est mort, passage au boss final.\n");                
+                *currentRoom = nextRoom;
+                char bigBossFilename[100] = "./data/game/bigBossMap.txt";
+                loadRoomData(bigBossFilename, mapRoom);
+
+                player->rect.x = 32;
+                player->rect.y = 224;
+
+                return true;
+
+            } else{
                 printf("Erreur : la salle suivante est invalide ou inexistante.\n");
+                printf("Salle actuelle : %d, Salle suivante : %d\n", *currentRoom, nextRoom);
             }
         }
     }
@@ -214,74 +137,167 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
     return false;
 }
 
-// Fonction pour sauvegarder les données du joueur (dès qu'une porte est prise)
-void saveGame(int saveNumber, int tentative, int vie, int attaque, int defense, int etage, int piece, int room) {
-    char playerFilename[100];
-    sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
 
-    FILE *file = fopen(playerFilename, "w");
-    if (!file) {
-        printf("Erreur lors de l'ouverture du fichier %s pour la sauvegarde.\n", playerFilename);
+int checkCollisionTable(Player *player, SDL_Rect *attackTile, SDL_Rect *defenseTile, SDL_Rect *maxHealthTile) {
+    if ((player->orientation == 'R' && player->rect.x == attackTile->x - 32 && player->rect.y == attackTile->y) || 
+        (player->orientation == 'U' && player->rect.y == attackTile->y + 32 && player->rect.x == attackTile->x)) { 
+        return 1; 
+    }
+    
+    if (player->orientation == 'U' && player->rect.y == defenseTile->y + 32 && player->rect.x == defenseTile->x) {
+        return 2; 
+    }
+
+    if ((player->orientation == 'L' && player->rect.x == maxHealthTile->x + 32 && player->rect.y == maxHealthTile->y) || 
+        (player->orientation == 'U' && player->rect.y == maxHealthTile->y + 32 && player->rect.x == maxHealthTile->x)) { 
+        return 3; 
+    }
+
+    return 0; 
+}
+
+
+void renderLobby(SDL_Renderer *renderer, Player *player, int *attackBought, int *defenseBought, int *maxHealthBought) {
+    const int tableWidth = 3 * 32;
+    const int tableHeight = 32;
+
+    SDL_Rect table = {(COLS * TILE_SIZE - tableWidth) / 2, TILE_SIZE, tableWidth, tableHeight};
+
+    const int tileSize = 32;
+    const int itemWidth = tileSize / 2;
+    const int itemHeight = tileSize / 2;
+
+    SDL_Rect attackTile = {table.x + 0 * tileSize, table.y, tileSize, tileSize};
+    SDL_Rect defenseTile = {table.x + 1 * tileSize, table.y, tileSize, tileSize};
+    SDL_Rect maxHealthTile = {table.x + 2 * tileSize, table.y, tileSize, tileSize};
+
+    SDL_Rect attackItem = {attackTile.x + (tileSize - itemWidth) / 2, attackTile.y + (tileSize - itemHeight) / 2, itemWidth, itemHeight};
+    SDL_Rect defenseItem = {defenseTile.x + (tileSize - itemWidth) / 2, defenseTile.y + (tileSize - itemHeight) / 2, itemWidth, itemHeight};
+    SDL_Rect maxHealthItem = {maxHealthTile.x + (tileSize - itemWidth) / 2, maxHealthTile.y + (tileSize - itemHeight) / 2, itemWidth, itemHeight};
+
+    const int price = 10;
+
+    SDL_SetRenderDrawColor(renderer, 139, 69, 19, 255);
+    SDL_RenderFillRect(renderer, &table);
+
+
+    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
+    if (*attackBought == 0) SDL_RenderFillRect(renderer, &attackItem);
+    if (*defenseBought == 0) SDL_RenderFillRect(renderer, &defenseItem);
+    if (*maxHealthBought == 0) SDL_RenderFillRect(renderer, &maxHealthItem);
+
+    SDL_Color color;
+    SDL_Surface *surface;
+    SDL_Texture *texture;
+    SDL_Rect textRect;
+
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 16);
+    if (!font) {
+        printf("Erreur chargement police: %s\n", TTF_GetError());
         return;
     }
 
-    fprintf(file, "%d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room);
-    fclose(file);
+    for (int i = 0; i < 3; i++) {
+        SDL_Rect *currentItem = (i == 0) ? &attackItem : (i == 1) ? &defenseItem : &maxHealthItem;
+        int bought = (i == 0) ? *attackBought : (i == 1) ? *defenseBought : *maxHealthBought;
 
-    printf("Données sauvegardées : Tentative: %d, Vie: %d, Attaque: %d, Defense: %d, Etage: %d, Piece: %d, Salle: %d\n",
-           tentative, vie, attaque, defense, etage, piece, room);
+        if (bought == 0) {
+            color = (player->argent >= price) ? (SDL_Color){255, 255, 255, 255} : (SDL_Color){255, 0, 0, 255};
+            char priceText[10];
+            sprintf(priceText, "%d", price);
+
+            surface = TTF_RenderUTF8_Solid(font, priceText, color);
+            if (surface) {
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+                textRect = (SDL_Rect){currentItem->x + (itemWidth - surface->w) / 2, currentItem->y - 20, surface->w, surface->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_FreeSurface(surface);
+                SDL_DestroyTexture(texture);
+            }
+        }
+    }
+
+    TTF_CloseFont(font);
+
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &player->rect);
 }
 
-// Fonction pour effacer les fichiers de sauvegarde de l'étage (après mort ou changement d'étage)
-void clearMapDirectory(int saveNumber) {
-    char dirCommand[150];
-    sprintf(dirCommand, "rm -rf ./data/game/save%d/map", saveNumber);
-    system(dirCommand);
-}
 
-// Fonction pour gérer la fin de partie (mort du joueur), temporaire visuellement
-void gameOver(Player *player, SDL_Renderer *renderer, int saveNumber, int *room, int *etage,int mapRoom[ROWS][COLS]) {
-    if (player->vie <= 0) {
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderClear(renderer);
 
-        SDL_RenderPresent(renderer);
-        
-        SDL_Delay(2000); 
 
-        player->vie = 100;
+void handleLobbyInteraction(Player *player, int *attackBought, int *defenseBought, int *maxHealthBought, int *alreadyBoughtInSession) {
 
-        clearMapDirectory(saveNumber);
-        
-        *room = 0; 
-        *etage = 1; 
-        clearEnemies();
-        char roomFilename[100] = "./data/game/lobbyMap.txt";
-        loadRoomData(roomFilename, mapRoom);
+    const int tableX = (COLS * TILE_SIZE - 3 * 32) / 2;  
+    const int tableY = TILE_SIZE;                       
+
+    SDL_Rect attackTile = {tableX + 0 * 32, tableY, 32, 32};
+    SDL_Rect defenseTile = {tableX + 1 * 32, tableY, 32, 32};
+    SDL_Rect maxHealthTile = {tableX + 2 * 32, tableY, 32, 32};
+
+
+    if (*alreadyBoughtInSession == 0 && player->argent >= 10) {
+        int collision = checkCollisionTable(player, &attackTile, &defenseTile, &maxHealthTile);
+
+        if (collision == 1 && *attackBought == 0) {
+            player->argent -= 10;
+            player->attaque += 10;
+            *attackBought = 1;
+            *alreadyBoughtInSession = 1;
+            printf("attaque achetée\n");
+        } else if (collision == 2 && *defenseBought == 0) {
+            player->argent -= 10;
+            player->defense += 10;
+            *defenseBought = 1;
+            *alreadyBoughtInSession = 1;
+            printf("défense achetée\n");
+        } else if (collision == 3 && *maxHealthBought == 0) {
+            player->argent -= 10;
+            player->max_vie += 10;
+            *maxHealthBought = 1;
+            *alreadyBoughtInSession = 1;
+            printf("max vie achetée\n");
+        }
     }
 }
 
-// Fonction pour gérer la partie dans son intégralité
+
+void restoreArticles(int *attackBought, int *defenseBought, int *maxHealthBought, int *alreadyBoughtInSession, int room) {
+
+    if (*alreadyBoughtInSession == 1 && room == 0) {
+        *attackBought = 0;
+        *defenseBought = 0;
+        *maxHealthBought = 0;
+        *alreadyBoughtInSession = 0;
+    }
+}
+
+
 void allGame(int saveNumber, SDL_Renderer *renderer) {
-    char mapFilename[100];
+    char mapFilename[100] = "";
+    char stageFilename[100] = "";
     int dataMap[11][11];
 
-    sprintf(mapFilename, "./data/game/save%d/map/map.txt", saveNumber);
-    loadMap(mapFilename, dataMap);
-
-    int tentative = 0, vie = 100, attaque = 15, defense = 15, etage = 1, piece = 0, room = 1;
+    int tentative = 0 ,vie = 100, attaque = 15, defense = 15, etage = 1, piece = 0, room = 1, max_vie = 100;
 
     char playerFilename[100];
     sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
+
+
+    int attackBought = 0;
+    int defenseBought = 0;
+    int maxHealthBought = 0;
+    int alreadyBoughtInSession = 0;
+
 
     FILE *file = fopen(playerFilename, "r");
     if (file) {
         printf("Le fichier %s existe, on va le charger.\n", playerFilename);
 
-        fscanf(file, "%d %d %d %d %d %d %d", &tentative, &vie, &attaque, &defense, &etage, &piece, &room);
+        fscanf(file, "%d %d %d %d %d %d %d %d", &tentative, &vie, &attaque, &defense, &etage, &piece, &room, &max_vie);
         
-        printf("Données lues du fichier: Tentative: %d, Vie: %d, Attaque: %d, Defense: %d, Etage: %d, Piece: %d, Salle : %d\n",
-               tentative, vie, attaque, defense, etage, piece, room);
+        printf("Données lues du fichier: Tentative: %d, Vie: %d, Attaque: %d, Defense: %d, Etage: %d, Piece: %d, Salle : %d, Max Vie : %d\n",
+               tentative, vie, attaque, defense, etage, piece, room, max_vie);
 
         fclose(file); 
     } else {
@@ -293,29 +309,47 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             return;
         }
 
-        fprintf(file, "%d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room);
+        fprintf(file, "%d %d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room, max_vie);
         fclose(file); 
 
-        printf("Données par défaut écrites dans le fichier: Tentative: %d, Vie: %d, Attaque: %d, Defense: %d, Etage: %d, Piece: %d, Salle : %d\n",
-               tentative, vie, attaque, defense, etage, piece, room);
+        printf("Données par défaut écrites dans le fichier: Tentative: %d, Vie: %d, Attaque: %d, Defense: %d, Etage: %d, Piece: %d, Salle : %d, Max vie : %d\n",
+               tentative, vie, attaque, defense, etage, piece, room, max_vie);
     }
+
 
     int mapRoom[ROWS][COLS];
     
     if (room == 0) {
         sprintf(mapFilename, "./data/game/lobbyMap.txt");
+
+        
+
+
     } else {
         sprintf(mapFilename, "./data/game/save%d/map/Salle%02d/salle%02d.txt", saveNumber, room, room);
     }
 
+
     loadRoomData(mapFilename, mapRoom);
 
+
+// Appel à initPlayer           
     Player player;
-    initPlayer(&player, TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE, vie);
+    initPlayer(&player, TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE, vie, piece, attaque, defense, max_vie);
+
+    sprintf(stageFilename, "./data/game/save%d/map/map.txt", saveNumber);
+    loadMap(stageFilename, dataMap);
 
     char enemyFilename[100];
     sprintf(enemyFilename, "./data/game/save%d/map/Salle%02d/mobs%02d.txt", saveNumber, room, room);
     initEnemies(enemyFilename);
+
+
+    if (room == 0 || room == 1){
+        player.rect.x = 320;
+        player.rect.y = 224;
+    }
+
 
     SDL_Event event;
     bool running = true;
@@ -324,104 +358,177 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
     Uint32 frameStart;
     int frameTime;
 
+
     while (running) {
+
 
         frameStart = SDL_GetTicks();
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-    SDL_RenderClear(renderer); 
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+        SDL_RenderClear(renderer); 
 
-    if (gamePaused) {
-        SDL_Event pauseEvent;
-        bool pauseRunning = true;
-        SDL_Rect resumeButton = {200, 200, 400, 100};
-        SDL_Rect quitButton = {200, 350, 400, 100};
+        if (room == 2) {
+            checkAndActivateBossDoor(room, enemyCount);
+            }
+
+        if (room == 100){
+            if(!isBossAlive(enemyCount, 100)){
+
+                saveWinGame(saveNumber, tentative, player.vie, player.attaque, player.defense, etage, player.argent, room, player.max_vie);
+
+                clearMapDirectory(saveNumber);
+
+                creerEtageEntier(1);
+
+                displayCredits(renderer);
+
+                running = false;
+            }
+        }
         
-        drawPauseMenu(renderer); 
 
-        while (pauseRunning) {
-            while (SDL_PollEvent(&pauseEvent)) {
-                if (pauseEvent.type == SDL_QUIT) {
-                    running = false;
-                    pauseRunning = false;
+        if (gamePaused) {
+            SDL_Event pauseEvent;
+            bool pauseRunning = true;
+            SDL_Rect resumeButton = {410, 200, 200, 60};
+            SDL_Rect quitButton = {410, 300, 200, 60};
+            
+            drawPauseMenu(renderer); 
+
+            while (pauseRunning) {
+                while (SDL_PollEvent(&pauseEvent)) {
+                    if (pauseEvent.type == SDL_QUIT) {
+                        clearEnemies();
+                        running = false;
+                        pauseRunning = false;
+                        
+                    }
+
+                    if (handleButtonClick(&pauseEvent, resumeButton, quitButton, &gamePaused, &running)) {
+                        pauseRunning = false;
+                    }
+                }
+            }
+            continue;
+        }
+
+        gameOver(&player, renderer, saveNumber, &room, &etage, mapRoom, &tentative, dataMap, stageFilename, &event, &running);
+        if (!running) break;
+        drawMap(mapRoom, renderer);
+           
+
+        
+
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            } else if (event.type == SDL_KEYDOWN) {
+                int oldX = player.rect.x, oldY = player.rect.y;
+
+                switch (event.key.keysym.sym) {
+                    case SDLK_z:
+                        player.rect.y -= TILE_SIZE;
+                        player.orientation = 'U';
+                        break;
+                    case SDLK_s:
+                        player.rect.y += TILE_SIZE;
+                        player.orientation = 'D';
+                        break;
+                    case SDLK_q:
+                        player.rect.x -= TILE_SIZE;
+                        player.orientation = 'L';
+                        break;
+                    case SDLK_d:
+                        player.rect.x += TILE_SIZE;
+                        player.orientation = 'R';
+                        break;
+                    case SDLK_e:
+                        regeneratePlayer(&player);  
+                        break;
+                    case SDLK_SPACE:
+                        useLightning(renderer, &player, &enemyCount, enemyFilename);  
+                        break;
+                    case SDLK_b:
+                        player.vie -= 100;
+                        break;
+                    case SDLK_ESCAPE:
+                        handlePauseMenu(&event, &gamePaused);
+                        break;
+                    case SDLK_a:
+                        if (room == 0) { 
+                            handleLobbyInteraction(&player, &attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession);
+                        }
+                        break;
                 }
 
-                if (handleButtonClick(&pauseEvent, resumeButton, quitButton, &gamePaused, &running)) {
-                    pauseRunning = false;
+                if (checkCollision(&player, mapRoom, enemies, enemyCount)) {
+                    player.rect.x = oldX;
+                    player.rect.y = oldY;
+                } else if (handleDoorTransition(&player, mapRoom, dataMap, &room, saveNumber, &etage)) {
+                    saveGame(saveNumber, tentative, player.vie, player.attaque, player.defense, etage, player.argent, room, player.max_vie);
+                    clearEnemies();
+
+                        if (room < 100) {
+                            sprintf(enemyFilename, "./data/game/save%d/map/Salle%02d/mobs%02d.txt", saveNumber, room, room);
+                            initEnemies(enemyFilename);
+                        } else if (room == 100) {
+                            printf("Boss room\n");
+                            initBigBoss();
+                        }
+
+                }
+            } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                switch (event.button.button) {
+                    case SDL_BUTTON_LEFT:
+                        attackWithSword(renderer, &player, player.orientation, &enemyCount, enemyFilename);
+                        break;
+                    case SDL_BUTTON_RIGHT:
+                        shootArrow(&player);
+                        break;
                 }
             }
         }
-        continue;
-    }
 
-    gameOver(&player, renderer, saveNumber, &room, &etage, mapRoom);
-    drawMap(mapRoom, renderer);
-    drawEnemies(renderer);
+        if (room == 0) {
+            renderLobby(renderer, &player, &attackBought, &defenseBought, &maxHealthBought);
+        } else {
 
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) {
-            running = false;
-        } else if (event.type == SDL_KEYDOWN) {
-            int oldX = player.rect.x, oldY = player.rect.y;
+            // Appeler UpdateEnnemies ici 
+            drawEnemies(renderer); 
 
-            switch (event.key.keysym.sym) {
-                case SDLK_UP:
-                    player.rect.y -= TILE_SIZE;
-                    player.orientation = 'U';
-                    break;
-                case SDLK_DOWN:
-                    player.rect.y += TILE_SIZE;
-                    player.orientation = 'D';
-                    break;
-                case SDLK_LEFT:
-                    player.rect.x -= TILE_SIZE;
-                    player.orientation = 'L';
-                    break;
-                case SDLK_RIGHT:
-                    player.rect.x += TILE_SIZE;
-                    player.orientation = 'R';
-                    break;
-                case SDLK_a:
-                    attackWithSword(renderer, &player, player.orientation, enemies, &enemyCount, enemyFilename);  
-                    break;
-                case SDLK_e:
-                    regeneratePlayer(&player);  
-                    break;
-                case SDLK_SPACE:
-                    useLightning(renderer, &player);  
-                    break;
-                case SDLK_b:
-                    player.vie -= 100;
-                    break;
-                case SDLK_ESCAPE:
-                    handlePauseMenu(&event, &gamePaused);
-                    break;
-            }
+            restoreArticles(&attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession, room);
 
-            if (checkCollision(&player, mapRoom, enemies, enemyCount)) {
-                player.rect.x = oldX;
-                player.rect.y = oldY;
-            } else if (handleDoorTransition(&player, mapRoom, dataMap, &room, saveNumber)) {
-                saveGame(saveNumber, tentative, vie, attaque, defense, etage, piece, room);
-                clearEnemies();
-                sprintf(enemyFilename, "./data/game/save%d/map/Salle%02d/mobs%02d.txt", saveNumber, room, room);
-                initEnemies(enemyFilename);
-            }
+            checkBonusCollision(&player);
+            drawBonuses(renderer);
+
+            handleBossDoorCollision(renderer, &player.rect, &room, mapFilename, mapRoom, saveNumber, 
+                            tentative, &etage, &player, dataMap, stageFilename);
+
+        }    
+
+
+        renderHUD(renderer, &player, tentative);
+        updateArrows(&player, mapRoom, &enemyCount, enemyFilename);
+
+        if (areArrowsActive(&player)) {
+            updateArrows(&player, mapRoom, &enemyCount, enemyFilename);
+
+            renderArrows(renderer, &player);
         }
-    }
 
-    
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
-    SDL_RenderFillRect(renderer, &player.rect);
 
-    SDL_RenderPresent(renderer); 
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
+        SDL_RenderFillRect(renderer, &player.rect);
 
-    frameTime = SDL_GetTicks() - frameStart;
+        SDL_RenderPresent(renderer); 
+
+        frameTime = SDL_GetTicks() - frameStart;
 
         if (frameTime < FRAME_DELAY) {
             SDL_Delay(FRAME_DELAY - frameTime);
         }
-}
+    }
+    clearEnemies();
 }
 
 // Fonction pour initialiser une partie (création de la map, génération des ennemis, etc.)
@@ -457,7 +564,7 @@ int is_mouse_in_rect(int mouse_x, int mouse_y, SDL_Rect rect) {
 void draw_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y) {
     SDL_Color color = {255, 255, 255, 255};  
 
-    SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
+    SDL_Surface *surface = TTF_RenderUTF8_Solid(font, text, color);
     if (surface == NULL) {
         fprintf(stderr, "Erreur de création de surface pour le texte : %s\n", TTF_GetError());
         return;
@@ -574,3 +681,48 @@ void start_game_mode(SDL_Renderer *renderer) {
     TTF_CloseFont(font);
     TTF_Quit();
 }
+
+
+/*
+Quand tu as codé en une semaine le jeu de ta vie sans avoir rencontré le moindre problème (les problèmes viennent du code des autres).                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠂⠉⠉⠉⠉⠉⠀⠒⠠⠄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠒⠤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢆⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⠀⠤⠤⠒⣂⣈⣉⣁⣀⣄⠀⠀⠀⠀⠇⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀⢀⡠⠄⢒⣊⣉⣀⠤⠐⠒⠉⣁⡀⠤⠒⠒⠠⣄⠀⠀⠀⠀⢸⡀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡇⠠⠔⣂⡭⢅⣒⡈⠁⠠⠤⠒⠒⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡁⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀⠀⠀⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠖⠒⠂⠉⠉⠉⠉⠲⠀⠀⠀⠈⡇⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢨⡇⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣇⠀⠀⠀⠀⠀⠀
+No segmentation fault                         ⠀⠀⢇⠀⢀⡔⠊⠁⠀⠀⢀⣀⠱⠀⠀⢠⠀⣰⡯⢤⣶⣶⢲⠀⠀⠀⠀⠀⠀⠀⠻⠀⠀⠀⠀⠀⠀
+dans le code                    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⡔⢲⣶⣶⠨⣭⡇⠀⢸⡄⠉⠃⠚⠛⠋⠉⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣇⠀⠀⠀⠑⠚⠻⠛⠒⠁⣧⠀⠈⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡆⠀⠀⠀⠀⠀
+                                ⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀⠀⠀⠀⠀
+                                ⠘⠦⣉⠒⠒⠲⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢠⠏⠀⠀⠀⠈⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣞⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⢸⠁⠀⠀⠀⠈⠉⠑⠂⠠⠤⣀⣀⡀⢹⡀⠀⠀⠀⠀⠀⠀⠙⣄⢀⡤⠤⠤⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⢠⢲⠟⡆⠀⠀⠀⠀⠀
+                                ⠀⢀⡞⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢧⡆⡀⠀⠀⠀⠀⠀⡈⢠⣤⡀⠀⡄⠀⠀⠀⠀⠀⠀⠀⢀⡖⣮⡿⣧⡘⠄⣀⠀⠀⠀
+                                ⠀⠸⠦⠤⠢⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⡏⠀⠀⠀⢠⡞⢀⣾⣅⣁⣀⡁⠈⣦⡀⢠⡀⠀⢰⣟⣿⣿⢻⣃⠀⠀⠀⠈⠑⠲
+                                ⠀⠀⠀⠀⠀⠀⠈⠐⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣦⡆⢠⣛⠀⣾⣿⣿⣿⣿⣿⣦⣀⠋⢸⣴⢴⡃⠿⣽⢯⠢⡽⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠜⢷⣯⡿⣎⢿⣿⣿⣿⣿⣿⢟⡇⠀⠀⡿⠘⢙⡼⡿⠖⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠣⡀⠀⠀⠀⠀⠀⠀⠀⠼⠿⣇⡇⠈⢏⡛⠛⠛⡡⠊⠀⠀⠀⢠⣠⡯⣽⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⡀⠀⠀⠀⠀⠀⠀⠀⠹⣿⠆⡀⠀⠈⠁⠀⠀⠀⠀⢀⡴⡿⡁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⠹⡷⢾⣀⡀⠀⢀⡆⣆⢀⣾⣹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⣀⠀⠀⠀⠀⠀⠀⠁⠀⠉⢻⣞⠻⡇⡟⠻⡥⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢡⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                                ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*/

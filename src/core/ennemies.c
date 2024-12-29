@@ -2,9 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
+Bonus bonuses[5];
+
+
+
 
 // Définition des couleurs des ennemis
 SDL_Color enemyColors[15] = {
@@ -86,10 +91,38 @@ void updateEnemies(SDL_Renderer *renderer) {
 
 // Fonction pour effacer les ennemis
 void clearEnemies() {
+    printf("Effacement de tous les ennemis\n");
     enemyCount = 0;
+
 }
 
-// Fonction pour supprimer un ennemi du fichier et du tableau
+// Fonction pour initialiser les bonus
+void initBonuses() {
+    for (int i = 0; i < 5; i++) {
+        bonuses[i].active = false;
+    }
+}
+
+
+// Fonction pour faire apparaître un bonus
+void spawnBonus(int x, int y, int type) {
+    for (int i = 0; i < 5; i++) {
+        if (!bonuses[i].active) {
+            bonuses[i].rect.x = x;
+            bonuses[i].rect.y = y;
+            bonuses[i].rect.w = 32 / 2;
+            bonuses[i].rect.h = 32 / 2;
+            bonuses[i].type = type;
+            bonuses[i].active = true;
+            printf("Bonus de type %d généré à (%d, %d)\n", type, x, y);
+            return;
+        }
+    }
+    printf("Nombre maximum de bonus atteint, aucun nouveau bonus généré.\n");
+}
+
+
+// Fonction pour supprimer un ennemi d'un fichier
 void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyFilename) {
     if (index < 0 || index >= *enemyCount) {
         printf("Indice d'ennemi invalide : %d\n", index);
@@ -98,10 +131,19 @@ void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyF
 
     printf("Suppression de l'ennemi %d\n", index);
 
+    int bonusX = enemies[index].rect.x + (enemies[index].rect.w / 2) - (bonuses[0].rect.w / 2);
+    int bonusY = enemies[index].rect.y + (enemies[index].rect.h / 2) - (bonuses[0].rect.h / 2);
+
     for (int i = index; i < *enemyCount - 1; i++) {
         enemies[i] = enemies[i + 1];
     }
     (*enemyCount)--;
+
+    if (rand() % 10 != 3) {
+        int bonusType = rand() % 2;
+        spawnBonus(bonusX, bonusY, bonusType);
+    }
+    
 
     FILE *file = fopen(enemyFilename, "w");
     if (!file) {
@@ -121,3 +163,12 @@ void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyF
 }
 
 
+// Fonction pour dessiner les bonus
+void drawBonuses(SDL_Renderer *renderer) {
+    for (int i = 0; i < 5; i++) {
+        if (bonuses[i].active) {
+            SDL_SetRenderDrawColor(renderer, bonuses[i].type == 0 ? 0 : 255, bonuses[i].type == 0 ? 255 : 255, 0, 255);  
+            SDL_RenderFillRect(renderer, &bonuses[i].rect);
+        }
+    }
+}

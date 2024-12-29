@@ -13,7 +13,7 @@
 
 // Fonction pour afficher du texte à l'écran
 void render_text(SDL_Renderer *renderer, const char *text, int x, int y, TTF_Font *font, SDL_Color color) {
-    SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, color);
+    SDL_Surface *text_surface = TTF_RenderUTF8_Solid(font, text, color);
     SDL_Texture *text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
     
     if (text_texture) {

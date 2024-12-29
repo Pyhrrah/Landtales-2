@@ -224,14 +224,14 @@ void draw(SDL_Renderer *renderer) {
     SDL_RenderFillRect(renderer, &reset_button);
 
     if (font != NULL) {
-        SDL_Surface *save_surface = TTF_RenderText_Solid(font, "Save", (SDL_Color){255, 255, 255, 255});
+        SDL_Surface *save_surface = TTF_RenderUTF8_Solid(font, "Save", (SDL_Color){255, 255, 255, 255});
         SDL_Texture *save_texture = SDL_CreateTextureFromSurface(renderer, save_surface);
         SDL_Rect save_rect = {WINDOW_WIDTH - 95, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, save_surface->w, save_surface->h};
         SDL_RenderCopy(renderer, save_texture, NULL, &save_rect);
         SDL_FreeSurface(save_surface);
         SDL_DestroyTexture(save_texture);
 
-        SDL_Surface *reset_surface = TTF_RenderText_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
+        SDL_Surface *reset_surface = TTF_RenderUTF8_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
         SDL_Texture *reset_texture = SDL_CreateTextureFromSurface(renderer, reset_surface);
         SDL_Rect reset_rect = {WINDOW_WIDTH - 195, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, reset_surface->w, reset_surface->h};
         SDL_RenderCopy(renderer, reset_texture, NULL, &reset_rect);

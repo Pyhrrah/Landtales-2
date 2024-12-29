@@ -11,7 +11,7 @@ void draw_button(SDL_Renderer *renderer, SDL_Rect rect, const char *text, TTF_Fo
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_Surface *textSurface = TTF_RenderText_Solid(font, text, textColor);
+    SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, text, textColor);
     if (!textSurface) {
         printf("Erreur lors de la création de la surface de texte : %s\n", TTF_GetError());
         return;
@@ -58,7 +58,7 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
         filename[strcspn(filename, "\n")] = 0; 
         strncpy(fileNames[fileCount], filename, sizeof(fileNames[fileCount]) - 1);
 
-        SDL_Surface *textSurface = TTF_RenderText_Solid(font, filename, textColor);
+        SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, filename, textColor);
         if (textSurface) {
             SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
@@ -112,7 +112,7 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
 
         y_offset = 100;
         for (int i = 0; i < fileCount; i++) {
-            SDL_Surface *textSurface = TTF_RenderText_Solid(font, fileNames[i], textColor);
+            SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, fileNames[i], textColor);
             if (textSurface) {
                 SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
@@ -163,7 +163,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        SDL_Surface *messageSurface = TTF_RenderText_Solid(font, "Renseignez l'IP de l'hôte :", textColor);
+        SDL_Surface *messageSurface = TTF_RenderUTF8_Solid(font, "Renseignez l'IP de l'hôte :", textColor);
         if (messageSurface) {
             SDL_Texture *messageTexture = SDL_CreateTextureFromSurface(renderer, messageSurface);
             SDL_Rect messageRect = {100, 100, messageSurface->w, messageSurface->h};
@@ -179,7 +179,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_RenderDrawRect(renderer, &inputRect);
 
         if (strlen(inputText) > 0) {
-            SDL_Surface *inputSurface = TTF_RenderText_Solid(font, inputText, textColor);
+            SDL_Surface *inputSurface = TTF_RenderUTF8_Solid(font, inputText, textColor);
             if (inputSurface) {
                 SDL_Texture *inputTexture = SDL_CreateTextureFromSurface(renderer, inputSurface);
                 SDL_Rect textRect = {
