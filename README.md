@@ -1,6 +1,6 @@
 # Landtales 2 - Roguelike RPG en 2D
 
-**Groupe 6 :**  
+**Groupe 6 2A3:**  
 Rémy THIBAUT  
 Bryan MATHUREL  
 Elias MATHURIN
@@ -40,11 +40,53 @@ Une connexion client-serveur en C avec SDL 2 permet de gérer les échanges entr
 **Expérience de jeu :**  
 Les joueurs peuvent s'affronter dans des combats dynamiques et stratégiques, ajoutant une dimension compétitive à l'expérience.
 
-## Technologies utilisées
+## Utilisation du projet
 
-- **SDL 2** : Pour la gestion des graphiques, des entrées utilisateur et de l'interface.
-- **Fichiers** : Pour la gestion et la sauvegarde des données de progression, des salles et des configurations.
+### Prérequis
+Avant de pouvoir utiliser **Landtales 2**, assurez-vous d'avoir installé les prérequis suivants :
+- **SDL2** : La bibliothèque principale pour la gestion des graphiques et des entrées.
+- **SDL2_ttf**, **SDL2_image**, **SDL2_net** : Extensions nécessaires pour gérer les polices, les images et les communications réseau.
+- **GCC** : Le compilateur C utilisé pour construire le projet.
+- **make** : L'outil permettant la compilation et le build du programme à partir de plusieurs fichiers de codes.
 
-## Conclusion
+#### Installation des dépendances
+Voici les commandes pour installer les dépendances sur **Ubuntu** et **Fedora**.
 
-**Landtales 2** se distingue par ses nombreuses fonctionnalités et modes de jeu variés, offrant une expérience complète à la fois pour les joueurs solo et multijoueur. Sa gestion de la progression, ses niveaux générés procéduralement, et son éditeur de niveaux garantissent une grande rejouabilité et une personnalisation poussée. Ce jeu est une aventure captivante pour ceux qui recherchent un défi dynamique, que ce soit en solo ou entre amis.
+- **Pour Ubuntu :**
+```bash
+sudo apt update
+sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-net-dev build-essential
+sudo apt install make
+```
+
+
+#### Téléchargement du projet 
+
+Pour utiliser le projet, il faut d'abord le télécharger depuis ce repository Github : 
+```bash
+git clone https://github.com/Pyhrrah/Landtales-2.git
+cd Landtales-2
+```
+
+#### Compilation du programme
+
+Vous pouvez ensuite lancer la commande **make** afin de compiler le projet (make clean peut être nécessaire une première fois avant de lancer make)
+
+```bash
+make clean
+make 
+```
+
+Le programme Landtales 2 devrait être alors correctement compilé. 
+
+Vous pouvez désormais le lancer avec la commande : 
+
+```bash
+./Landtales
+```
+
+
+
+
+
+
