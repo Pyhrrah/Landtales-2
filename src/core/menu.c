@@ -15,7 +15,8 @@
 #include "./../../include/settings.h"
 #include "./../../include/game/game.h"
 #define TILE_SIZE 32
-
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 960
 #define KONAMI_LENGTH 7 
 
 const SDL_Keycode konami_code[KONAMI_LENGTH] = {
@@ -73,26 +74,18 @@ void play_audio(const char *filename) {
 }
 
 
-#define WINDOW_WIDTH 672
-#define WINDOW_HEIGHT 544
-
 void display_video_frame(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame, SDL_Rect *rect,
                          SDL_Texture *texture, SDL_Renderer *renderer, double fpsrendering) {
     if (avcodec_send_packet(ctx, pkt) < 0) return;
     if (avcodec_receive_frame(ctx, frame) < 0) return;
 
-    // Mettre à jour la texture avec les nouvelles dimensions
-    SDL_UpdateYUVTexture(texture, NULL,
+    SDL_UpdateYUVTexture(texture, rect,
                          frame->data[0], frame->linesize[0],
                          frame->data[1], frame->linesize[1],
                          frame->data[2], frame->linesize[2]);
-
-    // Effacer l'écran et copier la texture de la vidéo
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, rect);
     SDL_RenderPresent(renderer);
-
-    // Délai pour respecter la fréquence d'images de la vidéo
     SDL_Delay((Uint32)(fpsrendering * 1000));
 }
 
@@ -142,13 +135,11 @@ void play_video(const char *filename, SDL_Renderer *renderer) {
         return;
     }
 
-    // Créer la texture avec la taille de la fenêtre
+    
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING,
-                                             WINDOW_WIDTH, WINDOW_HEIGHT);
+                                             codec_params->width, codec_params->height);
 
-    // Le rectangle de la vidéo doit occuper toute la fenêtre
-    SDL_Rect rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-
+    SDL_Rect rect = {0, 0, codec_params->width, codec_params->height};
     AVPacket *packet = av_packet_alloc();
     AVFrame *frame = av_frame_alloc();
 
@@ -175,7 +166,6 @@ void play_video(const char *filename, SDL_Renderer *renderer) {
         }
     }
 
-    // Nettoyer après la lecture de la vidéo
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     av_frame_free(&frame);
