@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-#include <arpa/inet.h>
+#include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +10,7 @@
 #define ROWS 15
 #define COLS 21
 #define CELL_SIZE 32
-#define BUFFER_SIZE 1024 // Taille du buffer de réception et sert à envoyer des messages
+#define BUFFER_SIZE 1024 
 
 typedef struct {
     SDL_Rect rect;
@@ -21,7 +21,7 @@ bool check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= ROWS) {
         return false;
     }
-    int blocked_tiles[] = {5, 6, 7, 8,9,10,11};
+    int blocked_tiles[] = {5, 6, 7, 8, 9, 10, 11};
     int tile_value = grid[new_y][new_x];
     for (size_t i = 0; i < sizeof(blocked_tiles) / sizeof(blocked_tiles[0]); i++) {
         if (tile_value == blocked_tiles[i]) {
@@ -32,23 +32,36 @@ bool check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
 }
 
 // Reçoit la grille et l'identifiant du joueur
-void receive_grid(int client_socket, int grid[ROWS][COLS], int *client_id) {
+void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id) {
     memset(grid, 0, sizeof(int) * ROWS * COLS);
 
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (recv(client_socket, &grid[i][j], sizeof(int), 0) <= 0) {
-                perror("Erreur de réception de données");
-                exit(EXIT_FAILURE);
-            }
+    // Réception de la grille
+    size_t grid_size = ROWS * COLS * sizeof(int);
+    size_t received = 0;
+    while (received < grid_size) {
+        int bytes = SDLNet_TCP_Recv(client_socket, (char *)grid + received, grid_size - received);
+        if (bytes <= 0) {
+            fprintf(stderr, "Erreur de réception de la grille : %s\n", SDLNet_GetError());
+            exit(EXIT_FAILURE);
         }
+        received += bytes;
     }
 
-    if (recv(client_socket, client_id, sizeof(int), 0) <= 0) {
-        perror("Erreur de réception de l'identifiant");
-        exit(EXIT_FAILURE);
+    // Réception de l'identifiant du client
+    received = 0;
+    size_t id_size = sizeof(int);
+    while (received < id_size) {
+        int bytes = SDLNet_TCP_Recv(client_socket, (char *)client_id + received, id_size - received);
+        if (bytes <= 0) {
+            fprintf(stderr, "Erreur de réception de l'identifiant du client : %s\n", SDLNet_GetError());
+            exit(EXIT_FAILURE);
+        }
+        received += bytes;
     }
+
+    printf("Grille et identifiant client reçus avec succès.\n");
 }
+
 
 // Dessine la grille
 void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
@@ -94,47 +107,70 @@ void draw_player(SDL_Renderer *renderer, Player *player, SDL_Color color) {
 }
 
 // Envoie la position du joueur au serveur
-void send_player_position(int client_socket, Player *player) {
+void send_player_position(TCPsocket client_socket, Player *player) {
     char message[BUFFER_SIZE];
     snprintf(message, sizeof(message), "MOVE %d %d\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE);
-    send(client_socket, message, strlen(message), 0);
+    SDLNet_TCP_Send(client_socket, message, strlen(message));
 }
 
 // Gère les messages du serveur
-void handle_server_messages(int client_socket, Player *opponent) {
+void handle_server_messages(TCPsocket client_socket, Player *opponent) {
     char buffer[BUFFER_SIZE];
-    int bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, MSG_DONTWAIT);
-    if (bytes_received > 0) {
-        buffer[bytes_received] = '\0';
-        int x, y;
-        if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
-            opponent->rect.x = x * CELL_SIZE;
-            opponent->rect.y = y * CELL_SIZE;
+
+    static SDLNet_SocketSet socket_set = NULL;
+    if (!socket_set) {
+        socket_set = SDLNet_AllocSocketSet(1);
+        if (!socket_set) {
+            fprintf(stderr, "Erreur lors de l'allocation du SocketSet : %s\n", SDLNet_GetError());
+            return;
+        }
+        SDLNet_TCP_AddSocket(socket_set, client_socket);
+    }
+
+    if (SDLNet_CheckSockets(socket_set, 0) > 0 && SDLNet_SocketReady(client_socket)) {
+        int bytes_received = SDLNet_TCP_Recv(client_socket, buffer, sizeof(buffer) - 1);
+
+        if (bytes_received > 0) {
+            buffer[bytes_received] = '\0';
+            printf("Message reçu : %s\n", buffer);
+
+            int x, y;
+            if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
+                opponent->rect.x = x * CELL_SIZE;
+                opponent->rect.y = y * CELL_SIZE;
+            } else {
+                fprintf(stderr, "Format de message inconnu : %s\n", buffer);
+            }
+        } else if (bytes_received <= 0) {
+            if (bytes_received == 0) {
+                printf("Le serveur a fermé la connexion.\n");
+            } else {
+                fprintf(stderr, "Erreur lors de la réception des données : %s\n", SDLNet_GetError());
+            }
         }
     }
 }
 
+
+
 // Démarre le client
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
-    int client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == -1) {
-        perror("Erreur de création de socket");
+    if (SDLNet_Init() == -1) {
+        fprintf(stderr, "Erreur d'initialisation de SDL_net : %s\n", SDLNet_GetError());
         exit(EXIT_FAILURE);
     }
 
-    struct sockaddr_in server_addr = {
-        .sin_family = AF_INET,
-        .sin_port = htons(PORT),
-    };
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        perror("Adresse IP invalide");
-        close(client_socket);
+    IPaddress ip;
+    if (SDLNet_ResolveHost(&ip, server_ip, PORT) == -1) {
+        fprintf(stderr, "Erreur de résolution de l'hôte : %s\n", SDLNet_GetError());
+        SDLNet_Quit();
         exit(EXIT_FAILURE);
     }
 
-    if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-        perror("Connexion au serveur échouée");
-        close(client_socket);
+    TCPsocket client_socket = SDLNet_TCP_Open(&ip);
+    if (!client_socket) {
+        fprintf(stderr, "Erreur de connexion au serveur : %s\n", SDLNet_GetError());
+        SDLNet_Quit();
         exit(EXIT_FAILURE);
     }
 
@@ -153,7 +189,9 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
     const Uint32 send_interval = 200;
 
     while (running) {
+        printf("ici\n");
         handle_server_messages(client_socket, &opponent);
+        printf("la\n");
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
@@ -178,6 +216,7 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
         }
 
         if (SDL_GetTicks() - last_send_time >= send_interval) {
+            printf("Envoi de la position du joueur.\n");
             send_player_position(client_socket, &player);
             last_send_time = SDL_GetTicks();
         }
@@ -191,5 +230,6 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
         SDL_Delay(16);
     }
 
-    close(client_socket);
+    SDLNet_TCP_Close(client_socket);
+    SDLNet_Quit();
 }
