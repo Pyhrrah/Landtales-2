@@ -57,32 +57,32 @@ void drawPauseMenu(SDL_Renderer *renderer) {
 }
 
 // Fonction pour gérer l'événement de pause
-bool handlePauseMenu(SDL_Event *event, bool *gamePaused) {
+int handlePauseMenu(SDL_Event *event, int *gamePaused) {
     if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
-        *gamePaused = true;
-        return true;
+        *gamePaused = 1;
+        return 1;
     }
-    return false;
+    return 0;
 }
 
 // Fonction pour gérer le clic sur les boutons du menu de pause
-bool handleButtonClick(SDL_Event *event, SDL_Rect resumeButton, SDL_Rect quitButton, bool *gamePaused, bool *running) {
+int handleButtonClick(SDL_Event *event, SDL_Rect resumeButton, SDL_Rect quitButton, int *gamePaused, int *running) {
     if (event->type == SDL_MOUSEBUTTONDOWN) {
         int x = event->button.x;
         int y = event->button.y;
 
         if (x >= resumeButton.x && x <= resumeButton.x + resumeButton.w &&
             y >= resumeButton.y && y <= resumeButton.y + resumeButton.h) {
-            *gamePaused = false;
-            return true;
+            *gamePaused = 0;
+            return 1;
         }
 
         if (x >= quitButton.x && x <= quitButton.x + quitButton.w &&
             y >= quitButton.y && y <= quitButton.y + quitButton.h) {
-            *running = false;
-            *gamePaused = false;
-            return true;
+            *running = 0;
+            *gamePaused = 0;
+            return 1;
         }
     }
-    return false;
+    return 0;
 }

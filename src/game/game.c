@@ -23,7 +23,7 @@
 
 
 // Fonction pour vérifier la collision du joueur avec les murs et les ennemis
-bool checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int enemyCount) {
+int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int enemyCount) {
     int tileX = player->rect.x / TILE_SIZE;
     int tileY = player->rect.y / TILE_SIZE;
 
@@ -32,7 +32,7 @@ bool checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], in
         if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
             tileId == 12 || tileId == 13 || tileId == 14 || 
             tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
-            return true;
+            return 1;
         }
     }
 
@@ -40,14 +40,14 @@ bool checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], in
         if (SDL_HasIntersection(&player->rect, &enemies[i].rect)) {
             player->vie -= 10; 
             printf("Collision avec un ennemi ! PV restants: %d\n", player->vie);
-            return true; 
+            return 1; 
         }
     }
-    return false;
+    return 0;
 }
 
 // Fonction pour gérer la transition de porte (redirection vers la bonne salle etc.)
-bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][11], int *currentRoom, int saveNumber, int *etage) {
+int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][11], int *currentRoom, int saveNumber, int *etage) {
     int tileX = player->rect.x / TILE_SIZE;
     int tileY = player->rect.y / TILE_SIZE;
     if (tileX >= 0 && tileX < COLS && tileY >= 0 && tileY < ROWS) {
@@ -70,7 +70,7 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
 
             if (currentRoomX == -1 || currentRoomY == -1) {
                 printf("Erreur : salle actuelle (%d) introuvable dans la carte de l'étage.\n", *currentRoom);
-                return false;
+                return 0;
             }
 
             if (tileId == 8) { 
@@ -114,7 +114,7 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
                     player->rect.x = 32;
                 }
 
-                return true;
+                return 1;
             } else  if (nextRoom == 100) {
 
                 printf("Le boss est mort, passage au boss final.\n");                
@@ -125,7 +125,7 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
                 player->rect.x = 32;
                 player->rect.y = 224;
 
-                return true;
+                return 1;
 
             } else{
                 printf("Erreur : la salle suivante est invalide ou inexistante.\n");
@@ -134,7 +134,7 @@ bool handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][
         }
     }
 
-    return false;
+    return 0;
 }
 
 
@@ -352,8 +352,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
 
     SDL_Event event;
-    bool running = true;
-    bool gamePaused = false;
+    int running = 1;
+    int gamePaused = 0;
 
     Uint32 frameStart;
     int frameTime;
@@ -372,7 +372,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             }
 
         if (room == 100){
-            if(!isBossAlive(enemyCount, 100)){
+            if(isBossAlive(enemyCount, 100) != 1){
 
                 saveWinGame(saveNumber, tentative, player.vie, player.attaque, player.defense, etage, player.argent, room, player.max_vie);
 
@@ -382,14 +382,14 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
                 displayCredits(renderer);
 
-                running = false;
+                running = 0;
             }
         }
         
 
         if (gamePaused) {
             SDL_Event pauseEvent;
-            bool pauseRunning = true;
+            int pauseRunning = 1;
             SDL_Rect resumeButton = {410, 200, 200, 60};
             SDL_Rect quitButton = {410, 300, 200, 60};
             
@@ -399,13 +399,13 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                 while (SDL_PollEvent(&pauseEvent)) {
                     if (pauseEvent.type == SDL_QUIT) {
                         clearEnemies();
-                        running = false;
-                        pauseRunning = false;
+                        running = 0;
+                        pauseRunning = 0;
                         
                     }
 
                     if (handleButtonClick(&pauseEvent, resumeButton, quitButton, &gamePaused, &running)) {
-                        pauseRunning = false;
+                        pauseRunning = 0;
                     }
                 }
             }
@@ -421,7 +421,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_KEYDOWN) {
                 int oldX = player.rect.x, oldY = player.rect.y;
 

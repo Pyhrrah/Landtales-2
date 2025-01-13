@@ -2,7 +2,6 @@
 #define ENNEMIES_H
 
 #include <SDL2/SDL.h>
-#include <stdbool.h>
 
 #define MAX_ENNEMIES 25  // Nombre maximum d'ennemis pouvant exister simultanément.
 
@@ -33,7 +32,7 @@ typedef struct {
 typedef struct {
     SDL_Rect rect;
     int type;
-    bool active;
+    int active : 1;
 } Bonus;
 
 // Variables globales externes.

@@ -4,10 +4,9 @@
 #include "./../../include/core/player.h"
 #include "./../../include/game/file.h"
 #include "./../../include/game/map.h"
-#include <stdbool.h>
 
 // Fonction pour afficher l'écran Game Over
-void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, bool *running) {
+void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *running) {
     const int screenWidth = 672;
     const int screenHeight = 544;
 
@@ -99,7 +98,7 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, bool *runni
 }
 
 // Fonction game over mise à jour
-void gameOver(Player *player, SDL_Renderer *renderer, int saveNumber, int *room, int *etage, int mapRoom[15][21], int *tentative, int mapData[11][11], char *stageFilename, SDL_Event *event, bool *running) {
+void gameOver(Player *player, SDL_Renderer *renderer, int saveNumber, int *room, int *etage, int mapRoom[15][21], int *tentative, int mapData[11][11], char *stageFilename, SDL_Event *event, int *running) {
     if (player->vie <= 0) {
         displayGameOverScreen(renderer, event, running);
 

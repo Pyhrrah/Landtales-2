@@ -1,6 +1,5 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <stdbool.h>
 #include "./../../include/game/map.h"
 
 void displayCredits(SDL_Renderer *renderer) {
@@ -39,13 +38,13 @@ void displayCredits(SDL_Renderer *renderer) {
 
     int y_position = screen_height;
 
-    bool running = true;
+    int running = 1;
     SDL_Event event;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             }
         }
 
@@ -77,7 +76,7 @@ void displayCredits(SDL_Renderer *renderer) {
         y_position -= scroll_speed;
 
         if (current_y < 0) {
-            running = false;
+            running = 0;
         }
 
         SDL_Delay(16);

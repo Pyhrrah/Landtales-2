@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
-#include <stdbool.h>
 
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
@@ -99,7 +98,7 @@ void clearEnemies() {
 // Fonction pour initialiser les bonus
 void initBonuses() {
     for (int i = 0; i < 5; i++) {
-        bonuses[i].active = false;
+        bonuses[i].active = 0;
     }
 }
 
@@ -113,7 +112,7 @@ void spawnBonus(int x, int y, int type) {
             bonuses[i].rect.w = 32 / 2;
             bonuses[i].rect.h = 32 / 2;
             bonuses[i].type = type;
-            bonuses[i].active = true;
+            bonuses[i].active = 1;
             printf("Bonus de type %d généré à (%d, %d)\n", type, x, y);
             return;
         }

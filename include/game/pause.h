@@ -2,7 +2,6 @@
 #define PAUSE_H
 
 #include <SDL2/SDL.h>
-#include <stdbool.h>
 
 /**
  * Affiche le menu de pause du jeu.
@@ -25,7 +24,7 @@ void drawPauseMenu(SDL_Renderer *renderer);
  * 
  * @return true si l'état du jeu a été modifié, sinon false.
  */
-bool handlePauseMenu(SDL_Event *event, bool *gamePaused);
+int handlePauseMenu(SDL_Event *event, int *gamePaused);
 
 /**
  * Gère le clic sur les boutons du menu de pause.
@@ -41,6 +40,6 @@ bool handlePauseMenu(SDL_Event *event, bool *gamePaused);
  * 
  * @return true si un clic valide a été effectué, sinon false.
  */
-bool handleButtonClick(SDL_Event *event, SDL_Rect resumeButton, SDL_Rect quitButton, bool *gamePaused, bool *running);
+int handleButtonClick(SDL_Event *event, SDL_Rect resumeButton, SDL_Rect quitButton, int *gamePaused, int *running);
 
 #endif // PAUSE_H

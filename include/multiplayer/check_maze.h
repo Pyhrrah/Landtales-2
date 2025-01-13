@@ -1,7 +1,6 @@
 #ifndef MAZE_SOLVER_H
 #define MAZE_SOLVER_H
 
-#include <stdbool.h>
 
 // Dimensions de la grille
 #define ROWS 15
@@ -36,7 +35,7 @@ enum {
  * 
  * @return true si la grille a été chargée avec succès, sinon false.
  */
-bool load_grid(const char *filename, int grid[ROWS][COLS]);
+int load_grid(const char *filename, int grid[ROWS][COLS]);
 
 /**
  * Vérifie si une tuile est traversable.
@@ -48,7 +47,7 @@ bool load_grid(const char *filename, int grid[ROWS][COLS]);
  * 
  * @return true si la tuile est traversable, sinon false.
  */
-bool is_walkable(int tile);
+int is_walkable(int tile);
 
 /**
  * Trouve les points de départ et d'arrivée du labyrinthe.
@@ -64,7 +63,7 @@ bool is_walkable(int tile);
  * 
  * @return true si les points de départ et d'arrivée ont été trouvés, sinon false.
  */
-bool find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *end_x, int *end_y);
+int find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *end_x, int *end_y);
 
 /**
  * Vérifie si le labyrinthe est solvable.
@@ -76,6 +75,6 @@ bool find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *en
  * 
  * @return true si le labyrinthe est solvable, sinon false.
  */
-bool is_maze_solvable(int grid[ROWS][COLS]);
+int is_maze_solvable(int grid[ROWS][COLS]);
 
 #endif // MAZE_SOLVER_H

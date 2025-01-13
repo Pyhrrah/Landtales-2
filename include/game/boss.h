@@ -17,7 +17,7 @@ extern int enemyCount;     // Nombre total d'ennemis actifs.
 // enemyCount : nombre total d'ennemis actifs.
 // type : type spécifique d'ennemi à vérifier.
 // Retourne : true si l'ennemi du type donné est en vie, sinon false.
-bool isBossAlive(int enemyCount, int type);
+int isBossAlive(int enemyCount, int type);
 
 // Initialise les données du Big Boss pour le combat final.
 // Configure la position, les statistiques et les attributs du boss.

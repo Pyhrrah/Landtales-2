@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "./../core/player.h"
-#include <stdbool.h>
 
 /**
  * Affiche l'écran "Game Over".
@@ -32,6 +31,6 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
  */
 void gameOver(Player *player, SDL_Renderer *renderer, int saveNumber, int *room, int *etage, 
               int mapRoom[15][21], int *tentative, int mapData[11][11], char *stageFilename, 
-              SDL_Event *event, bool *running);
+              SDL_Event *event, int *running);
 
 #endif // GAME_OVER_H

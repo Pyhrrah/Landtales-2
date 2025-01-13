@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,14 +25,14 @@ enum {
 
 
 // Charge une grille depuis un fichier
-bool load_grid(const char *filename, int grid[ROWS][COLS]) {
+int load_grid(const char *filename, int grid[ROWS][COLS]) {
     char filepath[256] = "./data/editor/";
     strcat(filepath, filename);
 
     FILE *file = fopen(filepath, "r");
     if (!file) {
         perror("Erreur lors de l'ouverture du fichier");
-        return false;
+        return 0;
     }
 
     for (int i = 0; i < ROWS; i++) {  
@@ -41,17 +40,17 @@ bool load_grid(const char *filename, int grid[ROWS][COLS]) {
             if (fscanf(file, "%d", &grid[i][j]) != 1) {
                 fprintf(stderr, "Erreur lors de la lecture de la grille\n");
                 fclose(file);
-                return false;
+                return 0;
             }
         }
     }
 
     fclose(file);
-    return true;
+    return 1;
 }
 
 // Vérifie si une tuile est franchissable
-bool is_walkable(int tile) {
+int is_walkable(int tile) {
     switch (tile) {
         case SOL:
         case SOL_VARIANT_1:
@@ -60,31 +59,31 @@ bool is_walkable(int tile) {
         case SOL_VARIANT_4:
         case SPAWN_PLAYER_1:
         case SPAWN_PLAYER_2:
-            return true;
+            return 1;
         default:
-            return false;
+            return 0;
     }
 }
 
 // Vérifie si une tuile est un mur
-bool find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *end_x, int *end_y) {
-    bool found_player_1 = false;
-    bool found_player_2 = false;
+int find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *end_x, int *end_y) {
+    int found_player_1 = 0;
+    int found_player_2 = 0;
 
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (grid[i][j] == SPAWN_PLAYER_1) {
                 *start_x = i;
                 *start_y = j;
-                found_player_1 = true;
+                found_player_1 = 1;
             } else if (grid[i][j] == SPAWN_PLAYER_2) {
                 *end_x = i;
                 *end_y = j;
-                found_player_2 = true;
+                found_player_2 = 1;
             }
 
             if (found_player_1 && found_player_2) {
-                return true;
+                return 1;
             }
         }
     }
@@ -96,20 +95,20 @@ bool find_spawn_points(int grid[ROWS][COLS], int *start_x, int *start_y, int *en
         printf("Erreur : point de spawn pour le joueur 2 introuvable.\n");
     }
 
-    return false;
+    return 0;
 }
 
 // Vérifie si le labyrinthe est solvable
 // Utilisation de l'algorithme de recherche en largeur (BFS)
-bool is_maze_solvable(int grid[ROWS][COLS]) {
+int is_maze_solvable(int grid[ROWS][COLS]) {
     int start_x, start_y, end_x, end_y;
 
     if (!find_spawn_points(grid, &start_x, &start_y, &end_x, &end_y)) {
         fprintf(stderr, "Impossible de trouver les deux points de spawn\n");
-        return false;
+        return 0;
     }
 
-    bool visited[ROWS][COLS] = {false};
+    int visited[ROWS][COLS] = {0};
     int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};  
 
     int queue[ROWS * COLS][2];
@@ -118,7 +117,7 @@ bool is_maze_solvable(int grid[ROWS][COLS]) {
     queue[rear][0] = start_x;
     queue[rear][1] = start_y;
     rear++;
-    visited[start_x][start_y] = true;
+    visited[start_x][start_y] = 1;
 
     while (front < rear) {
         int x = queue[front][0];
@@ -126,7 +125,7 @@ bool is_maze_solvable(int grid[ROWS][COLS]) {
         front++;
 
         if (x == end_x && y == end_y) {
-            return true;
+            return 1;
         }
 
         for (int d = 0; d < 4; d++) {
@@ -134,7 +133,7 @@ bool is_maze_solvable(int grid[ROWS][COLS]) {
             int ny = y + directions[d][1];
 
             if (nx >= 0 && ny >= 0 && nx < ROWS && ny < COLS && !visited[nx][ny] && is_walkable(grid[nx][ny])) {
-                visited[nx][ny] = true;
+                visited[nx][ny] = 1;
                 queue[rear][0] = nx;
                 queue[rear][1] = ny;
                 rear++;
@@ -142,5 +141,5 @@ bool is_maze_solvable(int grid[ROWS][COLS]) {
         }
     }
 
-    return false;
+    return 0;
 }

@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-#include <stdbool.h>
 #include <time.h>
 #include "./../../include/core/ennemies.h"
 
@@ -10,7 +9,7 @@
 typedef struct {
     SDL_Rect rect;
     char orientation;
-    bool active;
+    int active : 1;
 } Arrow;
 
 // Structure pour le joueur
@@ -22,7 +21,6 @@ typedef struct {
     int defense;                
     char orientation;           
     int id;                     
-    bool regen_dispo;           
     time_t last_regen;          
     int argent;  
     time_t last_lightning;    
@@ -48,13 +46,12 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     player->defense = defense;      
     player->orientation = 'B';  
     player->id = 1;             
-    player->regen_dispo = true; 
     player->last_regen = 0; 
     player->argent = argent;     
     player->last_lightning = 0;    
     player->arrowCount = 3;
     for (int i = 0; i < player->arrowCount; i++) {
-        player->arrows[i].active = false;
+        player->arrows[i].active = 0;
         player->arrowTimestamps[i] = 0;
     }
 }
@@ -77,7 +74,7 @@ void checkBonusCollision(Player *player) {
                 printf("Le joueur récupère 1 pièce. Total d'argent : %d\n", player->argent);
             }
 
-            bonuses[i].active = false;  
+            bonuses[i].active = 0;  
         }
     }
 }
@@ -141,7 +138,7 @@ void shootArrow(Player *player) {
     Uint32 currentTime = SDL_GetTicks();
     for (int i = 0; i < 3; i++) {
         if (!player->arrows[i].active && currentTime - player->arrowTimestamps[i] >= 10000) {
-            player->arrows[i].active = true;
+            player->arrows[i].active = 0;
             player->arrows[i].orientation = player->orientation;
             player->arrows[i].rect.w = 8;
             player->arrows[i].rect.h = 8;
@@ -197,7 +194,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                 if (tileId == 5 || tileId == 6 || tileId == 7 || 
                     tileId == 12 || tileId == 14 || 
                     tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
-                    player->arrows[i].active = false;
+                    player->arrows[i].active = 0;
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();
                     continue;
@@ -209,7 +206,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                 if (SDL_HasIntersection(&player->arrows[i].rect, &enemies[j].rect)) {
                     enemies[j].vie -= 10;
                     printf("Ennemi %d touché par une flèche ! Vie restante : %d\n", j, enemies[j].vie);
-                    player->arrows[i].active = false;
+                    player->arrows[i].active = 0;
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();
 
@@ -239,13 +236,13 @@ void renderArrows(SDL_Renderer *renderer, Player *player) {
     }
 }
 
-bool areArrowsActive(Player *player) {
+int areArrowsActive(Player *player) {
     for (int i = 0; i < player->arrowCount; i++) {
         if (player->arrows[i].active) {
-            return true;
+            return 1;
         }
     }
-    return false;
+    return 0;
 }
 
 // Fonction de régénération du joueur

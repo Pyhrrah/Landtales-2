@@ -1,6 +1,5 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <stdbool.h>
 #include <string.h>
 #include "./../../include/multiplayer/check_maze.h"
 #include "./../../include/multiplayer/client.h"
@@ -79,12 +78,12 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
 
     pclose(fp);
 
-    bool running = true;
+    int running = 1;
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 int x = event.button.x;
                 int y = event.button.y;
@@ -130,7 +129,7 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
 // Fonction pour saisir l'IP de l'hôte en mode client
 void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
     char inputText[256] = "";
-    bool running = true;
+    int running = 1;
     SDL_StartTextInput();
 
     SDL_Rect inputRect = {100, 200, 400, 50};
@@ -142,7 +141,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
                 printf("IP saisie : %s\n", inputText);
                 if (strlen(inputText) > 0) {
@@ -215,12 +214,12 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
 
     SDL_Color textColor = {0, 0, 0, 255};
 
-    bool running = true;
+    int running = 1;
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 int x = event.button.x;
                 int y = event.button.y;

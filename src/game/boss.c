@@ -15,13 +15,13 @@ extern int enemyCount;
 
 SDL_Rect bossDoor = {0, 0, 0, 0};
 
-bool isBossAlive(int enemyCount, int type) {
+int isBossAlive(int enemyCount, int type) {
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i].type == type) { 
-            return true;
+            return 1;
         }
     }
-    return false;
+    return 0;
 }
 
 void initBigBoss() {
@@ -40,7 +40,7 @@ void initBigBoss() {
 
 void checkAndActivateBossDoor(int room, int enemyCount) {
     if (room == 2) {
-        if (!isBossAlive(enemyCount, 1)) {
+        if (isBossAlive(enemyCount, 1) != 1) {
             bossDoor.x = 320;
             bossDoor.y = 160;
             bossDoor.w = TILE_SIZE;

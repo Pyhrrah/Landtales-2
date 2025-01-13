@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 #define PORT 12345
 #define ROWS 15
@@ -17,18 +16,18 @@ typedef struct {
 } Player;
 
 // Vérifie les collisions avec des tuiles bloquantes
-bool check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
+int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= ROWS) {
-        return false;
+        return 0;
     }
     int blocked_tiles[] = {5, 6, 7, 8, 9, 10, 11};
     int tile_value = grid[new_y][new_x];
     for (size_t i = 0; i < sizeof(blocked_tiles) / sizeof(blocked_tiles[0]); i++) {
         if (tile_value == blocked_tiles[i]) {
-            return false; 
+            return 0; 
         }
     }
-    return true; 
+    return 1; 
 }
 
 // Reçoit la grille et l'identifiant du joueur
@@ -183,19 +182,17 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
     initialize_player(grid, &player, client_id);
 
     SDL_Event event;
-    bool running = true;
+    int running = 1;
 
     Uint32 last_send_time = SDL_GetTicks();
     const Uint32 send_interval = 200;
 
     while (running) {
-        printf("ici\n");
         handle_server_messages(client_socket, &opponent);
-        printf("la\n");
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
-                running = false;
+                running = 0;
             } else if (event.type == SDL_KEYDOWN) {
                 int x = player.rect.x / CELL_SIZE;
                 int y = player.rect.y / CELL_SIZE;
