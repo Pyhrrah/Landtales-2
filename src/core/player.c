@@ -9,7 +9,7 @@
 typedef struct {
     SDL_Rect rect;
     char orientation;
-    int active : 1;
+    int active;
 } Arrow;
 
 // Structure pour le joueur
@@ -138,7 +138,7 @@ void shootArrow(Player *player) {
     Uint32 currentTime = SDL_GetTicks();
     for (int i = 0; i < 3; i++) {
         if (!player->arrows[i].active && currentTime - player->arrowTimestamps[i] >= 10000) {
-            player->arrows[i].active = 0;
+            player->arrows[i].active = 1;
             player->arrows[i].orientation = player->orientation;
             player->arrows[i].rect.w = 8;
             player->arrows[i].rect.h = 8;
