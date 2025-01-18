@@ -95,6 +95,16 @@ void initialize_player(int grid[ROWS][COLS], Player *player, int client_id) {
             }
         }
     }
+
+    // Afficher la map en printf 
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            printf("%d ", grid[i][j]);
+        }
+        printf("\n");
+    }
+
     fprintf(stderr, "Erreur : Position de spawn introuvable pour le joueur %d.\n", client_id);
     exit(EXIT_FAILURE);
 }
@@ -131,7 +141,6 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
 
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';
-            printf("Message reçu : %s\n", buffer);
 
             int x, y;
             if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
@@ -156,6 +165,11 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
     if (SDLNet_Init() == -1) {
         fprintf(stderr, "Erreur d'initialisation de SDL_net : %s\n", SDLNet_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    if (!renderer) {
+        fprintf(stderr, "Erreur : Le renderer n'a pas été correctement initialisé.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -213,7 +227,6 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
         }
 
         if (SDL_GetTicks() - last_send_time >= send_interval) {
-            printf("Envoi de la position du joueur.\n");
             send_player_position(client_socket, &player);
             last_send_time = SDL_GetTicks();
         }

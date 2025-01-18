@@ -9,7 +9,7 @@
 typedef struct {
     SDL_Rect rect;
     char orientation;
-    int active;
+    int active; // Remplacement de bool par int
 } Arrow;
 
 // Structure pour le joueur
@@ -21,6 +21,7 @@ typedef struct {
     int defense;                
     char orientation;           
     int id;                     
+    int regen_dispo; // Remplacement de bool par int       
     time_t last_regen;          
     int argent;  
     time_t last_lightning;    
@@ -46,12 +47,13 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     player->defense = defense;      
     player->orientation = 'B';  
     player->id = 1;             
+    player->regen_dispo = 1; // Initialisation à vrai      
     player->last_regen = 0; 
     player->argent = argent;     
     player->last_lightning = 0;    
     player->arrowCount = 3;
     for (int i = 0; i < player->arrowCount; i++) {
-        player->arrows[i].active = 0;
+        player->arrows[i].active = 0; // Initialisation à faux
         player->arrowTimestamps[i] = 0;
     }
 }
@@ -78,7 +80,6 @@ void checkBonusCollision(Player *player) {
         }
     }
 }
-
 
 // Fonction d'attaque à l'épée
 void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, int *enemyCount, const char *enemyFilename) {
@@ -119,7 +120,6 @@ void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, i
         printf("Erreur lors du rendu du rectangle : %s\n", SDL_GetError());
     }
 
-
     for (int i = 0; i < *enemyCount; i++) {
         if (SDL_HasIntersection(&swordRect, &enemies[i].rect)) {
             enemies[i].vie -= 10; 
@@ -133,12 +133,11 @@ void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, i
     }
 }
 
-
 void shootArrow(Player *player) {
     Uint32 currentTime = SDL_GetTicks();
     for (int i = 0; i < 3; i++) {
         if (!player->arrows[i].active && currentTime - player->arrowTimestamps[i] >= 10000) {
-            player->arrows[i].active = 1;
+            player->arrows[i].active = 1; // Activation de la flèche
             player->arrows[i].orientation = player->orientation;
             player->arrows[i].rect.w = 8;
             player->arrows[i].rect.h = 8;
@@ -167,6 +166,7 @@ void shootArrow(Player *player) {
     }
 }
 
+// Autres fonctions restent inchangées, sauf conversion de `bool` en `int`...
 // Mettre à jour les flèches
 void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, const char *enemyFilename) {
     for (int i = 0; i < 3; i++) {
@@ -194,7 +194,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                 if (tileId == 5 || tileId == 6 || tileId == 7 || 
                     tileId == 12 || tileId == 14 || 
                     tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
-                    player->arrows[i].active = 0;
+                    player->arrows[i].active = 0;  // Désactivation de la flèche
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();
                     continue;
@@ -210,17 +210,12 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();
 
-
                     if (enemies[j].vie <= 0) {
                         removeEnemy(enemies, enemyCount, j, enemyFilename); 
                         j--;
                     }
-
-
                     break;
                 }
-
-
             }
         }
     }
@@ -239,10 +234,10 @@ void renderArrows(SDL_Renderer *renderer, Player *player) {
 int areArrowsActive(Player *player) {
     for (int i = 0; i < player->arrowCount; i++) {
         if (player->arrows[i].active) {
-            return 1;
+            return 1; // Si une flèche est active
         }
     }
-    return 0;
+    return 0; // Si aucune flèche n'est active
 }
 
 // Fonction de régénération du joueur
@@ -267,7 +262,6 @@ void regeneratePlayer(Player *player) {
     }
 }
 
-
 // Fonction pour créer une foudre à la position de la souris
 void createLightningAtMouse(SDL_Renderer *renderer, int *enemyCount, const char *enemyFilename) {
     int mouseX, mouseY;
@@ -290,7 +284,6 @@ void createLightningAtMouse(SDL_Renderer *renderer, int *enemyCount, const char 
             }
         }
 }
-//
 
 // Fonction pour utiliser la foudre
 void useLightning(SDL_Renderer *renderer, Player *player, int *enemyCount, const char *enemyFilename) {
@@ -298,11 +291,10 @@ void useLightning(SDL_Renderer *renderer, Player *player, int *enemyCount, const
     double secondsSinceLastLightning = difftime(currentTime, player->last_lightning);
     
     if (secondsSinceLastLightning >= 120) {
-        createLightningAtMouse(renderer,enemyCount, enemyFilename);  
+        createLightningAtMouse(renderer, enemyCount, enemyFilename);  
         
         player->last_lightning = currentTime;
 
-        
         printf("Foudre utilisée !\n");
     } else {
         int timeLeft = 120 - (int)secondsSinceLastLightning;
@@ -310,13 +302,11 @@ void useLightning(SDL_Renderer *renderer, Player *player, int *enemyCount, const
     }
 }
 
-
 int getLightningCooldown(Player *player) {
     time_t currentTime = time(NULL);
     int cooldown = 120 - difftime(currentTime, player->last_lightning);
     return (cooldown > 0) ? cooldown : 0;
 }
-
 
 int getRegenCooldown(Player *player) {
     time_t currentTime = time(NULL);

@@ -32,7 +32,7 @@ int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int
         if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
             tileId == 12 || tileId == 13 || tileId == 14 || 
             tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
-            return 1;
+            return 1;  // Collision avec un mur, retour 1
         }
     }
 
@@ -40,10 +40,10 @@ int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int
         if (SDL_HasIntersection(&player->rect, &enemies[i].rect)) {
             player->vie -= 10; 
             printf("Collision avec un ennemi ! PV restants: %d\n", player->vie);
-            return 1; 
+            return 1;  // Collision avec un ennemi, retour 1
         }
     }
-    return 0;
+    return 0;  // Pas de collision, retour 0
 }
 
 // Fonction pour gérer la transition de porte (redirection vers la bonne salle etc.)
@@ -70,7 +70,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
 
             if (currentRoomX == -1 || currentRoomY == -1) {
                 printf("Erreur : salle actuelle (%d) introuvable dans la carte de l'étage.\n", *currentRoom);
-                return 0;
+                return 0;  // Erreur, retour 0
             }
 
             if (tileId == 8) { 
@@ -114,7 +114,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
                     player->rect.x = 32;
                 }
 
-                return 1;
+                return 1;  // Transition réussie, retour 1
             } else  if (nextRoom == 100) {
 
                 printf("Le boss est mort, passage au boss final.\n");                
@@ -125,7 +125,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
                 player->rect.x = 32;
                 player->rect.y = 224;
 
-                return 1;
+                return 1;  // Transition vers le boss final, retour 1
 
             } else{
                 printf("Erreur : la salle suivante est invalide ou inexistante.\n");
@@ -134,7 +134,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
         }
     }
 
-    return 0;
+    return 0;  // Aucun changement, retour 0
 }
 
 
@@ -372,7 +372,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             }
 
         if (room == 100){
-            if(isBossAlive(enemyCount, 100) != 1){
+            if(!isBossAlive(enemyCount, 100)){
 
                 saveWinGame(saveNumber, tentative, player.vie, player.attaque, player.defense, etage, player.argent, room, player.max_vie);
 
@@ -452,9 +452,13 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         player.vie -= 100;
                         break;
                     case SDLK_ESCAPE:
-                        handlePauseMenu(&event, &gamePaused);
+                        if (!gamePaused) {
+                            gamePaused = 1;  // Passe en mode pause si le jeu n'est pas déjà en pause
+                        } else {
+                            gamePaused = 0;  // Reprend le jeu si déjà en pause
+                        }
                         break;
-                    case SDLK_a:
+                                        case SDLK_a:
                         if (room == 0) { 
                             handleLobbyInteraction(&player, &attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession);
                         }

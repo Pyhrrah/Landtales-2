@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {
     SDL_Rect rect;
     int type;
-    int active : 1;
+    int active;  // Remplacement de bool par int
 } Bonus;
 
 // Variables globales externes.

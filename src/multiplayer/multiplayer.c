@@ -5,6 +5,25 @@
 #include "./../../include/multiplayer/client.h"
 #include "./../../include/multiplayer/server.h"
 
+// Structure pour les données du client
+typedef struct {
+    const char *server_ip; 
+    SDL_Renderer *renderer; 
+} ClientData;
+
+/// Structure pour les données du serveur
+typedef struct {
+    int grid[ROWS][COLS]; 
+} ServerData;
+
+// Création d'un thread pour le serveur afin de lui passer les infos
+int server_thread(void *data) {
+    ServerData *server_data = (ServerData *)data; 
+    start_server(server_data->grid);             
+    return 0;                                    
+}
+
+
 // Fonction pour dessiner un bouton avec texte
 void draw_button(SDL_Renderer *renderer, SDL_Rect rect, const char *text, TTF_Font *font, SDL_Color textColor) {
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
@@ -92,11 +111,33 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                     if (x > fileRects[i].x && x < fileRects[i].x + fileRects[i].w &&
                         y > fileRects[i].y && y < fileRects[i].y + fileRects[i].h) {
 
+
+                            // Passage en mode thread si la map est trouvé : le serveur se lance en parallèle du client qui profite de la fenetre SDL déjà ouverte
                         if (!load_grid(fileNames[i], grid)) {
                             printf("Erreur lors du chargement de la grille\n");
                         } else {
                             if (is_maze_solvable(grid)) {
-                                start_server(grid);
+                                ServerData serverData;
+                                memcpy(serverData.grid, grid, sizeof(serverData.grid)); 
+
+                                SDL_Thread *serverThread = SDL_CreateThread(server_thread, "ServerThread", &serverData);
+                                if (!serverThread) {
+                                    printf("Erreur lors de la création du thread serveur : %s\n", SDL_GetError());
+                                    exit(EXIT_FAILURE);
+                                }
+
+                                SDL_Delay(2000); // Délai permettant au serveur d'être lancé
+                                // Sans ce délai, le client essaie de se connecter instantanément au serveur pas encore prêt. 
+                                // Donc il plante et fait crasher le programme.
+
+                                ClientData clientData = { 
+                                    "127.0.0.1", // Le serveur et un client sont lancé en simultané sur la même machine, donc l'adresse IP est localhost
+                                    renderer     
+                                };
+
+                                start_client(clientData.server_ip, clientData.renderer); 
+
+                                SDL_WaitThread(serverThread, NULL);
                             } else {
                                 printf("Le labyrinthe n'est pas solvable\n");
                             }

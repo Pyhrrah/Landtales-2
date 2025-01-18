@@ -14,7 +14,7 @@
 typedef struct {
     SDL_Rect rect;
     char orientation;
-    int active : 1;
+    int active; // Remplacement de bool par int
 } Arrow;
 
 /**
@@ -26,6 +26,7 @@ typedef struct {
  * - defense : points de défense du joueur.
  * - orientation : direction actuelle du joueur (N, S, E, W).
  * - id : identifiant unique du joueur.
+ * - regen_dispo : indique si la régénération est disponible.
  * - last_regen : dernier moment où la régénération a été utilisée.
  * - argent : argent possédé par le joueur.
  * - last_lightning : dernier moment où l'attaque éclair a été utilisée.
@@ -41,6 +42,7 @@ typedef struct {
     int defense;
     char orientation;
     int id;
+    int regen_dispo;  // Remplacement de bool par int
     time_t last_regen;
     int argent;
     Uint32 last_lightning;
@@ -122,7 +124,7 @@ void renderArrows(SDL_Renderer *renderer, Player *player);
  * @param player : pointeur vers le joueur à vérifier.
  * @return true si une flèche est active, sinon false.
  */
-int areArrowsActive(Player *player);
+int areArrowsActive(Player *player); // Remplacement de bool par int
 
 /**
  * Vérifie les collisions entre le joueur et les bonus.

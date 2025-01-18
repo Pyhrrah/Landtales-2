@@ -1,14 +1,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <stdio.h>
+#include <SDL2/SDL_image.h> 
 #include "./../../include/core/player.h"
+#include <stdio.h>
 
-// Fonction pour afficher le HUD
+// Fonction pour afficher le HUD avec les images de foudre et régénération
 void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
+
     const int screenWidth = 672;
     const int screenHeight = 544;
     const int hudHeight = 544 - (32 * 15);
-    
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
     SDL_Rect hudRect = {0, screenHeight - hudHeight, screenWidth, hudHeight};
     SDL_RenderFillRect(renderer, &hudRect);
@@ -59,47 +61,60 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_FreeSurface(attemptSurface);
     SDL_DestroyTexture(attemptTexture);
 
-
-    int lightningCooldown = getLightningCooldown(player);
-    SDL_Rect lightningRect = {screenWidth - 80, screenHeight - hudHeight + 10, 30, 30};
-    if (lightningCooldown > 0) {
-        SDL_SetRenderDrawColor(renderer, 255, 105, 180, 255);
+    SDL_Texture *lightningTexture = NULL;
+    if (getLightningCooldown(player) > 0) {
+        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/regen_pas_dispo.png"); 
     } else {
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    }
-    SDL_RenderFillRect(renderer, &lightningRect);
-
-    if (lightningCooldown > 0) {
-        char lightningText[12];
-        sprintf(lightningText, "%d", lightningCooldown);
-        SDL_Surface *lightningSurface = TTF_RenderUTF8_Solid(font, lightningText, textColor);
-        SDL_Texture *lightningTexture = SDL_CreateTextureFromSurface(renderer, lightningSurface);
-        SDL_Rect lightningTextRect = {screenWidth - 80, screenHeight - hudHeight + 45, lightningSurface->w, lightningSurface->h};
-        SDL_RenderCopy(renderer, lightningTexture, NULL, &lightningTextRect);
-        SDL_FreeSurface(lightningSurface);
-        SDL_DestroyTexture(lightningTexture);
+        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/regen_dispo.png");
     }
 
-    int regenCooldown = getRegenCooldown(player);
+    if (lightningTexture) {
+        SDL_Rect lightningRect = {screenWidth - 80, screenHeight - hudHeight + 10, 30, 30};
+        SDL_RenderCopy(renderer, lightningTexture, NULL, &lightningRect);
+        
+        if (getLightningCooldown(player) > 0) {
+            char lightningText[12];
+            sprintf(lightningText, "%d", getLightningCooldown(player));
+            SDL_Surface *lightningSurface = TTF_RenderUTF8_Solid(font, lightningText, textColor);
+            SDL_Texture *lightningTextTexture = SDL_CreateTextureFromSurface(renderer, lightningSurface);
+            SDL_Rect lightningTextRect = {screenWidth - 80, screenHeight - hudHeight + 45, lightningSurface->w, lightningSurface->h};
+            SDL_RenderCopy(renderer, lightningTextTexture, NULL, &lightningTextRect);
+            SDL_FreeSurface(lightningSurface);
+            SDL_DestroyTexture(lightningTextTexture);
+        }
+        SDL_DestroyTexture(lightningTexture); 
+    }
+
+    SDL_Texture *regenTexture = NULL;
+if (getRegenCooldown(player) > 0) {
+    regenTexture = IMG_LoadTexture(renderer, "./assets/images/regen_pas_dispo.png");
+} else {
+    regenTexture = IMG_LoadTexture(renderer, "./assets/images/regen_dispo.png");
+}
+
+if (regenTexture) {
     SDL_Rect regenRect = {screenWidth - 40, screenHeight - hudHeight + 10, 30, 30};
-    if (regenCooldown > 0) {
-        SDL_SetRenderDrawColor(renderer, 255, 105, 180, 255);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    }
-    SDL_RenderFillRect(renderer, &regenRect);
-
-    if (regenCooldown > 0) {
+    SDL_RenderCopy(renderer, regenTexture, NULL, &regenRect);
+    
+    if (getRegenCooldown(player) > 0) {
         char regenText[12];
-        sprintf(regenText, "%d", regenCooldown);
+        sprintf(regenText, "%d", getRegenCooldown(player));
         SDL_Surface *regenSurface = TTF_RenderUTF8_Solid(font, regenText, textColor);
-        SDL_Texture *regenTexture = SDL_CreateTextureFromSurface(renderer, regenSurface);
+        SDL_Texture *regenTextTexture = SDL_CreateTextureFromSurface(renderer, regenSurface);
         SDL_Rect regenTextRect = {screenWidth - 40, screenHeight - hudHeight + 45, regenSurface->w, regenSurface->h};
-        SDL_RenderCopy(renderer, regenTexture, NULL, &regenTextRect);
+        SDL_RenderCopy(renderer, regenTextTexture, NULL, &regenTextRect);
         SDL_FreeSurface(regenSurface);
+        SDL_DestroyTexture(regenTextTexture);
+    }
+
+    SDL_DestroyTexture(regenTexture);
+}
+
+    if (regenTexture) {
+        SDL_Rect regenRect = {screenWidth - 40, screenHeight - hudHeight + 10, 30, 30};
+        SDL_RenderCopy(renderer, regenTexture, NULL, &regenRect);
         SDL_DestroyTexture(regenTexture);
     }
 
     TTF_CloseFont(font);
 }
-
