@@ -7,12 +7,13 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
 #include "./../../include/editor/grid.h"
+#include "./../../include/plugins/open_map_editor.h"
 
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 #define CELL_SIZE 32
-#define GRID_WIDTH 21  
-#define GRID_HEIGHT 15  
+#define GRID_WIDTH 15
+#define GRID_HEIGHT 21
 #define CAROUSEL_HEIGHT 64
 #define UNDO_STACK_SIZE 100
 #define EMPTY -1  
@@ -210,23 +211,25 @@ int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects
 }
 
 // Gestion des événements du menu
-char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *fileCount) {
+char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *fileCount) {
     SDL_Event event;
     char *fichier = NULL;  
     int running = 1;
 
     SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
+    SDL_Rect generation_button = {20, 20, 200, 60};  // Bouton "Génération"
 
     while (running) {
-
-
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
         SDL_RenderClear(renderer);
 
         SDL_Color textColor = {255, 255, 255, 255}; 
         render_button(renderer, new_room_button, "Créer une Map", textColor, font);
         render_button(renderer, &quit_button, "Quitter", textColor, font);
+        render_button(renderer, &generation_button, "Génération", textColor, font);  // Afficher le bouton "Génération"
         render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
+
+        SDL_RenderPresent(renderer);
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -235,92 +238,87 @@ char* handle_menu_events(SDL_Renderer *renderer ,SDL_Rect *new_room_button, SDL_
                 int x = event.button.x;
                 int y = event.button.y;
 
-                if (event.button.button == SDL_BUTTON_LEFT &&
-                    x >= new_room_button->x && x <= new_room_button->x + new_room_button->w &&
-                    y >= new_room_button->y && y <= new_room_button->y + new_room_button->h) {
-                    fichier = "nouvelle_map"; 
-                    printf("new_room_button clicked\n"); 
-                    running = 0;  
-                }
-
-                for (int i = 0; i < *fileCount; i++) {
-                    if (x >= fileRects[i].x && x <= fileRects[i].x + fileRects[i].w &&
-                        y >= fileRects[i].y && y <= fileRects[i].y + fileRects[i].h) {
-                            if (fichier) free(fichier);
-                        fichier = malloc(strlen("./data/editor/") + strlen(fileNames[i]) + 1);
-                        sprintf(fichier, "./data/editor/%s", fileNames[i]);  
-                        printf("Fichier sélectionné : %s\n", fichier);
+                if (event.button.button == SDL_BUTTON_LEFT) {
+                    // Vérification du clic sur "Créer une Map"
+                    if (x >= new_room_button->x && x <= new_room_button->x + new_room_button->w &&
+                        y >= new_room_button->y && y <= new_room_button->y + new_room_button->h) {
+                        fichier = "nouvelle_map";
+                        printf("Bouton 'Créer une Map' cliqué\n");
                         running = 0;  
-                        break;
                     }
 
-                    if (x >= deleteButtons[i].x && x <= deleteButtons[i].x + deleteButtons[i].w &&
-                        y >= deleteButtons[i].y && y <= deleteButtons[i].y + deleteButtons[i].h) {
-                        
-                        SDL_MessageBoxButtonData buttons[2] = {
-                            {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Oui"},
-                            {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "Non"}
-                        };
+                    // Vérification du clic sur "Génération"
+                    if (x >= generation_button.x && x <= generation_button.x + generation_button.w &&
+                        y >= generation_button.y && y <= generation_button.y + generation_button.h) {
+                        fichier = "generation";
+                        printf("Bouton 'Génération' cliqué\n");
+                        running = 0;  
+                    }
 
-                        SDL_MessageBoxData messageboxdata = {
-                            SDL_MESSAGEBOX_INFORMATION,
-                            NULL,
-                            "Confirmation",
-                            "Êtes-vous sûr de vouloir supprimer ce fichier ?",
-                            SDL_arraysize(buttons),
-                            buttons,
-                            NULL
-                        };
+                    // Vérification des clics sur les fichiers
+                    for (int i = 0; i < *fileCount; i++) {
+                        if (x >= fileRects[i].x && x <= fileRects[i].x + fileRects[i].w &&
+                            y >= fileRects[i].y && y <= fileRects[i].y + fileRects[i].h) {
+                            if (fichier) free(fichier);
+                            fichier = malloc(strlen("./data/editor/") + strlen(fileNames[i]) + 1);
+                            sprintf(fichier, "./data/editor/%s", fileNames[i]);  
+                            printf("Fichier sélectionné : %s\n", fichier);
+                            running = 0;  
+                            break;
+                        }
 
-                        int button_id;
-                        SDL_ShowMessageBox(&messageboxdata, &button_id);
+                        // Vérification des clics sur les boutons "Supprimer"
+                        if (x >= deleteButtons[i].x && x <= deleteButtons[i].x + deleteButtons[i].w &&
+                            y >= deleteButtons[i].y && y <= deleteButtons[i].y + deleteButtons[i].h) {
+                            SDL_MessageBoxButtonData buttons[2] = {
+                                {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Oui"},
+                                {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "Non"}
+                            };
 
-                        if (button_id == 0) {  
+                            SDL_MessageBoxData messageboxdata = {
+                                SDL_MESSAGEBOX_INFORMATION,
+                                NULL,
+                                "Confirmation",
+                                "Êtes-vous sûr de vouloir supprimer ce fichier ?",
+                                SDL_arraysize(buttons),
+                                buttons,
+                                NULL
+                            };
+
+                            int button_id;
+                            SDL_ShowMessageBox(&messageboxdata, &button_id);
+
+                            if (button_id == 0) {  
                                 char filePath[512];
                                 sprintf(filePath, "./data/editor/%s", fileNames[i]);
                                 if (remove(filePath) == 0) {
                                     printf("Fichier '%s' supprimé avec succès.\n", fileNames[i]);
                                     *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);  
-                            
-                                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
-                                    SDL_RenderClear(renderer);  
-
-                                    SDL_Color textColor = {255, 255, 255, 255}; 
-                                    render_button(renderer, new_room_button, "Créer une Map", textColor, font);
-                                    render_button(renderer, &quit_button, "Quitter", textColor, font);
-                                    render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
-
-                                    SDL_RenderPresent(renderer);  
                                 } else {
                                     printf("Erreur lors de la suppression du fichier '%s'.\n", fileNames[i]);
                                 }
                                 break;  
                             }
+                        }
+                    }
+
+                    // Vérification du clic sur "Quitter"
+                    if (x >= quit_button.x && x <= quit_button.x + quit_button.w &&
+                        y >= quit_button.y && y <= quit_button.y + quit_button.h) {
+                        running = 0; 
                     }
                 }
-
-                if (x >= quit_button.x && x <= quit_button.x + quit_button.w &&
-                    y >= quit_button.y && y <= quit_button.y + quit_button.h) {
-                    running = 0; 
-                }
-            }
-
-             else if (event.type == SDL_MOUSEWHEEL) {
+            } else if (event.type == SDL_MOUSEWHEEL) {
                 if (event.wheel.y > 0) {
                     scrollOffset -= 50; 
-                    printf("scrollOffset : %d\n", scrollOffset);
                     if (scrollOffset < 0) scrollOffset = 0;  
                 } else if (event.wheel.y < 0) {
                     scrollOffset += 50; 
-                    printf("scrollOffset : %d\n", scrollOffset);
                 }
 
                 *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
             }
-
         }
-
-        SDL_RenderPresent(renderer);
     }
 
     return fichier;  
@@ -359,7 +357,12 @@ void show_menu(SDL_Renderer *renderer) {
         if (strcmp(selectedFile, "nouvelle_map") == 0) {
             init_grid("");  
             launch_editor(renderer);
-        } else {
+        } else if (strcmp(selectedFile, "generation") == 0) {
+            load_and_run_plugin(grid);
+            launch_editor(renderer);
+        } 
+        
+        else {
             printf("Fichier sélectionné : %s\n", selectedFile);
             init_grid(selectedFile);  
             launch_editor(renderer);  

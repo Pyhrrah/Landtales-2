@@ -18,8 +18,8 @@
 #define PLAYER_SPAWN 12  
 #define TARGET_SPAWN 13 
 
-#define GRID_WIDTH 21  
-#define GRID_HEIGHT 15 
+#define GRID_WIDTH 15  
+#define GRID_HEIGHT 21 
 #define CELL_SIZE 32
 
 int player_x = -1;  

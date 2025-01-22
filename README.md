@@ -55,7 +55,7 @@ Voici les commandes pour installer les dépendances sur **Ubuntu** et **Fedora**
 - **Pour Ubuntu :**
 ```bash
 sudo apt update
-sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-net-dev build-essential
+sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-net-dev libsdl2-mixer-dev build-essential libavformat-dev libavcodec-dev libavutil-dev libswresample-dev
 sudo apt install make
 ```
 
@@ -85,8 +85,28 @@ Vous pouvez désormais le lancer avec la commande :
 ./Landtales
 ```
 
+#### Plugins 
 
+Landtales 2 propose différents plugins pour customiser votre façon de jouer : 
 
+- Un plugin pour s'amuser à générer une map comme bon nous semble. 
 
+Pour modifier le fichier, rendez-vous dans 
+
+```bash
+cd src/plugins/map_editor.c
+```
+
+Pour compiler ce plugin, écrivez la commande suivante : 
+
+```bash
+gcc -shared -o plugins/map_editor.so -fPIC src/plugins/map_editor.c
+```
+
+- Un plugin pour ajouter de nouveaux bonus 
+
+- Un plugin pour choisir personnaliser le template des sprite du jeu
+
+**NB** : Pour des raisons de cohérences et de fonctionnement, nous partons du principe que vous suivrez les indications marquées dans chaque fichier de plugins. 
 
 

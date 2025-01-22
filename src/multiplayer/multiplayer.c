@@ -173,10 +173,22 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
     int running = 1;
     SDL_StartTextInput();
 
-    SDL_Rect inputRect = {100, 200, 400, 50};
+    int screen_width = 672;
+    int screen_height = 544;
+
+    SDL_Rect inputRect = {0, 0, 400, 50};
     SDL_Color bgColor = {50, 50, 50, 255};   
     SDL_Color borderColor = {255, 255, 255, 255}; 
     SDL_Color textColor = {255, 255, 255, 255};
+
+    inputRect.x = (screen_width - inputRect.w) / 2;
+    inputRect.y = screen_height / 2;
+
+    SDL_Rect backButton = {0, 0, 100, 50}; 
+    backButton.x = screen_width - backButton.w - 20;  
+    backButton.y = screen_height - backButton.h - 20;
+
+    SDL_Color backButtonColor = {50, 50, 50, 255}; 
 
     while (running) {
         SDL_Event event;
@@ -197,6 +209,13 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
                 if (len > 0) {
                     inputText[len - 1] = '\0';
                 }
+            } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                int x = event.button.x;
+                int y = event.button.y;
+                if (x > backButton.x && x < backButton.x + backButton.w &&
+                    y > backButton.y && y < backButton.y + backButton.h) {
+                    running = 0; 
+                }
             }
         }
 
@@ -206,7 +225,12 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_Surface *messageSurface = TTF_RenderUTF8_Solid(font, "Renseignez l'IP de l'hôte :", textColor);
         if (messageSurface) {
             SDL_Texture *messageTexture = SDL_CreateTextureFromSurface(renderer, messageSurface);
-            SDL_Rect messageRect = {100, 100, messageSurface->w, messageSurface->h};
+            SDL_Rect messageRect = {
+                (screen_width - messageSurface->w) / 2, 
+                inputRect.y - 60,  
+                messageSurface->w, 
+                messageSurface->h
+            };
             SDL_RenderCopy(renderer, messageTexture, NULL, &messageRect);
             SDL_FreeSurface(messageSurface);
             SDL_DestroyTexture(messageTexture);
@@ -236,16 +260,38 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
             }
         }
 
+        SDL_SetRenderDrawColor(renderer, backButtonColor.r, backButtonColor.g, backButtonColor.b, backButtonColor.a);  
+        SDL_RenderFillRect(renderer, &backButton);
+
+        SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_RenderDrawRect(renderer, &backButton);
+
+        SDL_Surface *backTextSurface = TTF_RenderUTF8_Solid(font, "Retour", textColor);
+        if (backTextSurface) {
+            SDL_Texture *backTextTexture = SDL_CreateTextureFromSurface(renderer, backTextSurface);
+            SDL_Rect backTextRect = {
+                backButton.x + (backButton.w - backTextSurface->w) / 2,
+                backButton.y + (backButton.h - backTextSurface->h) / 2,
+                backTextSurface->w,
+                backTextSurface->h
+            };
+            SDL_RenderCopy(renderer, backTextTexture, NULL, &backTextRect);
+            SDL_FreeSurface(backTextSurface);
+            SDL_DestroyTexture(backTextTexture);
+        }
+
         SDL_RenderPresent(renderer);
     }
 
     SDL_StopTextInput();
 }
 
-// Fonction principale pour le mode multijoueur
+
+
 void start_multiplayer_mode(SDL_Renderer *renderer) {
-    SDL_Rect clientButton = {100, 100, 200, 100};
-    SDL_Rect serverButton = {400, 100, 200, 100};
+    SDL_Rect joinButton = {0, 0, 200, 100};  
+    SDL_Rect hostButton = {0, 0, 200, 100};  
+    SDL_Rect backButton = {0, 0, 100, 50};   
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
     if (!font) {
@@ -265,21 +311,38 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
                 int x = event.button.x;
                 int y = event.button.y;
 
-                if (x > clientButton.x && x < clientButton.x + clientButton.w &&
-                    y > clientButton.y && y < clientButton.y + clientButton.h) {
+                if (x > joinButton.x && x < joinButton.x + joinButton.w &&
+                    y > joinButton.y && y < joinButton.y + joinButton.h) {
                     client_mode_input(renderer, font);
-                } else if (x > serverButton.x && x < serverButton.x + serverButton.w &&
-                           y > serverButton.y && y < serverButton.y + serverButton.h) {
-                    display_file_list(renderer, font);                
+                } else if (x > hostButton.x && x < hostButton.x + hostButton.w &&
+                           y > hostButton.y && y < hostButton.y + hostButton.h) {
+                    display_file_list(renderer, font);
+                } else if (x > backButton.x && x < backButton.x + backButton.w &&
+                           y > backButton.y && y < backButton.y + backButton.h) {
+                    running = 0; 
                 }
             }
         }
 
+        int screen_width = 672; 
+        int screen_height = 544; 
+
+        joinButton.x = (screen_width - joinButton.w) / 2;
+        hostButton.x = (screen_width - hostButton.w) / 2;
+
+        int button_spacing = 20;  
+        joinButton.y = (screen_height - (joinButton.h + hostButton.h + button_spacing)) / 2;
+        hostButton.y = joinButton.y + joinButton.h + button_spacing;
+
+        backButton.x = screen_width - backButton.w - 20;
+        backButton.y = screen_height - backButton.h - 20;
+
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        draw_button(renderer, clientButton, "Client", font, textColor);
-        draw_button(renderer, serverButton, "Serveur", font, textColor);
+        draw_button(renderer, joinButton, "Rejoindre", font, textColor);
+        draw_button(renderer, hostButton, "Héberger", font, textColor);
+        draw_button(renderer, backButton, "Retour", font, textColor);
 
         SDL_RenderPresent(renderer);
     }

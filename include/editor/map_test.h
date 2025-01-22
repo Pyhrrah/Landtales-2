@@ -4,8 +4,8 @@
 #include <SDL2/SDL.h>
 
 // Définitions des dimensions de la grille
-#define GRID_WIDTH 21  // Largeur de la grille en nombre de cases
-#define GRID_HEIGHT 15 // Hauteur de la grille en nombre de cases
+#define GRID_WIDTH 15  // Largeur de la grille en nombre de cases
+#define GRID_HEIGHT 21 // Hauteur de la grille en nombre de cases
 
 /**
  * Vérifie si un déplacement vers une position donnée est valide.

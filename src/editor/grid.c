@@ -8,16 +8,16 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
 
-#define GRID_WIDTH 21  
-#define GRID_HEIGHT 15  
+#define GRID_WIDTH 15  
+#define GRID_HEIGHT 21  
 #define CELL_SIZE 32
 #define UNDO_STACK_SIZE 100
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 #define CAROUSEL_HEIGHT 64
 
-int grid[GRID_WIDTH][GRID_HEIGHT];
-int undoStack[UNDO_STACK_SIZE][GRID_WIDTH][GRID_HEIGHT];
+int grid[GRID_WIDTH][GRID_HEIGHT];  // Changement ici pour refléter la nouvelle dimension
+int undoStack[UNDO_STACK_SIZE][GRID_WIDTH][GRID_HEIGHT];  // Changement ici aussi
 int undoIndex = -1;
 char *selectedFile = NULL;
 
@@ -42,7 +42,6 @@ extern TTF_Font *font;
 extern int currentObjectID;
 
 // Tentative de gestion pour Windows et Linux
-
 
 int directory_exists(const char *path) {
     char command[256];
@@ -69,13 +68,12 @@ void create_directory(const char *path) {
     }
 }
 
-
 // Initialisation de la grille 
 void init_grid(const char *file_path) {
     if (strcmp(file_path, "") == 0) {
         printf("ici\n");
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
+            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
                 grid[x][y] = SOL;
             }
         }
@@ -87,8 +85,8 @@ void init_grid(const char *file_path) {
             return;
         }
 
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
+        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
+            for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
                 if (fscanf(file, "%d", &grid[x][y]) != 1) {
                     fprintf(stderr, "Erreur lors de la lecture de la grille\n");
                     fclose(file);
@@ -109,7 +107,6 @@ void save_grid(SDL_Renderer *renderer) {
     if (test_map(renderer, grid)) {
         create_directory("./data/editor");
 
-
         if (!selectedFile) {
             int map_number = 1;
             char new_filename[256];
@@ -124,14 +121,13 @@ void save_grid(SDL_Renderer *renderer) {
                 }
             } while (file_check);            
             
-                selectedFile = malloc(strlen(new_filename) + 1);
-                if (selectedFile) {
-                    strcpy(selectedFile, new_filename);
-                } else {
-                    fprintf(stderr, "Erreur d'allocation mémoire pour le nom du fichier\n");
-                    return;
-                }
-            
+            selectedFile = malloc(strlen(new_filename) + 1);
+            if (selectedFile) {
+                strcpy(selectedFile, new_filename);
+            } else {
+                fprintf(stderr, "Erreur d'allocation mémoire pour le nom du fichier\n");
+                return;
+            }
         }
 
         FILE *file = fopen(selectedFile, "w");
@@ -140,8 +136,8 @@ void save_grid(SDL_Renderer *renderer) {
             return;
         }
 
-        for (int y = 0; y < GRID_HEIGHT; y++) {
-            for (int x = 0; x < GRID_WIDTH; x++) {
+        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
+            for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
                 fprintf(file, "%d ", grid[x][y]);
             }
             fprintf(file, "\n");
@@ -160,8 +156,8 @@ void save_grid(SDL_Renderer *renderer) {
 void push_undo() {
     if (undoIndex < UNDO_STACK_SIZE - 1) {
         undoIndex++;
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
+            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
                 undoStack[undoIndex][x][y] = grid[x][y];
             }
         }
@@ -171,8 +167,8 @@ void push_undo() {
 // Annule la dernière action
 void undo() {
     if (undoIndex >= 0) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
+            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
                 grid[x][y] = undoStack[undoIndex][x][y];
             }
         }
@@ -196,8 +192,8 @@ void draw(SDL_Renderer *renderer) {
 
     size_t colors_count = get_colors_count();
 
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
+        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
             SDL_SetRenderDrawColor(renderer, colors[grid[x][y]].r, colors[grid[x][y]].g, colors[grid[x][y]].b, colors[grid[x][y]].a);
             SDL_RenderFillRect(renderer, &cell);
