@@ -165,26 +165,26 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
     if (SDLNet_Init() == -1) {
         fprintf(stderr, "Erreur d'initialisation de SDL_net : %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
+        return;
     }
 
     if (!renderer) {
         fprintf(stderr, "Erreur : Le renderer n'a pas été correctement initialisé.\n");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     IPaddress ip;
     if (SDLNet_ResolveHost(&ip, server_ip, PORT) == -1) {
         fprintf(stderr, "Erreur de résolution de l'hôte : %s\n", SDLNet_GetError());
         SDLNet_Quit();
-        exit(EXIT_FAILURE);
+        return;
     }
 
     TCPsocket client_socket = SDLNet_TCP_Open(&ip);
     if (!client_socket) {
         fprintf(stderr, "Erreur de connexion au serveur : %s\n", SDLNet_GetError());
         SDLNet_Quit();
-        exit(EXIT_FAILURE);
+        return;
     }
 
     printf("Connecté au serveur.\n");

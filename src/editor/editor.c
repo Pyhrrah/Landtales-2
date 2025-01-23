@@ -122,7 +122,7 @@ void launch_editor(SDL_Renderer *renderer) {
 
 // Rendu des boutons (à l'avenir réuni dans un fichier séparé)
 void render_button(SDL_Renderer *renderer, SDL_Rect *button, const char *text, SDL_Color textColor, TTF_Font *font) {
-    SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, button);
 
     SDL_Surface *textSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, button->w);
@@ -223,7 +223,7 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
         SDL_RenderClear(renderer);
 
-        SDL_Color textColor = {255, 255, 255, 255}; 
+        SDL_Color textColor = {0, 0, 0, 255}; 
         render_button(renderer, new_room_button, "Créer une Map", textColor, font);
         render_button(renderer, &quit_button, "Quitter", textColor, font);
         render_button(renderer, &generation_button, "Génération", textColor, font);  // Afficher le bouton "Génération"
@@ -336,7 +336,7 @@ void show_menu(SDL_Renderer *renderer) {
     }
 
     SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
-    SDL_Color textColor = {255, 255, 255, 255}; 
+    SDL_Color textColor = {0, 0, 0, 255}; 
     render_button(renderer, &new_room_button, "Créer une Map", textColor, font);
 
     SDL_Rect fileRects[100], deleteButtons[100];

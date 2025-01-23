@@ -6,6 +6,12 @@
 #define ROWS 15
 #define COLS 21
 
+typedef enum {
+    EPEE,  // 0 : épée
+    ARC,   // 1 : arc
+    FOUDRE // 2 : foudre
+} ArmeType;
+
 typedef struct {
     SDL_Rect rect;
     char orientation;
@@ -58,27 +64,56 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     }
 }
 
-// Vérifier la collision du joueur avec les bonus
-void checkBonusCollision(Player *player) {
-    for (int i = 0; i < 5; i++) {
-        if (bonuses[i].active && SDL_HasIntersection(&player->rect, &bonuses[i].rect)) {
-            if (bonuses[i].type == 0) { 
 
-                // ici on regarde     
-                if (player->max_vie - player->vie <= 5) {
-                    player->vie = player->max_vie;
-                } else {
-                    player->vie += 5;
-                    printf("Le joueur récupère 5 PV. Vie actuelle : %d\n", player->vie);
-                }
-            } else if (bonuses[i].type == 1) { 
-                player->argent += 5;
-                printf("Le joueur récupère 1 pièce. Total d'argent : %d\n", player->argent);
-            }
 
-            bonuses[i].active = 0;  
-        }
+
+// Fonction pour calculer les dégâts en fonction du type d'arme
+int calculateDamage(int playerAttack, int ennemyDefense, ArmeType type) {
+    int damage;
+
+    // Appliquer la défense de l'ennemi selon le type d'arme
+    switch (type) {
+        case EPEE:
+            damage = playerAttack - ennemyDefense;  // Défense normale pour l'épée
+            break;
+        case ARC:
+            damage = playerAttack - (ennemyDefense / 2);  // Moins de défense contre l'arc
+            break;
+        case FOUDRE:
+            damage = playerAttack;  // Pas de défense contre la foudre
+            break;
+        default:
+            damage = playerAttack - ennemyDefense;  // Défense normale par défaut
+            break;
     }
+
+    if (damage < 0) {
+        damage = 0;  // Pas de dégâts négatifs
+    }
+
+    // Ajouter un facteur de variation aléatoire entre -5 et +5
+    damage += (rand() % 11) - 5;
+
+    if (damage < 0) {
+        damage = 0;  // Assurer que les dégâts ne soient pas négatifs
+    }
+
+    // Ajouter des bonus en fonction du type d'arme
+    switch (type) {
+        case EPEE:
+            damage += 5;  // +5 pour l'épée
+            break;
+        case ARC:
+            damage += 2;  // +2 pour l'arc
+            break;
+        case FOUDRE:
+            damage += 10; // +10 pour la foudre
+            break;
+        default:
+            break;
+    }
+
+    return damage;
 }
 
 // Fonction d'attaque à l'épée
@@ -122,7 +157,9 @@ void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, i
 
     for (int i = 0; i < *enemyCount; i++) {
         if (SDL_HasIntersection(&swordRect, &enemies[i].rect)) {
-            enemies[i].vie -= 10; 
+            int damageToEnemy = calculateDamage(player->attaque, enemies[i].defense, EPEE);
+
+            enemies[i].vie -= damageToEnemy; 
             printf("Ennemi %d touché ! Vie restante : %d\n", i, enemies[i].vie);
 
             if (enemies[i].vie <= 0) {
@@ -204,7 +241,10 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
             // Vérifier les collisions avec les ennemis
             for (int j = 0; j < *enemyCount; j++) {
                 if (SDL_HasIntersection(&player->arrows[i].rect, &enemies[j].rect)) {
-                    enemies[j].vie -= 10;
+
+                    int damageToEnemy = calculateDamage(player->attaque, enemies[j].defense, ARC);
+
+                    enemies[j].vie -= damageToEnemy;
                     printf("Ennemi %d touché par une flèche ! Vie restante : %d\n", j, enemies[j].vie);
                     player->arrows[i].active = 0;
                     player->arrowCount--;
@@ -274,7 +314,9 @@ void createLightningAtMouse(SDL_Renderer *renderer, int *enemyCount, const char 
 
     for (int i = 0; i < *enemyCount; i++) {
             if (SDL_HasIntersection(&lightningRect, &enemies[i].rect)) {
-                enemies[i].vie -= 30; 
+
+                int damageToEnemy = calculateDamage(30, enemies[i].defense, FOUDRE);
+                enemies[i].vie -= damageToEnemy; 
                 printf("Ennemi %d touché ! Vie restante : %d\n", i, enemies[i].vie);
 
                 if (enemies[i].vie <= 0) {

@@ -192,13 +192,13 @@ void draw(SDL_Renderer *renderer) {
 
     size_t colors_count = get_colors_count();
 
-    for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-            SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-            SDL_SetRenderDrawColor(renderer, colors[grid[x][y]].r, colors[grid[x][y]].g, colors[grid[x][y]].b, colors[grid[x][y]].a);
-            SDL_RenderFillRect(renderer, &cell);
-        }
+    for (int x = 0; x < GRID_HEIGHT; x++) {  
+    for (int y = 0; y < GRID_WIDTH; y++) {
+        SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+        SDL_SetRenderDrawColor(renderer, colors[grid[x][y]].r, colors[grid[x][y]].g, colors[grid[x][y]].b, colors[grid[x][y]].a);
+        SDL_RenderFillRect(renderer, &cell);
     }
+}
 
     for (int i = 0; i < (int)colors_count; i++) {  
         SDL_Rect item_pos = {i * CELL_SIZE, WINDOW_HEIGHT - CELL_SIZE, CELL_SIZE, CELL_SIZE};
@@ -229,7 +229,7 @@ void draw(SDL_Renderer *renderer) {
 
         SDL_Surface *reset_surface = TTF_RenderUTF8_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
         SDL_Texture *reset_texture = SDL_CreateTextureFromSurface(renderer, reset_surface);
-        SDL_Rect reset_rect = {WINDOW_WIDTH - 195, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, reset_surface->w, reset_surface->h};
+        SDL_Rect reset_rect = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, reset_surface->w, reset_surface->h};
         SDL_RenderCopy(renderer, reset_texture, NULL, &reset_rect);
         SDL_FreeSurface(reset_surface);
         SDL_DestroyTexture(reset_texture);

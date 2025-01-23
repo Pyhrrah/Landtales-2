@@ -14,6 +14,8 @@
 #include "./../../include/core/ennemies.h"
 #include "./../../include/game/credit.h"
 #include "./../../include/game/boss.h"
+#include "./../../include/plugins/open_plugin_bonus.h"
+
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -274,6 +276,8 @@ void restoreArticles(int *attackBought, int *defenseBought, int *maxHealthBought
 
 
 void allGame(int saveNumber, SDL_Renderer *renderer) {
+
+    loadPlugin("./plugins/plugin_bonus.so");
     char mapFilename[100] = "";
     char stageFilename[100] = "";
     int dataMap[11][11];
@@ -393,7 +397,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             SDL_Rect resumeButton = {410, 200, 200, 60};
             SDL_Rect quitButton = {410, 300, 200, 60};
             
-            drawPauseMenu(renderer); 
+            drawPauseMenu(renderer, dataMap, room); 
 
             while (pauseRunning) {
                 while (SDL_PollEvent(&pauseEvent)) {
@@ -502,8 +506,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
             restoreArticles(&attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession, room);
 
-            checkBonusCollision(&player);
-            drawBonuses(renderer);
+            checkPlayerBonusCollision(&player);
+            renderBonuses(renderer);
 
             handleBossDoorCollision(renderer, &player.rect, &room, mapFilename, mapRoom, saveNumber, 
                             tentative, &etage, &player, dataMap, stageFilename);
@@ -532,6 +536,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             SDL_Delay(FRAME_DELAY - frameTime);
         }
     }
+    unloadPlugin();
     clearEnemies();
 }
 

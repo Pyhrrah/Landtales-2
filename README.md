@@ -105,6 +105,11 @@ gcc -shared -o plugins/map_editor.so -fPIC src/plugins/map_editor.c
 
 - Un plugin pour ajouter de nouveaux bonus 
 
+
+```bash
+gcc -shared -o plugins/plugin_bonus.so -fPIC src/plugins/plugin_bonus.c
+```
+
 - Un plugin pour choisir personnaliser le template des sprite du jeu
 
 **NB** : Pour des raisons de cohérences et de fonctionnement, nous partons du principe que vous suivrez les indications marquées dans chaque fichier de plugins. 

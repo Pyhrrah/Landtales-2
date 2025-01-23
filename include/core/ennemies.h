@@ -72,10 +72,5 @@ void clearEnemies();
  */
 void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyFilename);
 
-/**
- * Dessine les bonus sur le renderer SDL.
- * @param renderer : le renderer SDL sur lequel dessiner.
- */
-void drawBonuses(SDL_Renderer *renderer);
 
 #endif // ENNEMIES_H

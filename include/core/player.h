@@ -127,12 +127,6 @@ void renderArrows(SDL_Renderer *renderer, Player *player);
 int areArrowsActive(Player *player); // Remplacement de bool par int
 
 /**
- * Vérifie les collisions entre le joueur et les bonus.
- * @param player : pointeur vers le joueur pour gérer les collisions.
- */
-void checkBonusCollision(Player *player);
-
-/**
  * Retourne le temps restant avant que l'attaque éclair soit disponible.
  * @param player : pointeur vers le joueur.
  * @return Temps restant en millisecondes.

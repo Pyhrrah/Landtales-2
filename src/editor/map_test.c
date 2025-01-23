@@ -45,8 +45,8 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
     SDL_RenderClear(renderer);
 
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_HEIGHT; x++) {
+        for (int y = 0; y < GRID_WIDTH; y++) {
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
 
             if (grid[x][y] == PLAYER_SPAWN) {
@@ -72,8 +72,8 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
 int test_map(SDL_Renderer *renderer, int grid[GRID_WIDTH][GRID_HEIGHT]) {
     int found_spawn = 0, target_spawn = 0;
 
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_HEIGHT; x++) {
+        for (int y = 0; y < GRID_WIDTH; y++) {
             if (grid[x][y] == PLAYER_SPAWN) {
                 found_spawn = 1;
                 player_x = x;

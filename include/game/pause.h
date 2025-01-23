@@ -10,8 +10,10 @@
  * incluant les options de reprise ou de quitter le jeu.
  * 
  * @param renderer : Le renderer SDL utilisé pour dessiner le menu de pause.
+ * @param map : Tableau représentant la carte du jeu.
+ * @param salle : Numéro de la salle actuelle du joueur.
  */
-void drawPauseMenu(SDL_Renderer *renderer);
+void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle);
 
 /**
  * Gère les événements liés au menu de pause.
