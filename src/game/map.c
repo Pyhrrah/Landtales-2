@@ -163,7 +163,7 @@ char sauvegarderTrouple(int nxy[3]) {
         ecrireErreur("Erreur lors de la sauvegarde des nombres directeurs\n");
         return 0;
     } else {
-        for (char i=0; i<3; i++) fprintf(fichier, "%d\n", nxy[i]);
+        for (int i=0; i<3; i++) fprintf(fichier, "%d\n", nxy[i]);
         fclose(fichier);
         fichier = NULL;
         return 1;
@@ -181,7 +181,7 @@ char lireTrouple(int nxy[3]) {
         ecrireErreur("Erreur lors de la lecture des nombres directeurs\n");
         return 0;
     } else {
-        for (char i=0; i<3; i++) fscanf(fichier, " %d\n", &nxy[i]);
+        for (int i=0; i<3; i++) fscanf(fichier, " %d\n", &nxy[i]);
         fclose(fichier);
         fichier = NULL;
         return 1;
@@ -223,7 +223,7 @@ char creerLabyrinthe(char map[121]) {
         if (salles[0] != salles[1]) {
             mursRestant--;
             map[mur * 2 - 1] = 0;
-            for (char i=0; i<121; i++) {
+            for (int i=0; i<121; i++) {
                 if(map[i] == salles[1]) map[i] = salles[0];
             }
         }
@@ -252,11 +252,13 @@ char mapNumeroSalleToIndice(char num) {
 
 char mapSalleIndice(char numSalle,char map[121]){
     /*renvoie l'indice de la salle donnée (identifiant) dans la map*/
-    for (char i = 0; i<121 ; i++){
+    for (int i = 0; i<121 ; i++){
         if (numSalle == map[i]){
-            return i;
+            return (char)i;
         }
     }
+
+    return -1;
 }
 
 int creerSeed(int seed) {
@@ -302,7 +304,7 @@ char salleAutourSalleListe36(char n, char * retour) {
     renvoie donc l'indice de la salle dans la map
     renvoie -1 si pas de salle voisine sur le coté concerné
     le renvoie est, bien évidement, effectué par le tableau retour*/
-    for (char i = 0; i<4;retour[i++] = -1);
+    for (int i = 0; i<4;retour[i++] = -1);
     if (n >= 6) retour[0] = n-6;
     if (n%6 != 5) retour[1] = n+1;
     if (n <= 29) retour[2] = n+6;
@@ -318,26 +320,26 @@ char mapRandomizer(int seed, char map[121], char etage) {
     creerLabyrinthe(map);
     char liste[36];
     char pos;
-    for (char i = 0; i<36; i++) {
+    for (int i = 0; i<36; i++) {
         liste[i] = ((((long)(etage + i + nxy[0]) * nxy[1]) * nxy[2]) % 36) + 1;     //transformer en long l'operation, sinon je finis avec des nombres negatif
-        if (liste[i] == 1) pos = i;
+        if (liste[i] == 1) pos = (char)i;
     }
     char pos2,temp;
     char adjacents[4];
     salleAutourSalleListe36(pos,adjacents);     //j'aurais pu recycler la variable pos et ne pas faire de pos2, mais si je l'avais fait ca aurait été confusing donc c'est mieux d'éviter
-    for (char i = 0; i<4; i++) {
+    for (int i = 0; i<4; i++) {
         if (adjacents[i] >= 0) {
-            if (liste[adjacents[i]] == 2) {
+            if (liste[(int)adjacents[i]] == 2) {
                 pos2 = adjacents[i];
-                temp = liste[pos2];
-                liste[pos2] = liste[(pos2 + 18) % 36];
-                liste[(pos2 + 18) % 36] = temp ;
+                temp = liste[(int)pos2];
+                liste[(int)pos2] = liste[((int)pos2 + 18) % 36];
+                liste[((int)pos2 + 18) % 36] = temp ;
             }
         }
     }
 
-    for (char i = 0; i<36; i++) {
-        map[mapNumeroSalleToIndice(i+1)] = liste[i];
+    for (int i = 0; i<36; i++) {
+        map[(int)mapNumeroSalleToIndice((char)i+1)] = liste[i];
     }
 
     return 1;
@@ -363,7 +365,7 @@ char sauvegarderMap(int seed, char etage) {
         ecrireErreur("Erreur lors de la sauvegarde de la map\n");
         return 0;
     } else {
-        for (char i = 0; i<121; i++) fprintf(fichier, " %d", map[i]);
+        for (int i = 0; i<121; i++) fprintf(fichier, " %d", map[i]);
         fclose(fichier);
         fichier = NULL;
         return 1;
@@ -381,7 +383,7 @@ char lireMap(char map[121]) {
         ecrireErreur("Erreur lors de la lecture de la map\n");
         return 0;
     } else {
-        for (char i = 0; i<121; i++) fscanf(fichier, " %hhd", &map[i]);
+        for (int i = 0; i<121; i++) fscanf(fichier, " %hhd", &map[i]);
         fclose(fichier);
         fichier = NULL;
         return 1;
@@ -391,7 +393,7 @@ char lireMap(char map[121]) {
 char obtenirEtatPorteByIndiceSalle(char n, char map[121], char retour[4]) {
     /*n est le numéro/identifiant de la salle
     Renvoie un tableau [N,E,S,W] de booleen sur l'etat des portes de la salle*/
-    for (char i = 0; i<4; i++) retour[i] = 1;
+    for (int i = 0; i<4; i++) retour[i] = 1;
     char position = mapSalleIndice(n,map);
     if (position <= 11) retour[0] = 0;
     else if (position >= 110) retour[2] = 0;
@@ -479,7 +481,7 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
 
 
     short pos;
-    for (char i = 0; i < nbPointsDirecteurs; i++) {
+    for (int i = 0; i < nbPointsDirecteurs; i++) {
         pos = (seed + numeroSalle + (x * y * n * i)) % (longueur * largeur);
 
 
@@ -493,13 +495,13 @@ char fairePetitLac(char numeroSalle, char **espaceLac, char dimensionLac[2]) {
         posPointsDirecteurs[i] = pos;
     }
 
-    for (char i = 0; i < nbPointsDirecteurs - 1; i++) {
+    for (int i = 0; i < nbPointsDirecteurs - 1; i++) {
         char point1[2], point2[2];
         char x1, y1, x2, y2, X, Y, xMin, yMin;
         positionOneLinetoLxlPos(posPointsDirecteurs[i], longueur, point1);
         x1 = point1[0];
         y1 = point1[1];
-        for (char j = i + 1; j < nbPointsDirecteurs; j++) {
+        for (int j = i + 1; j < nbPointsDirecteurs; j++) {
             positionOneLinetoLxlPos(posPointsDirecteurs[j], longueur, point2);
             x2 = point2[0];
             y2 = point2[1];
@@ -551,7 +553,7 @@ char sommeTableau(char * tab, char taille) {      /*return char car je sais que 
     /*renvoie la somme des elements du tableau*/
     char somme = 0;
     if (taille == 0) return 0;
-    else for (char i = 0; i<taille; i++) somme += tab[i];
+    else for (int i = 0; i<taille; i++) somme += tab[i];
     return somme;
 }
 
@@ -561,8 +563,8 @@ char algoGlouton(char sommeMax, char retour[5], char etape) { /*ne fonctionne pa
     if (etape<=0) return 1; /*fin de la fonction recursive*/
     char disponible[4] = {5,4,3,2};
     char temp[5] = {0,0,0,0};
-    for (char i = 0; i<5; i++) temp[i] = retour[i];
-    for (char i = 0; i<4; i++) {
+    for (int i = 0; i<5; i++) temp[i] = retour[i];
+    for (int i = 0; i<4; i++) {
         algoGlouton(sommeMax-disponible[i], temp, etape-1);
         if ((disponible[i]+sommeTableau(retour,5)) <= sommeMax && sommeTableau(temp,5)==(sommeMax-disponible[i])) {
             retour[5-etape] = disponible[i];
@@ -577,7 +579,7 @@ char genMobs(char numeroSalle, char retour[5]) {
     fonction temporaire : en attendant d'etre remplacée par la solution agloGlouton*/
     int seed = lireSeed();
     char prob = (numeroSalle + seed) % 14;
-    for (char i = 0; i<5; i++) retour[i] = 0;
+    for (int i = 0; i<5; i++) retour[i] = 0;
     if (prob < 10) retour[0] = 2;       /*pour la premiere case du tableau*/
     else if (prob < 13) retour[0] = 3;
     else retour[0] = 5;
@@ -602,9 +604,9 @@ char mobsShuffle(char mobs[5]) {
     /* Melange la place des mobs dans le tableau*/
     int places[3];
     lireTrouple(places);
-    for (char i = 0; i<3; i++) places[i] = places[i]%5;
+    for (int i = 0; i<3; i++) places[i] = places[i]%5;
     char temp;
-    for (char i = 0; i<3; i++) {
+    for (int i = 0; i<3; i++) {
         temp = mobs[places[i]];
         mobs[places[i]] = mobs[i];
         mobs[i] = temp;
@@ -620,7 +622,7 @@ double rad(int degre) {
 char racineNieme(char nMob, char numeroSalle, short retour[nMob]) {
     /*renvoie la position des mobs selon un cercle*/
     char coorX[nMob], coorY[nMob];
-    for(char i = 0; i<nMob; i++) {
+    for(int i = 0; i<nMob; i++) {
         retour[i] = 0;
         coorX[i] = 0;
         coorY[i] = 0;
@@ -634,13 +636,13 @@ char racineNieme(char nMob, char numeroSalle, short retour[nMob]) {
 
     char homothetie = 5;     /*pour agrandir le rayon du cercle trigo*/
 
-    for (char i = 0; i<nMob; i++) {
+    for (int i = 0; i<nMob; i++) {
         /*coorX[i] = (char)cos((angle + (M_PI * i)) / (nMob / 2.0)) * homothetie + transX;*/
         coorX[i] = (char)round(cos((angle + (M_PI * i)) * 2 / nMob) * homothetie + transX);
         coorY[i] = (char)round(sin((angle + (M_PI * i)) * 2 / nMob) * homothetie + transY);
     }
 
-    for (char i = 0; i<nMob; i++) retour[i] = positionLxltoOneLinePos(21,coorX[i],coorY[i]);
+    for (int i = 0; i<nMob; i++) retour[i] = positionLxltoOneLinePos(21,coorX[i],coorY[i]);
 
     return 1;
 }
@@ -648,16 +650,15 @@ char racineNieme(char nMob, char numeroSalle, short retour[nMob]) {
 char posInPosTab(short pos, char taille, short posTab[taille]) {
     /*renvoie si la position est dans le tableau des positions*/
     char c = 0;
-    for (char i = 0; i<taille; i++) {
+    for (int i = 0; i<taille; i++) {
         if (pos == posTab[i]) c++;
     }
     return c;
 }
 
 char placer1Mob(char salle[21*15], short placement, char taille, short mobsPos[taille], char indice) {
-    char c = 0;
     while((posInPosTab(placement,taille,mobsPos) >= 1) ||  (!(salle[placement] <=4 && salle[placement] > 0))) placement++;
-    mobsPos[indice] = placement;
+    mobsPos[(int)indice] = placement;
     return 1; 
 }
 
@@ -696,7 +697,7 @@ char creerSalle(char identifiantSalle, char etage) {
     creer la salle demandée*/
     char map[121];
     lireMap(map);
-    char indiceSalle = mapSalleIndice(identifiantSalle,map);
+    //char indiceSalle = mapSalleIndice(identifiantSalle,map);
 
     char salle[21*15];      /*21*15 = 315*/
     for (short i = 0; i<315;i++) salle[i] = 1;
@@ -745,7 +746,7 @@ char creerSalle(char identifiantSalle, char etage) {
 
     else if (identifiantSalle == 2) {       /*salle du boss*/
         short positionBasesPilliers[4] = {21*3+4, 21*3+15, 21*10+15, 21*10+4};
-        for (char i = 0; i<4; i++) {    /*constructions des pilliers*/
+        for (int i = 0; i<4; i++) {    /*constructions des pilliers*/
             salle[positionBasesPilliers[i]] = 15;
             salle[positionBasesPilliers[i]+1] = 16;
             salle[positionBasesPilliers[i]+22] = 17;
@@ -754,10 +755,10 @@ char creerSalle(char identifiantSalle, char etage) {
         nbMob = 5;
         allocEspaceMobTab(&mobs,nbMob);
         mobs[0] = 1;
-        for (char i = 1; i<nbMob; i++) mobs[i] = (seed+etage+i+((seed+etage)%2))%2 + 2; /*equivalent à la ternaire (seed+etage)%2 ? (seed+etage+i)%2 + 2 : (seed+etage+i+1)%2 + 2; pour que les mobs soient organisé comme ca [1,2,3,2,3] ou ca [1,3,2,3,2]*/
+        for (int i = 1; i<nbMob; i++) mobs[i] = (seed+etage+i+((seed+etage)%2))%2 + 2; /*equivalent à la ternaire (seed+etage)%2 ? (seed+etage+i)%2 + 2 : (seed+etage+i+1)%2 + 2; pour que les mobs soient organisé comme ca [1,2,3,2,3] ou ca [1,3,2,3,2]*/
         allocEspaceMobPosTab(&mobsPositions,nbMob);
         mobsPositions[0] = 21*7+10;     /* position centrale pour le boss*/
-        for (char i = 0; i<4; i++) mobsPositions[i+1] = positionCarreCentre[i];
+        for (int i = 0; i<4; i++) mobsPositions[i+1] = positionCarreCentre[i];
     }
 
     else if (identifiantSalle >= 3 && identifiantSalle <= 6) {      /* salle avec mini-boss */
@@ -766,7 +767,7 @@ char creerSalle(char identifiantSalle, char etage) {
         mobs[0] = 6; mobs[1] = mobs[3] = identifiantSalle%2+2; mobs[2] =(identifiantSalle+1)%2+2;
         allocEspaceMobPosTab(&mobsPositions,nbMob);
         mobsPositions[0] = 21*7+10;     /* position centrale pour le mini-boss*/
-        for (char i = 0; i<3; i++) mobsPositions[i+1] = positionCarreCentre[(identifiantSalle+i)%4];
+        for (int i = 0; i<3; i++) mobsPositions[i+1] = positionCarreCentre[(identifiantSalle+i)%4];
     }
 
     else if (identifiantSalle >= 17 && identifiantSalle <= 21) salle[tileCentraliseLxlto21x15((seed+etage+(identifiantSalle*13))%(17*11),17)] = 19;   /*salles de loot*/
@@ -782,21 +783,21 @@ char creerSalle(char identifiantSalle, char etage) {
         } else {
             nbMob = 6;
             allocEspaceMobTab(&mobs,nbMob);
-            for (char i = 0; i<6; i++) mobs[i] = 9;
+            for (int i = 0; i<6; i++) mobs[i] = 9;
             allocEspaceMobPosTab(&mobsPositions,nbMob);
             racineNieme(nbMob,identifiantSalle,mobsPositions);
-            for (char i = 0; i<nbMob; i++) placer1Mob(salle,mobsPositions[i],nbMob,mobsPositions,i);
+            for (int i = 0; i<nbMob; i++) placer1Mob(salle,mobsPositions[i],nbMob,mobsPositions,i);
         }
     }
 
     else {      /*le reste des salles, celles des mobs et des intermédiaires*/
         char noEnnemies = 0;
         /*probEau la proba sur 6 qu'il y ait de l'eau*/
-        char probEau;
-        if (identifiantSalle >= 7 && identifiantSalle <= 16) {      /*salles "intermédiaires"*/
-            probEau = 4;
-            noEnnemies = 1;
-        } else probEau = 1;
+        //char probEau;
+        //if (identifiantSalle >= 7 && identifiantSalle <= 16) {      /*salles "intermédiaires"*/
+        //    probEau = 4;
+        //    noEnnemies = 1;
+        //} else probEau = 1;
 
 
         /*if ((seed+identifiantSalle+etage)%6 < probEau) {
@@ -831,14 +832,14 @@ char creerSalle(char identifiantSalle, char etage) {
             char mobsTemp[5] = {0,0,0,0,0};
             genMobs(identifiantSalle,mobsTemp);
             mobsShuffle(mobsTemp);
-            for (char i = 0; i<5; i++) if (mobsTemp[i] > 0) nbMob++;    /*comptage du nombre de mob*/
+            for (int i = 0; i<5; i++) if (mobsTemp[i] > 0) nbMob++;    /*comptage du nombre de mob*/
             allocEspaceMobTab(&mobs,nbMob);
-            char c = 0;     /*sert de variable pour compter*/
-            for(char i = 0; i<5; i++) if (mobsTemp[i] > 0) mobs[c++] = mobsTemp[i];     /*determination des mobs terminé*/
+            int c = 0;     /*sert de variable pour compter*/
+            for(int i = 0; i<5; i++) if (mobsTemp[i] > 0) mobs[c++] = mobsTemp[i];     /*determination des mobs terminé*/
             allocEspaceMobPosTab(&mobsPositions,nbMob);
             short mobsPositionsTemp[nbMob];
             racineNieme(nbMob,identifiantSalle,mobsPositionsTemp);
-            for (char i = 0; i<nbMob; i++) {
+            for (int i = 0; i<nbMob; i++) {
                 placer1Mob(salle,mobsPositionsTemp[i],nbMob,mobsPositions,i);
             } /*placement des mobs terminé*/
         }
@@ -885,7 +886,7 @@ char creerSalle(char identifiantSalle, char etage) {
             ecrireErreur("Erreur lors de l'edition du fichier des mobs\n");
         } else {
             short X,Y;
-            for (char i = 0; i<nbMob; i++) {
+            for (int i = 0; i<nbMob; i++) {
                 X = (mobsPositions[i] % 21) * tailleTile;
                 Y = (mobsPositions[i] / 21) * tailleTile;
                 fprintf(fichierMob,"%d %d %d\n",X,Y,mobs[i]);
