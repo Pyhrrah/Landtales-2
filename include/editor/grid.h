@@ -4,17 +4,17 @@
 #include <SDL2/SDL.h>
 
 // Définitions des dimensions de la grille
-#define GRID_WIDTH 15  // Largeur de la grille en nombre de cases
-#define GRID_HEIGHT 21 // Hauteur de la grille en nombre de cases
+#define GRID_WIDTH 21  // Largeur de la grille en nombre de cases (anciennement 15)
+#define GRID_HEIGHT 15 // Hauteur de la grille en nombre de cases (anciennement 21)
 
 // Taille maximale de la pile d'annulations
 #define UNDO_STACK_SIZE 100
 
 // Grille principale de l'éditeur
-extern int grid[GRID_WIDTH][GRID_HEIGHT];
+extern int grid[GRID_HEIGHT][GRID_WIDTH]; // Grille de 15x21
 
 // Pile pour gérer les états précédents de la grille (annulation)
-extern int undoStack[UNDO_STACK_SIZE][GRID_WIDTH][GRID_HEIGHT];
+extern int undoStack[UNDO_STACK_SIZE][GRID_HEIGHT][GRID_WIDTH]; // Pile de grilles 15x21
 
 // Index actuel dans la pile d'annulation
 extern int undoIndex;

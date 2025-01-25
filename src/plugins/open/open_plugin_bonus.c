@@ -1,8 +1,23 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <SDL2/SDL.h>
-#include "./../../include/core/player.h"
-#include "./../../include/core/ennemies.h"
+#include "./../../../include/core/player.h"
+#include "./../../../include/core/ennemies.h"
+
+#ifdef _WIN32
+    #include <windows.h>
+    typedef HMODULE LibraryHandle;
+    #define OuvrirPlugin(path) LoadLibrary(path)
+    #define LancerPlugin(handle, symbol) GetProcAddress(handle, symbol)
+    #define FermerPlugin(handle) FreeLibrary(handle)
+#else
+    #include <dlfcn.h>
+    typedef void* LibraryHandle;
+    #define OuvrirPlugin(path) dlopen(path, RTLD_LAZY)
+    #define LancerPlugin(handle, symbol) dlsym(handle, symbol)
+    #define FermerPlugin(handle) dlclose(handle)
+#endif
+
 
 
 void (*spawnBonus)(int, int);
@@ -12,19 +27,19 @@ void (*drawBonuses)(SDL_Renderer*);
 void *pluginHandle = NULL;
 
 int loadPlugin(const char *pluginPath) {
-    pluginHandle = dlopen(pluginPath, RTLD_LAZY);
+    pluginHandle = OuvrirPlugin(pluginPath);
     if (!pluginHandle) {
         fprintf(stderr, "Erreur lors du chargement de la bibliothèque: %s\n", dlerror());
         return 0;  
     }
 
-    spawnBonus = dlsym(pluginHandle, "spawnBonus");
-    checkBonusCollision = dlsym(pluginHandle, "checkBonusCollision");
-    drawBonuses = dlsym(pluginHandle, "drawBonuses");
+    spawnBonus = LancerPlugin(pluginHandle, "spawnBonus");
+    checkBonusCollision = LancerPlugin(pluginHandle, "checkBonusCollision");
+    drawBonuses = LancerPlugin(pluginHandle, "drawBonuses");
 
     if (!spawnBonus || !checkBonusCollision || !drawBonuses) {
         fprintf(stderr, "Erreur d'accès aux fonctions du plugin: %s\n", dlerror());
-        dlclose(pluginHandle);  
+        FermerPlugin(pluginHandle);  
         return 0;
     }
 
@@ -34,7 +49,7 @@ int loadPlugin(const char *pluginPath) {
 
 void unloadPlugin() {
     if (pluginHandle) {
-        dlclose(pluginHandle);
+        FermerPlugin(pluginHandle);
         printf("Plugin déchargé.\n");
     }
 }

@@ -8,16 +8,16 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
 
-#define GRID_WIDTH 15  
-#define GRID_HEIGHT 21  
+#define GRID_WIDTH 21  
+#define GRID_HEIGHT 15  
 #define CELL_SIZE 32
 #define UNDO_STACK_SIZE 100
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 #define CAROUSEL_HEIGHT 64
 
-int grid[GRID_WIDTH][GRID_HEIGHT];  // Changement ici pour refléter la nouvelle dimension
-int undoStack[UNDO_STACK_SIZE][GRID_WIDTH][GRID_HEIGHT];  // Changement ici aussi
+int grid[GRID_HEIGHT][GRID_WIDTH];  // Grille de 15x21
+int undoStack[UNDO_STACK_SIZE][GRID_HEIGHT][GRID_WIDTH];
 int undoIndex = -1;
 char *selectedFile = NULL;
 
@@ -71,23 +71,22 @@ void create_directory(const char *path) {
 // Initialisation de la grille 
 void init_grid(const char *file_path) {
     if (strcmp(file_path, "") == 0) {
-        printf("ici\n");
-        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-                grid[x][y] = SOL;
+        // Initialisation d'une grille vide (toutes les cases sont "SOL")
+        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
+            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+                grid[y][x] = SOL;
             }
         }
     } else {
-        printf("%s\n", file_path);
         FILE *file = fopen(file_path, "r");
         if (!file) {
             perror("Erreur lors de l'ouverture du fichier");
             return;
         }
 
-        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-            for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-                if (fscanf(file, "%d", &grid[x][y]) != 1) {
+        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
+            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+                if (fscanf(file, "%d", &grid[y][x]) != 1) { // Inverser l'ordre de x et y
                     fprintf(stderr, "Erreur lors de la lecture de la grille\n");
                     fclose(file);
                     return;
@@ -96,13 +95,9 @@ void init_grid(const char *file_path) {
         }
 
         fclose(file);
-
-        selectedFile = malloc(strlen(file_path) + 1);
-        selectedFile = strcpy(selectedFile, file_path);
     }
 }
 
-// Sauvegarde de la grille
 void save_grid(SDL_Renderer *renderer) {
     if (test_map(renderer, grid)) {
         create_directory("./data/editor");
@@ -120,7 +115,7 @@ void save_grid(SDL_Renderer *renderer) {
                     map_number++;
                 }
             } while (file_check);            
-            
+
             selectedFile = malloc(strlen(new_filename) + 1);
             if (selectedFile) {
                 strcpy(selectedFile, new_filename);
@@ -136,19 +131,7 @@ void save_grid(SDL_Renderer *renderer) {
             return;
         }
 
-        for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-            for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-                fprintf(file, "%d ", grid[x][y]);
-            }
-            fprintf(file, "\n");
-        }
-
         fclose(file);
-
-        if (selectedFile) {
-            free(selectedFile);
-            selectedFile = NULL;
-        }
     }
 }
 
@@ -156,9 +139,9 @@ void save_grid(SDL_Renderer *renderer) {
 void push_undo() {
     if (undoIndex < UNDO_STACK_SIZE - 1) {
         undoIndex++;
-        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-                undoStack[undoIndex][x][y] = grid[x][y];
+        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
+            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+                undoStack[undoIndex][y][x] = grid[y][x];  // Conversion des indices
             }
         }
     }
@@ -167,9 +150,9 @@ void push_undo() {
 // Annule la dernière action
 void undo() {
     if (undoIndex >= 0) {
-        for (int x = 0; x < GRID_HEIGHT; x++) {  // Inversé
-            for (int y = 0; y < GRID_WIDTH; y++) {  // Inversé
-                grid[x][y] = undoStack[undoIndex][x][y];
+        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
+            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+                grid[y][x] = undoStack[undoIndex][y][x];  // Conversion des indices
             }
         }
         undoIndex--;
@@ -184,7 +167,6 @@ void reset_grid() {
 
 int selectedColorIndex = -1;
 
-
 // Dessine la grille et les boutons
 void draw(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -192,15 +174,16 @@ void draw(SDL_Renderer *renderer) {
 
     size_t colors_count = get_colors_count();
 
-    for (int x = 0; x < GRID_HEIGHT; x++) {  
-    for (int y = 0; y < GRID_WIDTH; y++) {
-        SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-        SDL_SetRenderDrawColor(renderer, colors[grid[x][y]].r, colors[grid[x][y]].g, colors[grid[x][y]].b, colors[grid[x][y]].a);
-        SDL_RenderFillRect(renderer, &cell);
+    for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
+        for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+            SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+            SDL_SetRenderDrawColor(renderer, colors[grid[y][x]].r, colors[grid[y][x]].g, colors[grid[y][x]].b, colors[grid[y][x]].a);
+            SDL_RenderFillRect(renderer, &cell);
+        }
     }
-}
 
-    for (int i = 0; i < (int)colors_count; i++) {  
+    // Dessiner les couleurs
+    for (int i = 0; i < (int)colors_count; i++) {
         SDL_Rect item_pos = {i * CELL_SIZE, WINDOW_HEIGHT - CELL_SIZE, CELL_SIZE, CELL_SIZE};
         SDL_SetRenderDrawColor(renderer, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
         SDL_RenderFillRect(renderer, &item_pos);
@@ -214,7 +197,7 @@ void draw(SDL_Renderer *renderer) {
     SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
     SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
     SDL_RenderFillRect(renderer, &save_button);
-    
+
     SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderFillRect(renderer, &reset_button);

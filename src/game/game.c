@@ -390,6 +390,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             }
         }
         
+        
 
         if (gamePaused) {
             SDL_Event pauseEvent;
@@ -419,6 +420,11 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
         gameOver(&player, renderer, saveNumber, &room, &etage, mapRoom, &tentative, dataMap, stageFilename, &event, &running);
         if (!running) break;
         drawMap(mapRoom, renderer);
+
+        if (room != 0) {
+            drawEnemies(renderer);
+        }
+        
            
 
         
@@ -502,7 +508,6 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
         } else {
 
             // Appeler UpdateEnnemies ici 
-            drawEnemies(renderer); 
 
             restoreArticles(&attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession, room);
 

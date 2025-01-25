@@ -12,8 +12,8 @@
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 #define CELL_SIZE 32
-#define GRID_WIDTH 15
-#define GRID_HEIGHT 21
+#define GRID_WIDTH 21
+#define GRID_HEIGHT 15
 #define CAROUSEL_HEIGHT 64
 #define UNDO_STACK_SIZE 100
 #define EMPTY -1  
@@ -46,7 +46,7 @@ int scrollOffset;
 void handle_editor_events(SDL_Renderer *renderer, int *running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        int x = event.button.x / CELL_SIZE;
+        int x = event.button.x / CELL_SIZE;  
         int y = event.button.y / CELL_SIZE;
 
         if (event.type == SDL_QUIT) {
@@ -70,14 +70,14 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
                     } else if (event.button.x >= reset_button.x && event.button.x <= reset_button.x + reset_button.w) {
                         reset_grid();
                     } else {
-                        currentObjectID = event.button.x / CELL_SIZE;
+                        currentObjectID = event.button.x / CELL_SIZE; 
                     }
                 } else {
                     int found_player1 = 0, found_player2 = 0;
                     int found_block_12 = 0, found_block_13 = 0;
 
-                    for (int i = 0; i < GRID_WIDTH; i++) {
-                        for (int j = 0; j < GRID_HEIGHT; j++) {
+                    for (int i = 0; i < GRID_HEIGHT; i++) {
+                        for (int j = 0; j < GRID_WIDTH; j++) {
                             if (grid[i][j] == SPAWN_PLAYER_1) found_player1 = 1;
                             if (grid[i][j] == SPAWN_PLAYER_2) found_player2 = 1;
                             if (grid[i][j] == 12) found_block_12 = 1; 
@@ -92,7 +92,7 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
                         !(found_block_13 && (currentObjectID == 13))) {
                         isDragging = 1;
                         push_undo();
-                        grid[x][y] = currentObjectID; 
+                        grid[y][x] = currentObjectID; 
                     }
                 }
             }
@@ -102,12 +102,13 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
             }
         } else if (event.type == SDL_MOUSEMOTION) {
             if (isDragging) {
-                grid[x][y] = currentObjectID;
+                grid[y][x] = currentObjectID;  
             }
+        }
     }
-
-}   
 }
+
+
 
 // Dessine la grille et les boutons
 void launch_editor(SDL_Renderer *renderer) {
@@ -116,7 +117,8 @@ void launch_editor(SDL_Renderer *renderer) {
     int running = 1;
     while (running) {
         handle_editor_events(renderer, &running);
-        draw(renderer);
+
+        draw(renderer);  
     }
 }
 
@@ -359,6 +361,7 @@ void show_menu(SDL_Renderer *renderer) {
             launch_editor(renderer);
         } else if (strcmp(selectedFile, "generation") == 0) {
             load_and_run_plugin(grid);
+
             launch_editor(renderer);
         } 
         

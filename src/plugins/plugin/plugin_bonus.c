@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
-#include "./../../include/core/player.h"
-#include "./../../include/core/ennemies.h"
+#include "./../../../include/core/player.h"
+#include "./../../../include/core/ennemies.h"
 
 // Tableau pour stocker les bonus
 Bonus bonuses[5];
