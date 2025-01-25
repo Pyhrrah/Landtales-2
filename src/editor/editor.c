@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "./../../include/editor/map_test.h"
-#include "./../../include/editor/colors.h"
 #include "./../../include/editor/grid.h"
 #include "./../../include/plugins/open_map_editor.h"
 

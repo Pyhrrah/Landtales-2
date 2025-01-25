@@ -4,15 +4,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "./../../include/editor/colors.h"
 
 #define PORT 12345
 #define ROWS 15
 #define COLS 21
 #define CELL_SIZE 32
-#define BUFFER_SIZE 1024 
+#define BUFFER_SIZE 1024
 
 typedef struct {
     SDL_Rect rect;
+    int hp;
+    char direction;
 } Player;
 
 // Vérifie les collisions avec des tuiles bloquantes
@@ -24,17 +27,16 @@ int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     int tile_value = grid[new_y][new_x];
     for (size_t i = 0; i < sizeof(blocked_tiles) / sizeof(blocked_tiles[0]); i++) {
         if (tile_value == blocked_tiles[i]) {
-            return 0; 
+            return 0;
         }
     }
-    return 1; 
+    return 1;
 }
 
 // Reçoit la grille et l'identifiant du joueur
 void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id) {
     memset(grid, 0, sizeof(int) * ROWS * COLS);
 
-    // Réception de la grille
     size_t grid_size = ROWS * COLS * sizeof(int);
     size_t received = 0;
     while (received < grid_size) {
@@ -46,7 +48,6 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id)
         received += bytes;
     }
 
-    // Réception de l'identifiant du client
     received = 0;
     size_t id_size = sizeof(int);
     while (received < id_size) {
@@ -61,52 +62,55 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id)
     printf("Grille et identifiant client reçus avec succès.\n");
 }
 
-
 // Dessine la grille
 void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
-    SDL_Color colors[] = {
-        {0, 0, 0, 255},       {70, 200, 70, 255},  {50, 150, 50, 255},
-        {30, 100, 30, 255},   {10, 50, 10, 255},   {150, 75, 0, 255},
-        {100, 100, 100, 255}, {100, 100, 100, 255}, {0, 0, 255, 255},
-        {128, 128, 128, 255}, {169, 169, 169, 255}, {139, 69, 19, 255},
-        {255, 0, 0, 255},     {0, 0, 255, 255}};
+    static int textures_loaded = 0;
+    if (!textures_loaded) {
+        load_textures(renderer);
+        textures_loaded = 1;
+    }
+
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             SDL_Rect rect = {j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE};
             int value = grid[i][j];
-            if (value >= 1 && value <= 13) {
-                SDL_SetRenderDrawColor(renderer, colors[value].r, colors[value].g, colors[value].b, colors[value].a);
+
+            if (value >= 0 && value < 14) {
+                SDL_Texture *current_texture = textures[value];
+                if (current_texture != NULL) {
+                    SDL_RenderCopy(renderer, current_texture, NULL, &rect);
+                } else {
+                    SDL_SetRenderDrawColor(renderer, colors[value].r, colors[value].g, colors[value].b, colors[value].a);
+                    SDL_RenderFillRect(renderer, &rect);
+                }
             } else {
                 SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+                SDL_RenderFillRect(renderer, &rect);
             }
-            SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
 // Initialise la position du joueur
-void initialize_player(int grid[ROWS][COLS], Player *player, int client_id) {
-    int spawn_tile = (client_id == 1) ? 12 : 13;
+void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *opponent, int client_id) {
+    int spawn_tile_player = (client_id == 1) ? 12 : 13;
+    int spawn_tile_opponent = (client_id == 1) ? 13 : 12;
+
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
-            if (grid[i][j] == spawn_tile) {
+            if (grid[i][j] == spawn_tile_player) {
                 player->rect = (SDL_Rect){j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-                return;
+                player->hp = 100;
+                player->direction = 'D';
+            }
+
+            if (grid[i][j] == spawn_tile_opponent) {
+                opponent->rect = (SDL_Rect){j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+                opponent->hp = 100;
+                opponent->direction = 'D';
             }
         }
     }
-
-    // Afficher la map en printf 
-
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            printf("%d ", grid[i][j]);
-        }
-        printf("\n");
-    }
-
-    fprintf(stderr, "Erreur : Position de spawn introuvable pour le joueur %d.\n", client_id);
-    exit(EXIT_FAILURE);
 }
 
 // Dessine un joueur
@@ -115,15 +119,61 @@ void draw_player(SDL_Renderer *renderer, Player *player, SDL_Color color) {
     SDL_RenderFillRect(renderer, &player->rect);
 }
 
-// Envoie la position du joueur au serveur
+// Dessine une épée
+void draw_sword(SDL_Renderer *renderer, Player *player) {
+    SDL_Rect sword;
+    switch (player->direction) {
+        case 'H':
+            sword = (SDL_Rect){player->rect.x, player->rect.y - CELL_SIZE, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'B':
+            sword = (SDL_Rect){player->rect.x, player->rect.y + CELL_SIZE, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'G':
+            sword = (SDL_Rect){player->rect.x - CELL_SIZE, player->rect.y, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'D':
+            sword = (SDL_Rect){player->rect.x + CELL_SIZE, player->rect.y, CELL_SIZE, CELL_SIZE};
+            break;
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &sword);
+}
+
+// Envoie la position et direction du joueur au serveur
 void send_player_position(TCPsocket client_socket, Player *player) {
     char message[BUFFER_SIZE];
-    snprintf(message, sizeof(message), "MOVE %d %d\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE);
+    snprintf(message, sizeof(message), "MOVE %d %d %c\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE, player->direction);
+    SDLNet_TCP_Send(client_socket, message, strlen(message));
+}
+
+// Envoie une attaque au serveur
+void send_attack(TCPsocket client_socket, Player *player) {
+    time_t timestamp = SDL_GetTicks();
+    SDL_Rect sword;
+    switch (player->direction) {
+        case 'H':
+            sword = (SDL_Rect){player->rect.x, player->rect.y - CELL_SIZE, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'B':
+            sword = (SDL_Rect){player->rect.x, player->rect.y + CELL_SIZE, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'G':
+            sword = (SDL_Rect){player->rect.x - CELL_SIZE, player->rect.y, CELL_SIZE, CELL_SIZE};
+            break;
+        case 'D':
+            sword = (SDL_Rect){player->rect.x + CELL_SIZE, player->rect.y, CELL_SIZE, CELL_SIZE};
+            break;
+    }
+
+    char message[BUFFER_SIZE];
+    snprintf(message, sizeof(message), "SWORD %d %d %d %d %ld\n", sword.x / CELL_SIZE, sword.y / CELL_SIZE, sword.w, sword.h, timestamp);
     SDLNet_TCP_Send(client_socket, message, strlen(message));
 }
 
 // Gère les messages du serveur
-void handle_server_messages(TCPsocket client_socket, Player *opponent) {
+void handle_server_messages(TCPsocket client_socket, Player *player, Player *opponent) {
     char buffer[BUFFER_SIZE];
 
     static SDLNet_SocketSet socket_set = NULL;
@@ -142,10 +192,24 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';
 
-            int x, y;
-            if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
-                opponent->rect.x = x * CELL_SIZE;
-                opponent->rect.y = y * CELL_SIZE;
+            if (strncmp(buffer, "MOVE", 4) == 0) {
+                int x, y;
+                char direction;
+                if (sscanf(buffer, "MOVE %d %d %c", &x, &y, &direction) == 3) {
+                    opponent->rect.x = x * CELL_SIZE;
+                    opponent->rect.y = y * CELL_SIZE;
+                    opponent->direction = direction;
+                }
+            } else if (strncmp(buffer, "DAMAGE", 6) == 0) {
+                int damage;
+                char target[10];
+                if (sscanf(buffer, "DAMAGE %d %s", &damage, target) == 2) {
+                    if (strcmp(target, "ME") == 0) {
+                        player->hp -= damage;
+                    } else if (strcmp(target, "OTHER") == 0) {
+                        opponent->hp -= damage;
+                    }
+                }
             } else {
                 fprintf(stderr, "Format de message inconnu : %s\n", buffer);
             }
@@ -158,8 +222,6 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
         }
     }
 }
-
-
 
 // Démarre le client
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
@@ -192,8 +254,8 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
     int grid[ROWS][COLS] = {0}, client_id = 0;
     receive_grid(client_socket, grid, &client_id);
 
-    Player player, opponent = {.rect = {0, 0, CELL_SIZE, CELL_SIZE}};
-    initialize_player(grid, &player, client_id);
+    Player player, opponent = {.rect = {0, 0, CELL_SIZE, CELL_SIZE}, .hp = 100};
+    initialize_player_opponent(grid, &player, &opponent, client_id);
 
     SDL_Event event;
     int running = 1;
@@ -202,7 +264,7 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
     const Uint32 send_interval = 200;
 
     while (running) {
-        handle_server_messages(client_socket, &opponent);
+        handle_server_messages(client_socket, &player, &opponent);
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
@@ -213,10 +275,11 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
                 int new_x = x, new_y = y;
 
                 switch (event.key.keysym.sym) {
-                    case SDLK_q: new_x--; break;
-                    case SDLK_d: new_x++; break;
-                    case SDLK_z: new_y--; break;
-                    case SDLK_s: new_y++; break;
+                    case SDLK_q: new_x--; player.direction = 'G'; break;
+                    case SDLK_d: new_x++; player.direction = 'D'; break;
+                    case SDLK_z: new_y--; player.direction = 'H'; break;
+                    case SDLK_s: new_y++; player.direction = 'B'; break;
+                    case SDLK_SPACE: send_attack(client_socket, &player); break;
                 }
 
                 if (check_collision(grid, new_x, new_y)) {
@@ -235,6 +298,9 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
         draw_grid(renderer, grid);
         draw_player(renderer, &player, (SDL_Color){255, 0, 0, 255});
         draw_player(renderer, &opponent, (SDL_Color){0, 0, 255, 255});
+        if (event.key.keysym.sym == SDLK_SPACE) {
+            draw_sword(renderer, &player);
+        }
         SDL_RenderPresent(renderer);
 
         SDL_Delay(16);

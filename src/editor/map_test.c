@@ -45,22 +45,42 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
     SDL_RenderClear(renderer);
 
-    // Correction : parcours par lignes (y) et colonnes (x)
+    // Charger les textures si ce n'est pas déjà fait
+    static int textures_loaded = 0; 
+    if (!textures_loaded) {
+        load_textures(renderer);
+        textures_loaded = 1;
+    }
+
+    // Parcours de la grille par lignes (y) et colonnes (x)
     for (int y = 0; y < GRID_HEIGHT; y++) {  
         for (int x = 0; x < GRID_WIDTH; x++) { 
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
 
-            if (grid[y][x] == PLAYER_SPAWN) {
+            int cell_id = grid[y][x];
+
+            // Dessiner la cellule avec une texture si elle existe
+            if (cell_id >= 0 && (unsigned long)cell_id < sizeof(textures) / sizeof(textures[0])) {
+                SDL_Texture *current_texture = textures[cell_id];
+                if (current_texture != NULL) {
+                    SDL_RenderCopy(renderer, current_texture, NULL, &cell);
+                    continue; // Passer à la cellule suivante après avoir dessiné la texture
+                }
+            }
+
+            // Si aucune texture n'est disponible, utiliser les couleurs par défaut
+            if (cell_id == PLAYER_SPAWN) {
                 SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // Vert pour le spawn du joueur
-            } else if (grid[y][x] == TARGET_SPAWN) {
+            } else if (cell_id == TARGET_SPAWN) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Rouge pour la cible
             } else {
-                SDL_SetRenderDrawColor(renderer, colors[grid[y][x]].r, colors[grid[y][x]].g, colors[grid[y][x]].b, colors[grid[y][x]].a);
+                SDL_SetRenderDrawColor(renderer, colors[cell_id].r, colors[cell_id].g, colors[cell_id].b, colors[cell_id].a);
             }
             SDL_RenderFillRect(renderer, &cell);
         }
     }
 
+    // Dessiner le joueur si sa position est valide
     if (player_x != -1 && player_y != -1) {
         SDL_SetRenderDrawColor(renderer, 56, 60, 126, 205);  // Couleur de joueur
         SDL_Rect player_rect = {player_x * CELL_SIZE, player_y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
@@ -69,6 +89,7 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
 
     SDL_RenderPresent(renderer); 
 }
+
 
 // Test de la carte
 // Gestion d'un joueur pour tester la map
@@ -140,7 +161,7 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
         }
 
         if (grid[player_y][player_x] == TARGET_SPAWN) {
-            return 1;  // Le joueur atteint la cible
+            return 1;
         }
     }
 

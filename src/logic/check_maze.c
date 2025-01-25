@@ -8,17 +8,18 @@
 
 // Enumération des différents types de tuiles
 enum {
-    SOL = 1,
-    SOL_VARIANT_1 = 2,
-    SOL_VARIANT_2 = 3,
-    SOL_VARIANT_3 = 4,
-    SOL_VARIANT_4 = 5,
-    WALL_FRONT = 6,
-    WALL_LEFT = 7,
-    WALL_RIGHT = 8,
-    WATER_BLOCK = 9,
-    ROCK = 10,
-    DEBRIS = 11,
+    SOL = 0,
+    SOL_VARIANT_1 = 1,
+    SOL_VARIANT_2 = 2,
+    SOL_VARIANT_3 = 3,
+    SOL_VARIANT_4 = 4,
+    WALL_FRONT = 5,
+    WALL_LEFT = 6,
+    WALL_RIGHT = 7,
+    WATER_BLOCK = 8,
+    ROCK = 9,
+    DEBRIS = 10,
+    STUMP = 11,
     SPAWN_PLAYER_1 = 12,
     SPAWN_PLAYER_2 = 13
 };
@@ -43,6 +44,14 @@ int load_grid(const char *filename, int grid[ROWS][COLS]) {
                 return 0;
             }
         }
+    }
+
+    // Affichage de la grille
+    for (int i = 0; i < ROWS; i++) {  
+        for (int j = 0; j < COLS; j++) { 
+            printf("%d ", grid[i][j]);
+        }
+        printf("\n");
     }
 
     fclose(file);
@@ -106,6 +115,15 @@ int is_maze_solvable(int grid[ROWS][COLS]) {
     if (!find_spawn_points(grid, &start_x, &start_y, &end_x, &end_y)) {
         fprintf(stderr, "Impossible de trouver les deux points de spawn\n");
         return 0;
+    }
+
+    // Affichage des points de la grille
+    printf("Points de spawn : (%d, %d) -> (%d, %d)\n", start_x, start_y, end_x, end_y);
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            printf("%d ", grid[i][j]);
+        }
+        printf("\n");
     }
 
     int visited[ROWS][COLS] = {0};

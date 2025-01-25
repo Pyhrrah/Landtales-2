@@ -71,10 +71,9 @@ void create_directory(const char *path) {
 // Initialisation de la grille 
 void init_grid(const char *file_path) {
     if (strcmp(file_path, "") == 0) {
-        // Initialisation d'une grille vide (toutes les cases sont "SOL")
         for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
             for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
-                grid[y][x] = SOL;
+                grid[y][x] = 0;
             }
         }
     } else {
@@ -131,17 +130,27 @@ void save_grid(SDL_Renderer *renderer) {
             return;
         }
 
+        // Écriture du tableau grid dans le fichier
+        for (int i = 0; i < 15; i++) {
+            for (int j = 0; j < 21; j++) {
+                fprintf(file, "%d ", grid[i][j]); // Écrit chaque valeur suivie d'un espace
+            }
+            fprintf(file, "\n"); // Nouvelle ligne après chaque ligne du tableau
+        }
+
         fclose(file);
+        printf("Fichier sauvegardé avec succès : %s\n", selectedFile);
     }
 }
+
 
 // Empile la grille actuelle dans la pile d'annulation
 void push_undo() {
     if (undoIndex < UNDO_STACK_SIZE - 1) {
         undoIndex++;
-        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
-            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
-                undoStack[undoIndex][y][x] = grid[y][x];  // Conversion des indices
+        for (int y = 0; y < GRID_HEIGHT; y++) {  
+            for (int x = 0; x < GRID_WIDTH; x++) {  
+                undoStack[undoIndex][y][x] = grid[y][x]; 
             }
         }
     }
@@ -150,9 +159,9 @@ void push_undo() {
 // Annule la dernière action
 void undo() {
     if (undoIndex >= 0) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
-            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
-                grid[y][x] = undoStack[undoIndex][y][x];  // Conversion des indices
+        for (int y = 0; y < GRID_HEIGHT; y++) {  
+            for (int x = 0; x < GRID_WIDTH; x++) {  
+                grid[y][x] = undoStack[undoIndex][y][x];
             }
         }
         undoIndex--;
@@ -169,24 +178,52 @@ int selectedColorIndex = -1;
 
 // Dessine la grille et les boutons
 void draw(SDL_Renderer *renderer) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    static int textures_loaded = 0; // Charger les textures une seule fois
+    if (!textures_loaded) {
+        load_textures(renderer);
+        textures_loaded = 1;
+    }
+
+    // Effacer l'écran avec une couleur de fond
     SDL_RenderClear(renderer);
 
     size_t colors_count = get_colors_count();
 
-    for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
-        for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+    // Dessiner la grille
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-            SDL_SetRenderDrawColor(renderer, colors[grid[y][x]].r, colors[grid[y][x]].g, colors[grid[y][x]].b, colors[grid[y][x]].a);
-            SDL_RenderFillRect(renderer, &cell);
+
+            int cell_id = grid[y][x];
+
+            if (cell_id < 0 || (unsigned long)cell_id >= sizeof(textures) / sizeof(textures[0])) {
+                continue;
+            }
+
+            SDL_Texture *current_texture = textures[cell_id];
+            SDL_Color current_color = colors[cell_id];
+
+            if (current_texture != NULL) {
+                SDL_RenderCopy(renderer, current_texture, NULL, &cell);
+            } else {
+                SDL_SetRenderDrawColor(renderer, current_color.r, current_color.g, current_color.b, current_color.a);
+                SDL_RenderFillRect(renderer, &cell);
+            }
         }
     }
 
-    // Dessiner les couleurs
+    // Dessiner la légende en bas (couleurs et sprites)
     for (int i = 0; i < (int)colors_count; i++) {
         SDL_Rect item_pos = {i * CELL_SIZE, WINDOW_HEIGHT - CELL_SIZE, CELL_SIZE, CELL_SIZE};
-        SDL_SetRenderDrawColor(renderer, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
-        SDL_RenderFillRect(renderer, &item_pos);
+
+        SDL_Texture *legend_texture = (i < (int)(sizeof(textures) / sizeof(textures[0]))) ? textures[i] : NULL;
+
+        if (legend_texture != NULL) {
+            SDL_RenderCopy(renderer, legend_texture, NULL, &item_pos);
+        } else {
+            SDL_SetRenderDrawColor(renderer, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+            SDL_RenderFillRect(renderer, &item_pos);
+        }
 
         if (i == selectedColorIndex) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  
@@ -194,32 +231,36 @@ void draw(SDL_Renderer *renderer) {
         }
     }
 
-    SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
+    // Dessiner les boutons Save et Reset
+    SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - 50, 80, 40};
     SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
     SDL_RenderFillRect(renderer, &save_button);
 
-    SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
+    SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - 50, 80, 40};
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderFillRect(renderer, &reset_button);
 
+    // Afficher les textes "Save" et "Reset" sur les boutons
     if (font != NULL) {
         SDL_Surface *save_surface = TTF_RenderUTF8_Solid(font, "Save", (SDL_Color){255, 255, 255, 255});
         SDL_Texture *save_texture = SDL_CreateTextureFromSurface(renderer, save_surface);
-        SDL_Rect save_rect = {WINDOW_WIDTH - 95, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, save_surface->w, save_surface->h};
+        SDL_Rect save_rect = {WINDOW_WIDTH - 95, WINDOW_HEIGHT - 45, save_surface->w, save_surface->h};
         SDL_RenderCopy(renderer, save_texture, NULL, &save_rect);
         SDL_FreeSurface(save_surface);
         SDL_DestroyTexture(save_texture);
 
         SDL_Surface *reset_surface = TTF_RenderUTF8_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
         SDL_Texture *reset_texture = SDL_CreateTextureFromSurface(renderer, reset_surface);
-        SDL_Rect reset_rect = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT + 5, reset_surface->w, reset_surface->h};
+        SDL_Rect reset_rect = {WINDOW_WIDTH - 195, WINDOW_HEIGHT - 45, reset_surface->w, reset_surface->h};
         SDL_RenderCopy(renderer, reset_texture, NULL, &reset_rect);
         SDL_FreeSurface(reset_surface);
         SDL_DestroyTexture(reset_texture);
     }
 
+    // Afficher tout ce qui a été dessiné
     SDL_RenderPresent(renderer);
 }
+
 
 void handle_mouse_click(int mouseX, int mouseY) {
     size_t colors_count = get_colors_count();

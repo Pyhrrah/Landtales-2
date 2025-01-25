@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // Le serveur sert ici de messager entre les deux clients,
 // Il n'est pas prévu qu'il gère la logique des joueurs également (trop complexe pour le moment)
@@ -12,12 +13,14 @@
 #define ROWS 15
 #define COLS 21
 #define MAX_CLIENTS 2
-#define MOVE_DELAY 10 // Délai entre les mouvements (en millisecondes)
+#define MOVE_DELAY 10 
 
 typedef struct {
     TCPsocket socket;
     int id;
-    int last_x, last_y;     
+    int last_x, last_y;    
+    char direction;
+    int hp; 
     Uint32 last_move_time;  
 } Client;
 
@@ -43,38 +46,122 @@ void start_game(Client *clients) {
 }
 
 // Fonction pour gérer les mouvements des joueurs et envoyer les mises à jour
+// Fonction pour gérer les mouvements des joueurs et envoyer les mises à jour
 void handle_player_movements(Client *clients) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (!clients[i].socket) {
+            continue; // Passer si aucun socket n'est associé
+        }
+
         char buffer[BUFFER_SIZE];
         int bytes_received = SDLNet_TCP_Recv(clients[i].socket, buffer, BUFFER_SIZE - 1);
 
         if (bytes_received > 0) {
+            // Terminer correctement le buffer et supprimer les retours à la ligne
             buffer[bytes_received] = '\0';
+            for (int k = 0; k < bytes_received; k++) {
+                if (buffer[k] == '\n' || buffer[k] == '\r') {
+                    buffer[k] = '\0';
+                    break;
+                }
+            }
+
+            // Debug : afficher le message brut reçu
+            printf("Message brut reçu du joueur %d : '%s'\n", clients[i].id, buffer);
 
             int x, y;
-            if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
-                // Vérifier si les coordonnées ont changé et si assez de temps est passé
-                Uint32 current_time = SDL_GetTicks();
-                if ((x != clients[i].last_x || y != clients[i].last_y) && (current_time - clients[i].last_move_time > MOVE_DELAY)) {
+            char direction;
+
+            // Gestion des messages "MOVE"
+            if (sscanf(buffer, "MOVE %d %d %c", &x, &y, &direction) == 3) {
+                time_t current_time = time(NULL); // Utilise time(NULL) pour obtenir un timestamp Unix
+
+                // Vérifier si les coordonnées ou la direction ont changé
+                if ((x != clients[i].last_x || y != clients[i].last_y || direction != clients[i].direction) &&
+                    (difftime(current_time, clients[i].last_move_time) > MOVE_DELAY)) {  // Utilise difftime pour la différence en secondes
+
+                    // Mettre à jour les données du joueur
                     clients[i].last_x = x;
                     clients[i].last_y = y;
+                    clients[i].direction = direction;
                     clients[i].last_move_time = current_time;
 
-                    // Envoyer le mouvement à l'autre joueur
-                    int other_player_id = (clients[i].id == 1) ? 2 : 1;
-                    char move_message[BUFFER_SIZE];
-                    snprintf(move_message, sizeof(move_message), "MOVE %d %d", x, y);
-
-                    if (clients[other_player_id - 1].socket) {
-                        SDLNet_TCP_Send(clients[other_player_id - 1].socket, move_message, strlen(move_message) + 1);
+                    // Envoyer les mouvements à l'autre joueur
+                    for (int j = 0; j < MAX_CLIENTS; j++) {
+                        if (j != i && clients[j].socket) {
+                            char move_message[BUFFER_SIZE];
+                            snprintf(move_message, sizeof(move_message), "MOVE %d %d %c\n", x, y, direction);
+                            SDLNet_TCP_Send(clients[j].socket, move_message, strlen(move_message) + 1);
+                        }
                     }
                 }
+
+            // Gestion des messages "SWORD"
+            } else if (strncmp(buffer, "SWORD", 5) == 0) {
+                int sword_x, sword_y, sword_w, sword_h;
+                time_t sword_timestamp;
+
+                // Extraire les informations du message "SWORD"
+                if (sscanf(buffer, "SWORD %d %d %d %d %ld", &sword_x, &sword_y, &sword_w, &sword_h, &sword_timestamp) == 5) {
+                    printf("Message SWORD valide reçu du joueur %d : %d %d %d %d %ld\n",
+                           clients[i].id, sword_x, sword_y, sword_w, sword_h, sword_timestamp);
+
+                    // Envoyer le message "SWORD" à l'autre joueur
+                    for (int j = 0; j < MAX_CLIENTS; j++) {
+                        if (j != i && clients[j].socket) {
+                            SDLNet_TCP_Send(clients[j].socket, buffer, strlen(buffer) + 1);
+                        }
+                    }
+
+                    // Vérifier si un joueur est touché
+                    for (int j = 0; j < MAX_CLIENTS; j++) {
+                        if (j == i || !clients[j].socket) continue;
+
+                        // Vérifier si le timestamp du joueur est proche du coup d'épée
+                        if (abs((int)(sword_timestamp - clients[j].last_move_time)) <= 1) { // 1 seconde de différence
+                            int player_x = clients[j].last_x;
+                            int player_y = clients[j].last_y;
+
+                            // Vérifier la collision entre le joueur et la zone de l'épée
+                            if (player_x >= sword_x && player_x < sword_x + sword_w &&
+                                player_y >= sword_y && player_y < sword_y + sword_h) {
+
+                                // Déterminer qui est touché et envoyer le message
+                                char damage_message[BUFFER_SIZE];
+                                snprintf(damage_message, sizeof(damage_message),
+                                         "DAMAGE 10 %s\n", (j == i) ? "ME" : "OTHER");
+
+                                // Envoyer le message aux deux joueurs
+                                for (int k = 0; k < MAX_CLIENTS; k++) {
+                                    if (clients[k].socket) {
+                                        SDLNet_TCP_Send(clients[k].socket, damage_message, strlen(damage_message) + 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    printf("Message SWORD invalide reçu du joueur %d : '%s'\n", clients[i].id, buffer);
+                }
+
             } else {
-                printf("Message invalide reçu du joueur %d : %s\n", clients[i].id, buffer);
+                printf("Message invalide reçu du joueur %d : '%s'\n", clients[i].id, buffer);
             }
+
+        } else if (bytes_received == 0) {
+            // Le client s'est déconnecté
+            printf("Le joueur %d s'est déconnecté.\n", clients[i].id);
+            SDLNet_TCP_Close(clients[i].socket);
+            clients[i].socket = NULL;
+        } else {
+            // Une erreur est survenue lors de la réception
+            fprintf(stderr, "Erreur lors de la réception des données du joueur %d : %s\n", clients[i].id, SDLNet_GetError());
         }
     }
 }
+
+
+
 
 // Fonction principale du serveur
 void start_server(int grid[ROWS][COLS]) {
