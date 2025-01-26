@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <unistd.h> 
 #include "./../../include/game/game.h"
 #include "./../../include/game/map.h"
@@ -72,7 +73,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
 
             if (currentRoomX == -1 || currentRoomY == -1) {
                 printf("Erreur : salle actuelle (%d) introuvable dans la carte de l'étage.\n", *currentRoom);
-                return 0;  // Erreur, retour 0
+                return 0;
             }
 
             if (tileId == 8) { 
@@ -116,7 +117,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
                     player->rect.x = 32;
                 }
 
-                return 1;  // Transition réussie, retour 1
+                return 1; 
             } else  if (nextRoom == 100) {
 
                 printf("Le boss est mort, passage au boss final.\n");                
@@ -127,7 +128,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
                 player->rect.x = 32;
                 player->rect.y = 224;
 
-                return 1;  // Transition vers le boss final, retour 1
+                return 1; 
 
             } else{
                 printf("Erreur : la salle suivante est invalide ou inexistante.\n");
@@ -136,7 +137,7 @@ int handleDoorTransition(Player *player, int mapRoom[ROWS][COLS], int data[11][1
         }
     }
 
-    return 0;  // Aucun changement, retour 0
+    return 0; 
 }
 
 
@@ -166,8 +167,8 @@ void renderLobby(SDL_Renderer *renderer, Player *player, int *attackBought, int 
     SDL_Rect table = {(COLS * TILE_SIZE - tableWidth) / 2, TILE_SIZE, tableWidth, tableHeight};
 
     const int tileSize = 32;
-    const int itemWidth = tileSize / 2;
-    const int itemHeight = tileSize / 2;
+    const int itemWidth = tileSize;  
+    const int itemHeight = tileSize;
 
     SDL_Rect attackTile = {table.x + 0 * tileSize, table.y, tileSize, tileSize};
     SDL_Rect defenseTile = {table.x + 1 * tileSize, table.y, tileSize, tileSize};
@@ -182,11 +183,32 @@ void renderLobby(SDL_Renderer *renderer, Player *player, int *attackBought, int 
     SDL_SetRenderDrawColor(renderer, 139, 69, 19, 255);
     SDL_RenderFillRect(renderer, &table);
 
+    SDL_Texture *attackTexture = NULL;
+    SDL_Texture *defenseTexture = NULL;
+    SDL_Texture *maxHealthTexture = NULL;
+    
+    if (*attackBought == 0) {
+        attackTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/shop/shop2.png");  
+    }
+    if (*defenseBought == 0) {
+        defenseTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/shop/shop3.png"); 
+    }
+    if (*maxHealthBought == 0) {
+        maxHealthTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/shop/shop1.png");  
+    }
 
-    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
-    if (*attackBought == 0) SDL_RenderFillRect(renderer, &attackItem);
-    if (*defenseBought == 0) SDL_RenderFillRect(renderer, &defenseItem);
-    if (*maxHealthBought == 0) SDL_RenderFillRect(renderer, &maxHealthItem);
+    if (attackTexture) {
+        SDL_RenderCopy(renderer, attackTexture, NULL, &attackItem);
+        SDL_DestroyTexture(attackTexture);
+    }
+    if (defenseTexture) {
+        SDL_RenderCopy(renderer, defenseTexture, NULL, &defenseItem);
+        SDL_DestroyTexture(defenseTexture);
+    }
+    if (maxHealthTexture) {
+        SDL_RenderCopy(renderer, maxHealthTexture, NULL, &maxHealthItem);
+        SDL_DestroyTexture(maxHealthTexture);
+    }
 
     SDL_Color color;
     SDL_Surface *surface;
@@ -265,8 +287,7 @@ void handleLobbyInteraction(Player *player, int *attackBought, int *defenseBough
 
 
 void restoreArticles(int *attackBought, int *defenseBought, int *maxHealthBought, int *alreadyBoughtInSession, int room) {
-
-    if (*alreadyBoughtInSession == 1 && room == 0) {
+    if (*alreadyBoughtInSession == 1 && room != 0) {
         *attackBought = 0;
         *defenseBought = 0;
         *maxHealthBought = 0;
@@ -338,7 +359,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
 
 // Appel à initPlayer           
-    Player player;
+    Player  player;
+    printf("Taille de player : %ld\n", sizeof(player));
     initPlayer(&player, TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE, vie, piece, attaque, defense, max_vie);
 
     sprintf(stageFilename, "./data/game/save%d/map/map.txt", saveNumber);
@@ -456,7 +478,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         regeneratePlayer(&player);  
                         break;
                     case SDLK_SPACE:
-                        useLightning(renderer, &player, &enemyCount, enemyFilename);  
+                        useLightning(&player, &enemyCount, enemyFilename);  
                         break;
                     case SDLK_b:
                         player.vie -= 100;
@@ -468,7 +490,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                             gamePaused = 0;  // Reprend le jeu si déjà en pause
                         }
                         break;
-                                        case SDLK_a:
+                    case SDLK_a:
                         if (room == 0) { 
                             handleLobbyInteraction(&player, &attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession);
                         }
@@ -508,7 +530,6 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
         } else {
 
             // Appeler UpdateEnnemies ici 
-
             restoreArticles(&attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession, room);
 
             checkPlayerBonusCollision(&player);
@@ -522,7 +543,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
         renderHUD(renderer, &player, tentative);
         updateArrows(&player, mapRoom, &enemyCount, enemyFilename);
-
+        
         if (areArrowsActive(&player)) {
             updateArrows(&player, mapRoom, &enemyCount, enemyFilename);
 
@@ -532,6 +553,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
         SDL_RenderFillRect(renderer, &player.rect);
+        updateAndRenderLightning(renderer);
+        updateAndRenderRegenAnimation(renderer, &player);
 
         SDL_RenderPresent(renderer); 
 
@@ -605,11 +628,20 @@ void start_game_mode(SDL_Renderer *renderer) {
         return;
     }
 
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/font.ttf", 24);
     if (!font) {
         fprintf(stderr, "Échec du chargement de la police : %s\n", TTF_GetError());
         return;
     }
+
+    // Charger l'image de fond
+    SDL_Surface* backgroundSurface = IMG_Load("./assets/images/fondGame.png");
+    if (!backgroundSurface) {
+        fprintf(stderr, "Erreur de chargement de l'image de fond : %s\n", IMG_GetError());
+        return;
+    }
+    SDL_Texture* backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface);
 
     int running = 1;
     SDL_Event event;
@@ -628,9 +660,10 @@ void start_game_mode(SDL_Renderer *renderer) {
     SDL_Rect save3_rect = {screen_width / 2 - 120, screen_height / 2 + 90, 240, 30};
 
     while (running) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-        SDL_RenderClear(renderer);
+        // Dessiner l'image de fond
+        SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
 
+        // Dessiner le texte
         draw_text(renderer, font, "Nouvelle Partie", nouvelle_partie_rect.x, nouvelle_partie_rect.y);
         draw_text(renderer, font, "Quitter", quitter_rect.x, quitter_rect.y);
         draw_text(renderer, font, save1_exists ? "Charger Partie 1" : "Aucune Partie 1", save1_rect.x, save1_rect.y);
@@ -687,6 +720,8 @@ void start_game_mode(SDL_Renderer *renderer) {
         SDL_Delay(100);
     }
 
+    // Nettoyer les ressources
+    SDL_DestroyTexture(backgroundTexture);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);

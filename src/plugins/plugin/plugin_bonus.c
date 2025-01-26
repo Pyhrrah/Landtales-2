@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include "./../../../include/core/player.h"
 #include "./../../../include/core/ennemies.h"
 
@@ -10,16 +11,15 @@ Bonus bonuses[5];
 void spawnBonus(int x, int y) {
     for (int i = 0; i < 5; i++) {
         if (!bonuses[i].active) {
-            bonuses[i].rect.x = x;
-            bonuses[i].rect.y = y;
-            bonuses[i].rect.w = 16;  
-            bonuses[i].rect.h = 16;
+            bonuses[i].rect.x = x - 16;  
+            bonuses[i].rect.y = y - 16;  
+            bonuses[i].rect.w = 32;  
+            bonuses[i].rect.h = 32;
 
-            
             bonuses[i].type = (rand() % 3);  
 
             bonuses[i].active = 1;
-            printf("Bonus de type %d généré à (%d, %d)\n", bonuses[i].type, x, y);
+            printf("Bonus de type %d généré à (%d, %d)\n", bonuses[i].type, bonuses[i].rect.x, bonuses[i].rect.y);
             return;
         }
     }
@@ -40,12 +40,8 @@ void checkBonusCollision(Player *player) {
                 player->argent += 5;
                 printf("Le joueur récupère 5 pièces. Total d'argent : %d\n", player->argent);
             } else if (bonuses[i].type == 2) {  
-                player->max_vie += 10;
-                player->vie += 10;
-                if (player->vie > player->max_vie) {
-                    player->vie = player->max_vie;
-                }
-                printf("Le joueur gagne 10 PV max et 10 PV supplémentaires. Vie actuelle : %d, Max vie : %d\n", player->vie, player->max_vie);
+                player->attaque += 5;
+                printf("Le joueur récupère 5 points d'attaque\n");
             }
             bonuses[i].active = 0;  
         }
@@ -56,14 +52,20 @@ void checkBonusCollision(Player *player) {
 void drawBonuses(SDL_Renderer *renderer) {
     for (int i = 0; i < 6; i++) { 
         if (bonuses[i].active) {
+            SDL_Texture *bonusTexture = NULL;
+
             if (bonuses[i].type == 0) {
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);  
+                bonusTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/bonus/Icons_08.png");
             } else if (bonuses[i].type == 1) {
-                SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);  
+                bonusTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/bonus/Icons_01.png");
             } else if (bonuses[i].type == 2) {
-                SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255); 
+                bonusTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/bonus/Icons_23.png");
             }
-            SDL_RenderFillRect(renderer, &bonuses[i].rect);
+
+            if (bonusTexture) {
+                SDL_RenderCopy(renderer, bonusTexture, NULL, &bonuses[i].rect);
+                SDL_DestroyTexture(bonusTexture);
+            }
         }
     }
 }

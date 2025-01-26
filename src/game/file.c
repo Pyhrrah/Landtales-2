@@ -37,21 +37,20 @@ int loadTextures(SDL_Renderer *renderer) {
 
     // Charger toutes les images et créer les textures
     for (int i = 0; i < 18; i++) {
-        SDL_Surface* surface = IMG_Load(tilePaths[i]);  // Charger l'image en surface
+        SDL_Surface* surface = IMG_Load(tilePaths[i]);
         if (!surface) {
             printf("Erreur de chargement de l'image %s: %s\n", tilePaths[i], SDL_GetError());
             return -1;
         }
 
-        tileTextures[i] = SDL_CreateTextureFromSurface(renderer, surface); // Créer la texture à partir de la surface
-        SDL_FreeSurface(surface); // Libérer la surface une fois la texture créée
+        tileTextures[i] = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface); 
 
         if (!tileTextures[i]) {
             printf("Erreur de création de la texture pour %s: %s\n", tilePaths[i], SDL_GetError());
             return -1;
         }
 
-        printf("Texture %d chargée avec succès pour %s\n", i + 1, tilePaths[i]);  // Debug
     }
 
     return 0;
@@ -91,25 +90,19 @@ void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
         {192, 192, 192, 255}  // 18: pilier bas gauche (bg)
     };
 
-    // On parcourt la map pour dessiner chaque tuile
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
-            int tileId = room[i][j];  // ID de la tuile actuelle
+            int tileId = room[i][j];  
 
-            // Si l'ID de la tuile est valide (entre 1 et 18), on dessine la tuile
             if (tileId > 0 && tileId <= 18) {
                 SDL_Rect tileRect = { j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE };
 
-                // Vérification si la texture est disponible
                 if (tileTextures[tileId - 1]) {
-                    printf("Dessiner la tuile %d à la position (%d, %d)\n", tileId, j, i);  // Debug
-                    SDL_RenderCopy(renderer, tileTextures[tileId - 1], NULL, &tileRect); // Dessine l'image de la tuile
+                    SDL_RenderCopy(renderer, tileTextures[tileId - 1], NULL, &tileRect); 
                 } else {
-                    // Dessine la couleur si pas de texture
-                    printf("Texture manquante pour la tuile %d, dessin couleur à la position (%d, %d)\n", tileId, j, i);  // Debug
                     SDL_Color tileColor = colors[tileId - 1]; 
                     SDL_SetRenderDrawColor(renderer, tileColor.r, tileColor.g, tileColor.b, tileColor.a);
-                    SDL_RenderFillRect(renderer, &tileRect); // Dessine la couleur de la tuile
+                    SDL_RenderFillRect(renderer, &tileRect); 
                 }
             }
         }

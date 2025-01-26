@@ -5,6 +5,12 @@
 #include <time.h>
 #include "ennemies.h"
 
+typedef enum {
+    EPEE,  // 0 : épée
+    ARC,   // 1 : arc
+    FOUDRE // 2 : foudre
+} ArmeType;
+
 /**
  * Structure représentant une flèche tirée par le joueur.
  * - rect : rectangle SDL définissant la position et la taille de la flèche.
@@ -43,12 +49,12 @@ typedef struct {
     char orientation;
     int id;
     int regen_dispo;  // Remplacement de bool par int
-    time_t last_regen;
     int argent;
-    Uint32 last_lightning;
-    Arrow arrows[3];
     int arrowCount;
-    Uint32 arrowTimestamps[3];
+    Arrow arrows[3];
+    time_t arrowTimestamps[3];
+    time_t last_regen;
+    time_t last_lightning;
 } Player;
 
 /**
@@ -58,6 +64,34 @@ typedef struct {
 typedef struct {
     SDL_Rect rect;
 } Attack;
+
+/*
+* Structure représentant une foudre.
+* - rect : rectangle SDL définissant la position et la taille de la foudre.
+* - framesLeft : nombre de frames restantes avant la fin de l'attaque.
+* - active : indique si la foudre est actuellement active.
+*/
+
+typedef struct {
+    SDL_Rect rect;       // Position et taille de la foudre
+    int framesLeft;      // Nombre de frames restantes
+    int active;          // Indique si la foudre est active
+} Lightning;
+
+
+/*
+* Structure représentant une animation de régénération.
+* - rects : tableau de rectangles SDL définissant les carrés de l'animation.
+* - offsets : tableau de points SDL définissant les décalages des particules par rapport au centre du joueur.
+* - framesLeft : nombre de frames restantes pour l'animation.
+* - active : indique si l'animation est active.
+*/
+typedef struct {
+    SDL_Rect rects[20];      // Les rectangles des particules
+    SDL_Point offsets[20];   // Les offsets des particules par rapport au centre du joueur
+    int framesLeft;          // Durée restante de l'animation en frames
+    int active;              // 1 si l'animation est active, 0 sinon
+} RegenAnimation;
 
 /**
  * Initialise le joueur avec des paramètres spécifiques.
@@ -95,7 +129,7 @@ void regeneratePlayer(Player *player);
  * @param enemyCount : pointeur vers le nombre d'ennemis restants (sera modifié).
  * @param enemyFilename : chemin du fichier contenant les données des ennemis.
  */
-void useLightning(SDL_Renderer *renderer, Player *player, int *enemyCount, const char *enemyFilename);
+void useLightning(Player *player, int *enemyCount, const char *enemyFilename);
 
 /**
  * Tire une flèche dans la direction actuelle du joueur.
@@ -119,6 +153,13 @@ void updateArrows(Player *player, int mapRoom[15][21], int *enemyCount, const ch
  */
 void renderArrows(SDL_Renderer *renderer, Player *player);
 
+
+/*
+* Crée une foudre à la position de la souris.
+* @param renderer : renderer SDL pour dessiner la foudre.
+*/
+void updateAndRenderLightning(SDL_Renderer *renderer);
+
 /**
  * Vérifie si au moins une flèche est active.
  * @param player : pointeur vers le joueur à vérifier.
@@ -139,5 +180,12 @@ int getLightningCooldown(Player *player);
  * @return Temps restant en millisecondes.
  */
 int getRegenCooldown(Player *player);
+
+/**
+ * Met à jour et affiche l'animation de régénération.
+ * @param renderer : renderer SDL pour dessiner l'animation.
+ * @param player : pointeur vers le joueur à régénérer.
+ */
+void updateAndRenderRegenAnimation(SDL_Renderer *renderer, Player *player);
 
 #endif // PLAYER_H

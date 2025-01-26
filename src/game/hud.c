@@ -63,9 +63,9 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
 
     SDL_Texture *lightningTexture = NULL;
     if (getLightningCooldown(player) > 0) {
-        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/regen_pas_dispo.png"); 
+        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/foudre2.png"); 
     } else {
-        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/regen_dispo.png");
+        lightningTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/foudre1.png");
     }
 
     if (lightningTexture) {
@@ -87,9 +87,9 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
 
     SDL_Texture *regenTexture = NULL;
 if (getRegenCooldown(player) > 0) {
-    regenTexture = IMG_LoadTexture(renderer, "./assets/images/regen_pas_dispo.png");
+    regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen2.png");
 } else {
-    regenTexture = IMG_LoadTexture(renderer, "./assets/images/regen_dispo.png");
+    regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen1.png");
 }
 
 if (regenTexture) {

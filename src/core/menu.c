@@ -194,11 +194,9 @@ void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *backg
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, background, NULL, NULL); 
 
-    render_text(renderer, "Landtales 2", 50, 50, font, white);
-
     int start_y = 200;
     int spacing = 60;
-    const char *labels[] = {"Jouer", "Editeur", "Multijoueur", "Parametres"};
+    const char *labels[] = {"Jouer", "Editeur", "Multijoueur", "Paramètres"};
 
     for (int i = 0; i < 4; i++) {
         SDL_Color color = (i == selected_option) ? white : black;
@@ -213,7 +211,7 @@ void handle_menu(SDL_Renderer *renderer) {
     SDL_Event event;
     int konami_index = 0;
 
-    SDL_Surface *bg_surface = IMG_Load("./assets/images/wallpaperMenu.jpg");
+    SDL_Surface *bg_surface = IMG_Load("./assets/images/fond.png");
     if (!bg_surface) {
         fprintf(stderr, "Erreur lors du chargement de l'image de fond : %s\n", IMG_GetError());
         return;
@@ -226,7 +224,7 @@ void handle_menu(SDL_Renderer *renderer) {
         return;
     }
 
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/font.ttf", 28);
     if (!font) {
         fprintf(stderr, "Impossible de charger la police : %s\n", TTF_GetError());
         SDL_DestroyTexture(background);

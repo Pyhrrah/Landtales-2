@@ -1,45 +1,15 @@
 #include <SDL2/SDL.h>
 #include <time.h>
 #include "./../../include/core/ennemies.h"
+#include "./../../include/core/player.h"
 
 #define TILE_SIZE 32
 #define ROWS 15
 #define COLS 21
 
-typedef enum {
-    EPEE,  // 0 : épée
-    ARC,   // 1 : arc
-    FOUDRE // 2 : foudre
-} ArmeType;
+Lightning lightning = {0};
+RegenAnimation regenAnimation = {0};
 
-typedef struct {
-    SDL_Rect rect;
-    char orientation;
-    int active; // Remplacement de bool par int
-} Arrow;
-
-// Structure pour le joueur
-typedef struct {
-    SDL_Rect rect;    
-    int max_vie;          
-    int vie;                    
-    int attaque;                
-    int defense;                
-    char orientation;           
-    int id;                     
-    int regen_dispo; // Remplacement de bool par int       
-    time_t last_regen;          
-    int argent;  
-    time_t last_lightning;    
-    Arrow arrows[3];
-    int arrowCount;
-    Uint32 arrowTimestamps[3];           
-} Player;
-
-// Structure pour les attaques
-typedef struct {
-    SDL_Rect rect;
-} Attack;
 
 // Initialisation du joueur
 void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent, int attaque, int defense, int max_vie) {
@@ -48,20 +18,20 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     player->rect.w = w;
     player->rect.h = h;
     player->max_vie = max_vie;
-    player->vie = vie;          
-    player->attaque = attaque;      
-    player->defense = defense;      
-    player->orientation = 'B';  
-    player->id = 1;             
-    player->regen_dispo = 1; // Initialisation à vrai      
-    player->last_regen = 0; 
-    player->argent = argent;     
-    player->last_lightning = 0;    
+    player->vie = vie;
+    player->attaque = attaque;
+    player->defense = defense;
+    player->orientation = 'B';
+    player->id = 1;
+    player->regen_dispo = 1;
+    player->argent = argent;
     player->arrowCount = 3;
     for (int i = 0; i < player->arrowCount; i++) {
-        player->arrows[i].active = 0; // Initialisation à faux
+        player->arrows[i].active = 0;
         player->arrowTimestamps[i] = 0;
     }
+    player->last_regen = 0;
+    player->last_lightning = 0;
 }
 
 
@@ -223,7 +193,6 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                     break;
             }
 
-            // Vérifier les collisions avec les murs
             int tileX = player->arrows[i].rect.x / TILE_SIZE;
             int tileY = player->arrows[i].rect.y / TILE_SIZE;
             if (tileX >= 0 && tileX < COLS && tileY >= 0 && tileY < ROWS) {
@@ -231,14 +200,13 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                 if (tileId == 5 || tileId == 6 || tileId == 7 || 
                     tileId == 12 || tileId == 14 || 
                     tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
-                    player->arrows[i].active = 0;  // Désactivation de la flèche
+                    player->arrows[i].active = 0; 
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();
                     continue;
                 }
             }
 
-            // Vérifier les collisions avec les ennemis
             for (int j = 0; j < *enemyCount; j++) {
                 if (SDL_HasIntersection(&player->arrows[i].rect, &enemies[j].rect)) {
 
@@ -263,7 +231,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
 
 // Rendu des flèches
 void renderArrows(SDL_Renderer *renderer, Player *player) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Jaune pour les flèches
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
     for (int i = 0; i < 3; i++) {
         if (player->arrows[i].active) {
             SDL_RenderFillRect(renderer, &player->arrows[i].rect);
@@ -274,10 +242,10 @@ void renderArrows(SDL_Renderer *renderer, Player *player) {
 int areArrowsActive(Player *player) {
     for (int i = 0; i < player->arrowCount; i++) {
         if (player->arrows[i].active) {
-            return 1; // Si une flèche est active
+            return 1; 
         }
     }
-    return 0; // Si aucune flèche n'est active
+    return 0;
 }
 
 // Fonction de régénération du joueur
@@ -288,17 +256,50 @@ void regeneratePlayer(Player *player) {
     if (secondsSinceLastRegen >= 180) {
         int regenAmount = player->vie / 4;
         player->vie += regenAmount;
+        if (player->vie > player->max_vie) {
+            player->vie = player->max_vie;
+        }
 
-        if (player->vie > 100) {
-            player->vie = 100;
+        regenAnimation.framesLeft = 10;  
+        regenAnimation.active = 1;
+
+        for (int i = 0; i < 20; i++) {
+            regenAnimation.offsets[i].x = (rand() % 42) - 21; 
+            regenAnimation.offsets[i].y = (rand() % 42) - 21; 
+
+            regenAnimation.rects[i] = (SDL_Rect){
+                0, 0, 5, 5 
+            };
         }
 
         player->last_regen = currentTime;
-        
         printf("Régénération effectuée : +%d PV\n", regenAmount);
     } else {
         int timeLeft = 180 - (int)secondsSinceLastRegen;
         printf("Temps restant avant la régénération : %d secondes\n", timeLeft);
+    }
+}
+
+
+void updateAndRenderRegenAnimation(SDL_Renderer *renderer, Player *player) {
+    if (regenAnimation.active) {
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
+        
+        for (int i = 0; i < 20; i++) {
+            int playerCenterX = player->rect.x + player->rect.w / 2;
+            int playerCenterY = player->rect.y + player->rect.h / 2;
+
+            regenAnimation.rects[i].x = playerCenterX + regenAnimation.offsets[i].x;
+            regenAnimation.rects[i].y = playerCenterY + regenAnimation.offsets[i].y;
+
+            SDL_RenderFillRect(renderer, &regenAnimation.rects[i]);
+        }
+
+        regenAnimation.framesLeft--;
+
+        if (regenAnimation.framesLeft <= 0) {
+            regenAnimation.active = 0;
+        }
     }
 }
 
@@ -328,19 +329,54 @@ void createLightningAtMouse(SDL_Renderer *renderer, int *enemyCount, const char 
 }
 
 // Fonction pour utiliser la foudre
-void useLightning(SDL_Renderer *renderer, Player *player, int *enemyCount, const char *enemyFilename) {
+void useLightning(Player *player, int *enemyCount, const char *enemyFilename) {
     time_t currentTime = time(NULL);
     double secondsSinceLastLightning = difftime(currentTime, player->last_lightning);
     
     if (secondsSinceLastLightning >= 120) {
-        createLightningAtMouse(renderer, enemyCount, enemyFilename);  
-        
-        player->last_lightning = currentTime;
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
 
+        lightning.rect = (SDL_Rect){mouseX - 20, mouseY - 20, 40, 40};
+        lightning.framesLeft = 10; 
+        lightning.active = 1;      
+
+        for (int i = 0; i < *enemyCount; i++) {
+            if (SDL_HasIntersection(&lightning.rect, &enemies[i].rect)) {
+                int damageToEnemy = calculateDamage(30, enemies[i].defense, FOUDRE);
+                enemies[i].vie -= damageToEnemy;
+                printf("Ennemi %d touché ! Vie restante : %d\n", i, enemies[i].vie);
+
+                if (enemies[i].vie <= 0) {
+                    removeEnemy(enemies, enemyCount, i, enemyFilename);
+                    i--;
+                }
+            }
+        }
+
+        player->last_lightning = currentTime;
         printf("Foudre utilisée !\n");
     } else {
         int timeLeft = 120 - (int)secondsSinceLastLightning;
         printf("Temps restant avant la réutilisation de la foudre : %d secondes\n", timeLeft);
+    }
+}
+
+void updateAndRenderLightning(SDL_Renderer *renderer) {
+    if (lightning.active) {
+        if (lightning.framesLeft % 2 == 0) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Jaune
+        } else {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Blanc
+        }
+
+        SDL_RenderFillRect(renderer, &lightning.rect);
+
+        lightning.framesLeft--;
+
+        if (lightning.framesLeft <= 0) {
+            lightning.active = 0;
+        }
     }
 }
 
