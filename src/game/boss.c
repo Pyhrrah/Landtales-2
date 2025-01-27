@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #define ROWS 15
 #define COLS 21
@@ -26,10 +27,10 @@ int isBossAlive(int enemyCount, int type) {
 
 void initBigBoss() {
     clearEnemies();
-    enemies[0].rect.x = 320;
-    enemies[0].rect.y = 224;
-    enemies[0].rect.w = 32;
-    enemies[0].rect.h = 32;
+    enemies[0].rect.x = 320-32;
+    enemies[0].rect.y = 224-32;
+    enemies[0].rect.w = 64;
+    enemies[0].rect.h = 64;
     enemies[0].vie = 500;
     enemies[0].attaque = 20;
     enemies[0].defense = 10;
@@ -52,9 +53,18 @@ void checkAndActivateBossDoor(int room, int enemyCount) {
 void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect, 
                              int *room, char *mapFilename, int mapRoom[ROWS][COLS], int saveNumber, 
                              int tentative, int *etage, Player *player, int mapData[11][11], char *stageFilename) {
+    static SDL_Texture *bossDoorTexture = NULL;
+
+    if (bossDoorTexture == NULL) {
+        bossDoorTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/map/spawn1.png");
+        if (!bossDoorTexture) {
+            printf("Erreur lors du chargement de l'image de la porte du boss : %s\n", IMG_GetError());
+            return;
+        }
+    }
+
     if (bossDoor.w > 0 && bossDoor.h > 0) {
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-        SDL_RenderFillRect(renderer, &bossDoor);
+        SDL_RenderCopy(renderer, bossDoorTexture, NULL, &bossDoor);
 
         if (SDL_HasIntersection(playerRect, &bossDoor)) {
             printf("Joueur entre dans la porte, retour au lobby.\n");

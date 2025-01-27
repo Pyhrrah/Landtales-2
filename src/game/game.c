@@ -15,6 +15,7 @@
 #include "./../../include/core/ennemies.h"
 #include "./../../include/game/credit.h"
 #include "./../../include/game/boss.h"
+#include "./../../include/game/chest.h"
 #include "./../../include/plugins/open_plugin_bonus.h"
 
 
@@ -34,7 +35,7 @@ int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int
         int tileId = mapRoom[tileY][tileX];
         if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
             tileId == 12 || tileId == 13 || tileId == 14 || 
-            tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
+            tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18 || tileId == 19) {
             return 1;  // Collision avec un mur, retour 1
         }
     }
@@ -446,10 +447,6 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
         if (room != 0) {
             drawEnemies(renderer);
         }
-        
-           
-
-        
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -493,6 +490,10 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                     case SDLK_a:
                         if (room == 0) { 
                             handleLobbyInteraction(&player, &attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession);
+                        } else {
+                            if (checkChestCollision(&player, mapRoom, mapFilename)) {
+                                openChestWithPlugin(&player);
+                            }
                         }
                         break;
                 }

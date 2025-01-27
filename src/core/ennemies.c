@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "./../../include/plugins/open_plugin_bonus.h"
+#include <SDL2/SDL_image.h>
+
 
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
@@ -63,17 +65,36 @@ void initEnemies(const char *filename) {
 
 // Fonction pour dessiner les ennemis
 void drawEnemies(SDL_Renderer *renderer) {
+    const char *basePath = "./assets/images/sprite/monster/";
+
+    const char *defaultImage = "./assets/images/sprite/monster/monster1.png";
+
     for (int i = 0; i < enemyCount; i++) {
-        if (enemies[i].type >= 1 && enemies[i].type <= 15) {
-            SDL_SetRenderDrawColor(renderer, enemyColors[enemies[i].type - 1].r, 
-                                    enemyColors[enemies[i].type - 1].g, 
-                                    enemyColors[enemies[i].type - 1].b, 
-                                    enemyColors[enemies[i].type - 1].a);
-        } else {
-            SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+        char imagePath[128]; 
+
+        snprintf(imagePath, sizeof(imagePath), "%sIcon%d.png", basePath, enemies[i].type);
+
+        SDL_Surface *enemySurface = IMG_Load(imagePath);
+
+        if (!enemySurface) {
+            printf("Erreur lors du chargement de l'image spécifique (%s) : %s\n", imagePath, IMG_GetError());
+            enemySurface = IMG_Load(defaultImage);
+            if (!enemySurface) {
+                printf("Erreur lors du chargement de l'image par défaut : %s\n", IMG_GetError());
+                continue; 
+            }
         }
 
-        SDL_RenderFillRect(renderer, &enemies[i].rect);
+        SDL_Texture *enemyTexture = SDL_CreateTextureFromSurface(renderer, enemySurface);
+        SDL_FreeSurface(enemySurface);
+        if (!enemyTexture) {
+            printf("Erreur lors de la création de la texture : %s\n", SDL_GetError());
+            continue;
+        }
+
+        SDL_RenderCopy(renderer, enemyTexture, NULL, &enemies[i].rect);
+
+        SDL_DestroyTexture(enemyTexture);
     }
 }
 

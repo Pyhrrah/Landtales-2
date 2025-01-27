@@ -23,6 +23,7 @@
 void (*spawnBonus)(int, int);
 void (*checkBonusCollision)(Player*);
 void (*drawBonuses)(SDL_Renderer*);
+void (*openChest)(Player*);
 
 void *pluginHandle = NULL;
 
@@ -36,6 +37,7 @@ int loadPlugin(const char *pluginPath) {
     spawnBonus = LancerPlugin(pluginHandle, "spawnBonus");
     checkBonusCollision = LancerPlugin(pluginHandle, "checkBonusCollision");
     drawBonuses = LancerPlugin(pluginHandle, "drawBonuses");
+    openChest = LancerPlugin(pluginHandle, "openChest");   
 
     if (!spawnBonus || !checkBonusCollision || !drawBonuses) {
         fprintf(stderr, "Erreur d'accès aux fonctions du plugin: %s\n", dlerror());
@@ -69,5 +71,11 @@ void checkPlayerBonusCollision(Player *player) {
 void renderBonuses(SDL_Renderer *renderer) {
     if (drawBonuses) {
         drawBonuses(renderer);
+    }
+}
+
+void openChestWithPlugin(Player *player) {
+    if (openChest) {
+        openChest(player);
     }
 }

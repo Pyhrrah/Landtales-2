@@ -15,6 +15,18 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_Rect hudRect = {0, screenHeight - hudHeight, screenWidth, hudHeight};
     SDL_RenderFillRect(renderer, &hudRect);
 
+    // Charger l'image à gauche (48x48 pixels)
+    SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/player.png");
+    if (!leftImageTexture) {
+        printf("Erreur lors du chargement de l'image : %s\n", IMG_GetError());
+    } else {
+        // Centrer l'image verticalement dans la zone noire du HUD
+        int leftImageY = screenHeight - hudHeight + 10;
+        SDL_Rect leftImageRect = {25, leftImageY, 48, 48}; 
+        SDL_RenderCopy(renderer, leftImageTexture, NULL, &leftImageRect);
+        SDL_DestroyTexture(leftImageTexture);
+    }
+
     SDL_Color textColor = {255, 255, 255, 255};
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 16);
@@ -23,10 +35,13 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         return;
     }
 
+    // Décalage de 80 vers la droite
+    int xOffset = 80;
+
     float healthPercentage = (float)player->vie / player->max_vie;
     int barWidth = 200;
     int barHeight = 10;
-    SDL_Rect healthBar = {25, screenHeight - hudHeight + 10, barWidth, barHeight};
+    SDL_Rect healthBar = {25 + xOffset, screenHeight - hudHeight + 10, barWidth, barHeight};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
     SDL_RenderFillRect(renderer, &healthBar);
 
@@ -38,7 +53,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     sprintf(healthText, "Vie: %d / %d", player->vie, player->max_vie);
     SDL_Surface *healthSurface = TTF_RenderUTF8_Solid(font, healthText, textColor);
     SDL_Texture *healthTexture = SDL_CreateTextureFromSurface(renderer, healthSurface);
-    SDL_Rect healthTextRect = {50, screenHeight - hudHeight + 25, healthSurface->w, healthSurface->h};
+    SDL_Rect healthTextRect = {50 + xOffset, screenHeight - hudHeight + 25, healthSurface->w, healthSurface->h};
     SDL_RenderCopy(renderer, healthTexture, NULL, &healthTextRect);
     SDL_FreeSurface(healthSurface);
     SDL_DestroyTexture(healthTexture);
@@ -47,7 +62,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     sprintf(coinText, "Pièces: %d", player->argent);
     SDL_Surface *coinSurface = TTF_RenderUTF8_Solid(font, coinText, textColor);
     SDL_Texture *coinTexture = SDL_CreateTextureFromSurface(renderer, coinSurface);
-    SDL_Rect coinTextRect = {50 + barWidth + 20, screenHeight - hudHeight + 10, coinSurface->w, coinSurface->h};
+    SDL_Rect coinTextRect = {50 + barWidth + 20 + xOffset, screenHeight - hudHeight + 10, coinSurface->w, coinSurface->h};
     SDL_RenderCopy(renderer, coinTexture, NULL, &coinTextRect);
     SDL_FreeSurface(coinSurface);
     SDL_DestroyTexture(coinTexture);
@@ -56,7 +71,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     sprintf(attemptText, "Tentatives: %d", tentative);
     SDL_Surface *attemptSurface = TTF_RenderUTF8_Solid(font, attemptText, textColor);
     SDL_Texture *attemptTexture = SDL_CreateTextureFromSurface(renderer, attemptSurface);
-    SDL_Rect attemptTextRect = {50 + barWidth + 20, screenHeight - hudHeight + 35, attemptSurface->w, attemptSurface->h};
+    SDL_Rect attemptTextRect = {50 + barWidth + 20 + xOffset, screenHeight - hudHeight + 35, attemptSurface->w, attemptSurface->h};
     SDL_RenderCopy(renderer, attemptTexture, NULL, &attemptTextRect);
     SDL_FreeSurface(attemptSurface);
     SDL_DestroyTexture(attemptTexture);
@@ -86,33 +101,27 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     }
 
     SDL_Texture *regenTexture = NULL;
-if (getRegenCooldown(player) > 0) {
-    regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen2.png");
-} else {
-    regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen1.png");
-}
-
-if (regenTexture) {
-    SDL_Rect regenRect = {screenWidth - 40, screenHeight - hudHeight + 10, 30, 30};
-    SDL_RenderCopy(renderer, regenTexture, NULL, &regenRect);
-    
     if (getRegenCooldown(player) > 0) {
-        char regenText[12];
-        sprintf(regenText, "%d", getRegenCooldown(player));
-        SDL_Surface *regenSurface = TTF_RenderUTF8_Solid(font, regenText, textColor);
-        SDL_Texture *regenTextTexture = SDL_CreateTextureFromSurface(renderer, regenSurface);
-        SDL_Rect regenTextRect = {screenWidth - 40, screenHeight - hudHeight + 45, regenSurface->w, regenSurface->h};
-        SDL_RenderCopy(renderer, regenTextTexture, NULL, &regenTextRect);
-        SDL_FreeSurface(regenSurface);
-        SDL_DestroyTexture(regenTextTexture);
+        regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen2.png");
+    } else {
+        regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen1.png");
     }
-
-    SDL_DestroyTexture(regenTexture);
-}
 
     if (regenTexture) {
         SDL_Rect regenRect = {screenWidth - 40, screenHeight - hudHeight + 10, 30, 30};
         SDL_RenderCopy(renderer, regenTexture, NULL, &regenRect);
+        
+        if (getRegenCooldown(player) > 0) {
+            char regenText[12];
+            sprintf(regenText, "%d", getRegenCooldown(player));
+            SDL_Surface *regenSurface = TTF_RenderUTF8_Solid(font, regenText, textColor);
+            SDL_Texture *regenTextTexture = SDL_CreateTextureFromSurface(renderer, regenSurface);
+            SDL_Rect regenTextRect = {screenWidth - 40, screenHeight - hudHeight + 45, regenSurface->w, regenSurface->h};
+            SDL_RenderCopy(renderer, regenTextTexture, NULL, &regenTextRect);
+            SDL_FreeSurface(regenSurface);
+            SDL_DestroyTexture(regenTextTexture);
+        }
+
         SDL_DestroyTexture(regenTexture);
     }
 

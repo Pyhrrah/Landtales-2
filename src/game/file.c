@@ -10,11 +10,11 @@
 #define COLS 21
 
 // Déclaration du tableau des textures global
-SDL_Texture* tileTextures[18];
+SDL_Texture* tileTextures[19];
 
 // Fonction pour charger les textures des sprites
 int loadTextures(SDL_Renderer *renderer) {
-    const char* tilePaths[18] = {
+    const char* tilePaths[19] = {
         "./assets/images/sprite/map/sol1.png",   // 1 : tile sol normal
         "./assets/images/sprite/map/sol2.png",   // 2 : tile sol variation 1
         "./assets/images/sprite/map/sol3.png",   // 3 : tile sol variation 2
@@ -32,11 +32,12 @@ int loadTextures(SDL_Renderer *renderer) {
         "./assets/images/sprite/map/pilier1.png",// 15: pilier haut gauche (hg)
         "./assets/images/sprite/map/pilier2.png",// 16: pilier haut droit (hd)
         "./assets/images/sprite/map/pilier3.png",// 17: pilier bas droit (bd)
-        "./assets/images/sprite/map/pilier4.png" // 18: pilier bas gauche (bg)
+        "./assets/images/sprite/map/pilier4.png", // 18: pilier bas gauche (bg)
+        "./assets/images/sprite/map/coffre.png",   // 19 : tile sol normal
     };
 
     // Charger toutes les images et créer les textures
-    for (int i = 0; i < 18; i++) {
+    for (int i = 0; i < 19; i++) {
         SDL_Surface* surface = IMG_Load(tilePaths[i]);
         if (!surface) {
             printf("Erreur de chargement de l'image %s: %s\n", tilePaths[i], SDL_GetError());
@@ -69,7 +70,7 @@ void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
     }
 
     // Tableau des couleurs pour les tuiles sans sprites
-    SDL_Color colors[18] = {
+    SDL_Color colors[19] = {
         {50, 205, 50, 255},   // 1 : tile sol normal
         {60, 179, 113, 255},  // 2 : tile sol variation 1
         {34, 139, 34, 255},   // 3 : tile sol variation 2
@@ -87,14 +88,15 @@ void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
         {192, 192, 192, 255}, // 15: pilier haut gauche (hg)
         {192, 192, 192, 255}, // 16: pilier haut droit (hd)
         {192, 192, 192, 255}, // 17: pilier bas droit (bd)
-        {192, 192, 192, 255}  // 18: pilier bas gauche (bg)
+        {192, 192, 192, 255},  // 18: pilier bas gauche (bg)
+        {192, 192, 192, 255}  // 19: coffre
     };
 
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             int tileId = room[i][j];  
 
-            if (tileId > 0 && tileId <= 18) {
+            if (tileId > 0 && tileId <= 19) {
                 SDL_Rect tileRect = { j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE };
 
                 if (tileTextures[tileId - 1]) {

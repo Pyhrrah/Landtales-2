@@ -1,11 +1,26 @@
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include "./../../include/game/pause.h"
 
 // Fonction pour dessiner le menu de pause
 void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
     int bossRoom = 2; // Toujours la salle 2 pour le boss
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-    SDL_RenderClear(renderer);
+
+    // Charger l'image de fond
+    SDL_Surface *backgroundSurface = IMG_Load("./assets/images/fondPause.png");
+    if (!backgroundSurface) {
+        printf("Erreur lors du chargement de l'image de fond: %s\n", IMG_GetError());
+        return;
+    }
+    SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface);
+    if (!backgroundTexture) {
+        printf("Erreur lors de la création de la texture de fond: %s\n", SDL_GetError());
+        return;
+    }
+
+    SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
+    SDL_DestroyTexture(backgroundTexture);
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
     if (!font) {
@@ -49,15 +64,11 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
     SDL_RenderCopy(renderer, textTexture, NULL, &textRectQuit);
     SDL_DestroyTexture(textTexture);
 
-
     // Code pour dessiner la minimap
-
     int mapSize = 11;  // La carte est 11x11
     int tileSize = 30; // Taille des cases de la map
     int mapStartX = 50; // Position X de départ pour la mini-map
-    int mapStartY = 80; // Position Y de départ pour la mini-map
-
-    // On dessine la mini map en fonction de la map
+    int mapStartY = 150; // Position Y de départ pour la mini-map
 
     for (int i = 0; i < mapSize; i++) {
         for (int j = 0; j < mapSize; j++) {
@@ -111,7 +122,6 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
 
     SDL_RenderPresent(renderer);
 }
-
 
 
 // Fonction pour gérer l'événement de pause

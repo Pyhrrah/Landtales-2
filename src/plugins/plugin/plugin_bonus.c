@@ -69,3 +69,37 @@ void drawBonuses(SDL_Renderer *renderer) {
         }
     }
 }
+
+
+void openChest(Player *player) {
+    srand(time(NULL));
+
+    int choice = rand() % 4;  
+
+    switch (choice) {
+        case 0:  
+            player->max_vie += (rand() % 21) - 10;  
+            if (player->max_vie < 1) player->max_vie = 1;  
+            player->vie = player->max_vie;  
+            printf("La vie du joueur a été modifiée. Vie max : %d, Vie actuelle : %d\n", player->max_vie, player->vie);
+            break;
+
+        case 1:  
+            player->argent += (rand() % 21) - 10;  
+            if (player->argent < 0) player->argent = 0; 
+            printf("Le joueur a gagné/perdu de l'argent. Total d'argent : %d\n", player->argent);
+            break;
+
+        case 2:  
+            player->attaque += (rand() % 11) - 5;  
+            if (player->attaque < 0) player->attaque = 0; 
+            printf("L'attaque du joueur a été modifiée. Attaque : %d\n", player->attaque);
+            break;
+
+        case 3:  
+            player->defense += (rand() % 11) - 5;  
+            if (player->defense < 0) player->defense = 0;  
+            printf("La défense du joueur a été modifiée. Défense : %d\n", player->defense);
+            break;
+    }
+}

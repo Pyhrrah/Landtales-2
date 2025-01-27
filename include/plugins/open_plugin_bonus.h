@@ -15,4 +15,6 @@ void checkPlayerBonusCollision(Player *player);
 
 void renderBonuses(SDL_Renderer *renderer);
 
+void openChestWithPlugin(Player *player);
+
 #endif // PLUGIN_LOADER_H

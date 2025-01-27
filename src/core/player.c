@@ -21,7 +21,7 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     player->vie = vie;
     player->attaque = attaque;
     player->defense = defense;
-    player->orientation = 'B';
+    player->orientation = 'D';
     player->id = 1;
     player->regen_dispo = 1;
     player->argent = argent;
