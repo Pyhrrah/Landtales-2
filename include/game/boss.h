@@ -9,6 +9,12 @@
 #define COLS 21         // Nombre de colonnes dans la grille de la salle.
 #define TILE_SIZE 32    // Taille d'une tuile en pixels.
 
+typedef struct {
+    SDL_Rect rect;
+    int active;
+    float dx, dy;
+} Projectile;
+
 // Externes
 extern Enemy enemies[];    // Tableau global des ennemis.
 extern int enemyCount;     // Nombre total d'ennemis actifs.
@@ -43,5 +49,11 @@ void checkAndActivateBossDoor(int room, int enemyCount);
 void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect, 
                              int *room, char *mapFilename, int mapRoom[ROWS][COLS], int saveNumber, 
                              int tentative, int *etage, Player *player, int mapData[11][11], char *stageFilename);
+
+
+void initProjectilesBoss();
+void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect);
+void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player);
+
 
 #endif // BOSS_HANDLER_H

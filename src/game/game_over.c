@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include "./../../include/core/player.h"
 #include "./../../include/game/file.h"
@@ -10,34 +11,22 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
     const int screenWidth = 672;
     const int screenHeight = 544;
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 48);
-    if (!font) {
-        printf("Erreur de chargement de la police: %s\n", TTF_GetError());
+    SDL_Surface *backgroundSurface = IMG_Load("./assets/images/fondGameOver.png");
+    if (!backgroundSurface) {
+        printf("Erreur de chargement de l'image de fond: %s\n", SDL_GetError());
         return;
     }
 
-    SDL_Color textColor = {255, 255, 255, 255};
+    SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface);  
 
-    const char *gameOverText = "Game Over";
-    SDL_Surface *gameOverSurface = TTF_RenderUTF8_Solid(font, gameOverText, textColor);
-    SDL_Texture *gameOverTexture = SDL_CreateTextureFromSurface(renderer, gameOverSurface);
-    SDL_Rect gameOverTextRect = {screenWidth / 2 - gameOverSurface->w / 2, screenHeight / 2 - gameOverSurface->h, gameOverSurface->w, gameOverSurface->h};
-    SDL_RenderCopy(renderer, gameOverTexture, NULL, &gameOverTextRect);
+    if (!backgroundTexture) {
+        printf("Erreur de création de la texture de fond: %s\n", SDL_GetError());
+        return;
+    }
 
-    SDL_FreeSurface(gameOverSurface);
-    SDL_DestroyTexture(gameOverTexture);
-
-    const char *continueText = "Voulez-vous continuer ?";
-    SDL_Surface *continueSurface = TTF_RenderUTF8_Solid(font, continueText, textColor);
-    SDL_Texture *continueTexture = SDL_CreateTextureFromSurface(renderer, continueSurface);
-    SDL_Rect continueTextRect = {screenWidth / 2 - continueSurface->w / 2, screenHeight / 2 + 40, continueSurface->w, continueSurface->h};
-    SDL_RenderCopy(renderer, continueTexture, NULL, &continueTextRect);
-
-    SDL_FreeSurface(continueSurface);
-    SDL_DestroyTexture(continueTexture);
+    SDL_Rect backgroundRect = {0, 0, screenWidth, screenHeight};
+    SDL_RenderCopy(renderer, backgroundTexture, NULL, &backgroundRect);  
 
     SDL_Rect yesButton = {screenWidth / 2 - 150, screenHeight / 2 + 100, 100, 50};
     SDL_Rect noButton = {screenWidth / 2 + 50, screenHeight / 2 + 100, 100, 50};
@@ -46,11 +35,13 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
     SDL_RenderFillRect(renderer, &yesButton);
     SDL_RenderFillRect(renderer, &noButton);
 
-    font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
     if (!font) {
         printf("Erreur de chargement de la police: %s\n", TTF_GetError());
         return;
     }
+
+    SDL_Color textColor = {255, 255, 255, 255}; 
 
     const char *yesText = "Oui";
     SDL_Surface *yesSurface = TTF_RenderUTF8_Solid(font, yesText, textColor);
@@ -87,12 +78,14 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
                 }
 
                 if (x >= noButton.x && x <= noButton.x + noButton.w && y >= noButton.y && y <= noButton.y + noButton.h) {
-                    *running = SDL_FALSE; 
+                    *running = SDL_FALSE;
                     buttonClicked = SDL_TRUE;
                 }
             }
         }
     }
+
+    SDL_DestroyTexture(backgroundTexture);
 
     TTF_CloseFont(font);
 }

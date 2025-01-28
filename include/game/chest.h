@@ -1,7 +1,6 @@
 #ifndef CHEST_H
 #define CHEST_H
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "./../../include/core/player.h"

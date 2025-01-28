@@ -296,8 +296,19 @@ void restoreArticles(int *attackBought, int *defenseBought, int *maxHealthBought
     }
 }
 
+void drawPlayer(Player *player, SDL_Renderer *renderer, int *stepCount) {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge
+    SDL_RenderFillRect(renderer, &player->rect);
+    *stepCount += 1;
+    *stepCount -= 1;
+    //printf("Nombre de pas modulo 7: %d\n", *stepCount % 7);
+}
+
 
 void allGame(int saveNumber, SDL_Renderer *renderer) {
+
+    static char lastOrientation = '\0';
+    int stepCount = 0;
 
     loadPlugin("./plugins/plugin_bonus.so");
     char mapFilename[100] = "";
@@ -308,7 +319,6 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
     char playerFilename[100];
     sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
-
 
     int attackBought = 0;
     int defenseBought = 0;
@@ -370,6 +380,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
     char enemyFilename[100];
     sprintf(enemyFilename, "./data/game/save%d/map/Salle%02d/mobs%02d.txt", saveNumber, room, room);
     initEnemies(enemyFilename);
+    initProjectilesBoss(); // Initialisation des projectiles pour le boss final
 
 
     if (room == 0 || room == 1){
@@ -453,23 +464,26 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                 running = 0;
             } else if (event.type == SDL_KEYDOWN) {
                 int oldX = player.rect.x, oldY = player.rect.y;
-
                 switch (event.key.keysym.sym) {
-                    case SDLK_z:
-                        player.rect.y -= TILE_SIZE;
+                    case SDLK_z:  // Déplacement vers le haut
+                        player.rect.y -= TILE_SIZE;  // Déplacer le joueur d'un pas plus petit
                         player.orientation = 'U';
+                        stepCount++;
                         break;
-                    case SDLK_s:
+                    case SDLK_s:  // Déplacement vers le bas
                         player.rect.y += TILE_SIZE;
                         player.orientation = 'D';
+                        stepCount++;
                         break;
-                    case SDLK_q:
+                    case SDLK_q:  // Déplacement vers la gauche
                         player.rect.x -= TILE_SIZE;
                         player.orientation = 'L';
+                        stepCount++;
                         break;
-                    case SDLK_d:
+                    case SDLK_d:  // Déplacement vers la droite
                         player.rect.x += TILE_SIZE;
                         player.orientation = 'R';
+                        stepCount++;
                         break;
                     case SDLK_e:
                         regeneratePlayer(&player);  
@@ -526,6 +540,13 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             }
         }
 
+        if (player.orientation != lastOrientation) {
+        stepCount = 0;
+        }
+
+        lastOrientation = player.orientation;  
+        
+
         if (room == 0) {
             renderLobby(renderer, &player, &attackBought, &defenseBought, &maxHealthBought);
         } else {
@@ -541,6 +562,11 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
         }    
 
+        if (room == 100){
+            launchProjectileWithCooldownBoss(&enemies[0].rect, &player.rect);
+            handleProjectilesBoss(renderer, mapRoom, &player);
+        }
+
 
         renderHUD(renderer, &player, tentative);
         updateArrows(&player, mapRoom, &enemyCount, enemyFilename);
@@ -552,8 +578,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
         }
 
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
-        SDL_RenderFillRect(renderer, &player.rect);
+        drawPlayer(&player, renderer, &stepCount);
         updateAndRenderLightning(renderer);
         updateAndRenderRegenAnimation(renderer, &player);
 

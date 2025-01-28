@@ -50,6 +50,4 @@ clean:
 fclean: clean
 	rm -f $(EXEC) plugins/*.so plugins/*.dll
 
-re: fclean all
-
 .PHONY: all clean fclean re plugin plugin_clean
