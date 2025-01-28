@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "./../../include/plugins/open_plugin_bonus.h"
-#include <SDL2/SDL_image.h>
-
+#include "./../../include/utils/sdl_utils.h"
 
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
@@ -66,30 +65,18 @@ void initEnemies(const char *filename) {
 // Fonction pour dessiner les ennemis
 void drawEnemies(SDL_Renderer *renderer) {
     const char *basePath = "./assets/images/sprite/monster/";
-
     const char *defaultImage = "./assets/images/sprite/monster/monster1.png";
 
     for (int i = 0; i < enemyCount; i++) {
-        char imagePath[128]; 
-
+        char imagePath[128];
         snprintf(imagePath, sizeof(imagePath), "%sIcon%d.png", basePath, enemies[i].type);
 
-        SDL_Surface *enemySurface = IMG_Load(imagePath);
-
-        if (!enemySurface) {
-            printf("Erreur lors du chargement de l'image spécifique (%s) : %s\n", imagePath, IMG_GetError());
-            enemySurface = IMG_Load(defaultImage);
-            if (!enemySurface) {
-                printf("Erreur lors du chargement de l'image par défaut : %s\n", IMG_GetError());
+        SDL_Texture *enemyTexture = load_texture(renderer, imagePath);
+        if (!enemyTexture) {
+            enemyTexture = load_texture(renderer, defaultImage);
+            if (!enemyTexture) {
                 continue; 
             }
-        }
-
-        SDL_Texture *enemyTexture = SDL_CreateTextureFromSurface(renderer, enemySurface);
-        SDL_FreeSurface(enemySurface);
-        if (!enemyTexture) {
-            printf("Erreur lors de la création de la texture : %s\n", SDL_GetError());
-            continue;
         }
 
         SDL_RenderCopy(renderer, enemyTexture, NULL, &enemies[i].rect);
@@ -97,6 +84,7 @@ void drawEnemies(SDL_Renderer *renderer) {
         SDL_DestroyTexture(enemyTexture);
     }
 }
+
 
 // Fonction pour mettre à jour les ennemis (temporaire)
 void updateEnemies(SDL_Renderer *renderer) {

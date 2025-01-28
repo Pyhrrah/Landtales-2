@@ -577,7 +577,6 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             renderArrows(renderer, &player);
         }
 
-
         drawPlayer(&player, renderer, &stepCount);
         updateAndRenderLightning(renderer);
         updateAndRenderRegenAnimation(renderer, &player);

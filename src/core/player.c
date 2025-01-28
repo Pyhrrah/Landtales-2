@@ -199,7 +199,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
                 int tileId = mapRoom[tileY][tileX];
                 if (tileId == 5 || tileId == 6 || tileId == 7 || 
                     tileId == 12 || tileId == 14 || 
-                    tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18) {
+                    tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18 || tileId == 19) {
                     player->arrows[i].active = 0; 
                     player->arrowCount--;
                     player->arrowTimestamps[i] = SDL_GetTicks();

@@ -4,49 +4,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "./../../include/core/menu.h"
+#include "./../../include/utils/sdl_utils.h"
+
+
+#define WINDOW_WIDTH 672
+#define WINDOW_HEIGHT 544
 
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 
 int main(int argc, char * argv[]) {
-
     char * throw;
     sscanf(argv[argc-1], "%ms", &throw);
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        fprintf(stderr, "Erreur lors de l'initialisation de la SDL : %s\n", SDL_GetError());
-        return 1;
-    }
+    SDL_Window *window = NULL;
+    SDL_Renderer *renderer = NULL;
 
-    if (TTF_Init() < 0) {
-        fprintf(stderr, "Erreur lors de l'initialisation de SDL_ttf : %s\n", TTF_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Window *window = SDL_CreateWindow("Landtales 2", 
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!window) {
-        fprintf(stderr, "Impossible de créer la fenêtre : %s\n", SDL_GetError());
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer) {
-        fprintf(stderr, "Impossible de créer le rendu : %s\n", SDL_GetError());
-        SDL_DestroyWindow(window);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
+    if (!initSDL(&window, &renderer, "Landtales 2", WINDOW_WIDTH, WINDOW_HEIGHT)) {
+        return 1; 
     }
 
     handle_menu(renderer);
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    TTF_Quit();
-    SDL_Quit();
+    closeSDL(window, renderer);
+
     return 0;
 }

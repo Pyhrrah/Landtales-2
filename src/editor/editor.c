@@ -1,5 +1,3 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +5,7 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/grid.h"
 #include "./../../include/plugins/open_map_editor.h"
+#include "./../../include/utils/sdl_utils.h"
 
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
@@ -121,28 +120,6 @@ void launch_editor(SDL_Renderer *renderer) {
     }
 }
 
-// Rendu des boutons (à l'avenir réuni dans un fichier séparé)
-void render_button(SDL_Renderer *renderer, SDL_Rect *button, const char *text, SDL_Color textColor, TTF_Font *font) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, button);
-
-    SDL_Surface *textSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, button->w);
-    if (textSurface) {
-        SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-        SDL_Rect textRect = {
-            button->x + (button->w - textSurface->w) / 2,
-            button->y + (button->h - textSurface->h) / 2,
-            textSurface->w,
-            textSurface->h
-        };
-        SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
-        SDL_FreeSurface(textSurface);
-        SDL_DestroyTexture(textTexture);
-    } else {
-        fprintf(stderr, "Erreur lors du rendu du texte : %s\n", TTF_GetError());
-    }
-}
-
 // Affichage de la liste des fichiers
 int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *scrollOffset) {
     SDL_Color textColor = {255, 255, 255, 255};
@@ -224,10 +201,15 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
         SDL_RenderClear(renderer);
 
-        SDL_Color textColor = {0, 0, 0, 255}; 
-        render_button(renderer, new_room_button, "Créer une Map", textColor, font);
-        render_button(renderer, &quit_button, "Quitter", textColor, font);
-        render_button(renderer, &generation_button, "Génération", textColor, font);  // Afficher le bouton "Génération"
+        SDL_Color textColor = {255, 255, 255, 255};  
+        SDL_Color newRoomButtonColor = {0, 128, 0, 255}; 
+        SDL_Color quitButtonColor = {255, 0, 0, 255};  
+        SDL_Color generationButtonColor = {0, 0, 255, 255};  
+
+        // Appels à la nouvelle fonction render_button
+        render_button(renderer, new_room_button, "Créer une Map", textColor, newRoomButtonColor, font);
+        render_button(renderer, &quit_button, "Quitter", textColor, quitButtonColor, font);
+        render_button(renderer, &generation_button, "Génération", textColor, generationButtonColor, font);
         render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
 
         SDL_RenderPresent(renderer);
@@ -330,15 +312,19 @@ void show_menu(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
     SDL_RenderClear(renderer);
 
-    TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    // Charger la police en utilisant la fonction load_font
+    TTF_Font *font = load_font("./assets/fonts/DejaVuSans.ttf", 28);
     if (!font) {
-        fprintf(stderr, "Erreur lors de l'ouverture de la police : %s\n", TTF_GetError());
+        fprintf(stderr, "Erreur lors de l'ouverture de la police\n");
         return;
     }
 
-    SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
     SDL_Color textColor = {0, 0, 0, 255}; 
-    render_button(renderer, &new_room_button, "Créer une Map", textColor, font);
+    SDL_Color newRoomButtonColor = {0, 128, 0, 255};  
+    SDL_Color quitButtonColor = {255, 0, 0, 255};
+
+    SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
+    render_button(renderer, &new_room_button, "Créer une Map", textColor, newRoomButtonColor, font);
 
     SDL_Rect fileRects[100], deleteButtons[100];
     char fileNames[100][256];
@@ -346,7 +332,7 @@ void show_menu(SDL_Renderer *renderer) {
     fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
 
     SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
-    render_button(renderer, &quit_button, "Quitter", textColor, font);
+    render_button(renderer, &quit_button, "Quitter", textColor, quitButtonColor, font);
 
     SDL_RenderPresent(renderer);
 
@@ -360,11 +346,8 @@ void show_menu(SDL_Renderer *renderer) {
             launch_editor(renderer);
         } else if (strcmp(selectedFile, "generation") == 0) {
             load_and_run_plugin(grid);
-
             launch_editor(renderer);
-        } 
-        
-        else {
+        } else {
             printf("Fichier sélectionné : %s\n", selectedFile);
             init_grid(selectedFile);  
             launch_editor(renderer);  
@@ -374,7 +357,6 @@ void show_menu(SDL_Renderer *renderer) {
         selectedFile = NULL;
         printf("Menu quitté sans sélection\n");
     }
-
 }
 
 // Lancement du mode éditeur

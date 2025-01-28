@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-
 #include "./../../include/editor/grid.h"
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
+#include "./../../include/utils/sdl_utils.h"
 
 #define GRID_WIDTH 21  
 #define GRID_HEIGHT 15  
@@ -193,7 +191,6 @@ void draw(SDL_Renderer *renderer) {
     for (int y = 0; y < GRID_HEIGHT; y++) {
         for (int x = 0; x < GRID_WIDTH; x++) {
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-
             int cell_id = grid[y][x];
 
             if (cell_id < 0 || (unsigned long)cell_id >= sizeof(textures) / sizeof(textures[0])) {
@@ -204,7 +201,7 @@ void draw(SDL_Renderer *renderer) {
             SDL_Color current_color = colors[cell_id];
 
             if (current_texture != NULL) {
-                SDL_RenderCopy(renderer, current_texture, NULL, &cell);
+                render_texture(renderer, current_texture, cell.x, cell.y, cell.w, cell.h);
             } else {
                 SDL_SetRenderDrawColor(renderer, current_color.r, current_color.g, current_color.b, current_color.a);
                 SDL_RenderFillRect(renderer, &cell);
@@ -215,11 +212,10 @@ void draw(SDL_Renderer *renderer) {
     // Dessiner la légende en bas (couleurs et sprites)
     for (int i = 0; i < (int)colors_count; i++) {
         SDL_Rect item_pos = {i * CELL_SIZE, WINDOW_HEIGHT - CELL_SIZE, CELL_SIZE, CELL_SIZE};
-
         SDL_Texture *legend_texture = (i < (int)(sizeof(textures) / sizeof(textures[0]))) ? textures[i] : NULL;
 
         if (legend_texture != NULL) {
-            SDL_RenderCopy(renderer, legend_texture, NULL, &item_pos);
+            render_texture(renderer, legend_texture, item_pos.x, item_pos.y, item_pos.w, item_pos.h);
         } else {
             SDL_SetRenderDrawColor(renderer, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
             SDL_RenderFillRect(renderer, &item_pos);
@@ -231,35 +227,22 @@ void draw(SDL_Renderer *renderer) {
         }
     }
 
-    // Dessiner les boutons Save et Reset
+    // Dessiner les boutons Save et Reset en utilisant render_button
     SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - 50, 80, 40};
-    SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
-    SDL_RenderFillRect(renderer, &save_button);
-
     SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - 50, 80, 40};
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-    SDL_RenderFillRect(renderer, &reset_button);
-
-    // Afficher les textes "Save" et "Reset" sur les boutons
-    if (font != NULL) {
-        SDL_Surface *save_surface = TTF_RenderUTF8_Solid(font, "Save", (SDL_Color){255, 255, 255, 255});
-        SDL_Texture *save_texture = SDL_CreateTextureFromSurface(renderer, save_surface);
-        SDL_Rect save_rect = {WINDOW_WIDTH - 95, WINDOW_HEIGHT - 45, save_surface->w, save_surface->h};
-        SDL_RenderCopy(renderer, save_texture, NULL, &save_rect);
-        SDL_FreeSurface(save_surface);
-        SDL_DestroyTexture(save_texture);
-
-        SDL_Surface *reset_surface = TTF_RenderUTF8_Solid(font, "Reset", (SDL_Color){255, 255, 255, 255});
-        SDL_Texture *reset_texture = SDL_CreateTextureFromSurface(renderer, reset_surface);
-        SDL_Rect reset_rect = {WINDOW_WIDTH - 195, WINDOW_HEIGHT - 45, reset_surface->w, reset_surface->h};
-        SDL_RenderCopy(renderer, reset_texture, NULL, &reset_rect);
-        SDL_FreeSurface(reset_surface);
-        SDL_DestroyTexture(reset_texture);
-    }
+    
+    SDL_Color buttonTextColor = {255, 255, 255, 255};  // Texte blanc
+    SDL_Color saveButtonColor = {150, 150, 150, 255};  // Fond gris pour "Save"
+    SDL_Color resetButtonColor = {100, 100, 100, 255}; // Fond gris pour "Reset"
+    
+    // Utilisation de la fonction render_button pour les boutons
+    render_button(renderer, &save_button, "Save", buttonTextColor, saveButtonColor, font);
+    render_button(renderer, &reset_button, "Reset", buttonTextColor, resetButtonColor, font);
 
     // Afficher tout ce qui a été dessiné
     SDL_RenderPresent(renderer);
 }
+
 
 
 void handle_mouse_click(int mouseX, int mouseY) {

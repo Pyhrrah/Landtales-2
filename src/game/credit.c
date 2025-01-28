@@ -17,10 +17,9 @@ void displayCredits(SDL_Renderer *renderer) {
 
     // Texte du générique
     const char *credits[] = {
-        "Merci d'avoir regardé !",
-        "Un film par SDL2 Productions",
-        "Avec la participation de vous-même",
-        "Et Open Source Community",
+        "Merci d'avoir jou\u00e9 \u00e0 Landtales 2 !",
+        "Ce jeu a \u00e9t\u00e9 cr\u00e9\u00e9 par l'\u00e9quipe de Landtales.",
+        "Nous esp\u00e9rons que vous avez appr\u00e9ci\u00e9 votre aventure.",
         "A bient\u00f4t !",
         NULL
     };

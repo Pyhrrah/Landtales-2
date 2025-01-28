@@ -67,7 +67,10 @@ void updateProjectilesBoss(int mapRoom[ROWS][COLS]) {
             int gridX = projectiles[i].rect.x / TILE_SIZE;
             int gridY = projectiles[i].rect.y / TILE_SIZE;
 
-            if (mapRoom[gridY][gridX] == 9) { // Exemple : l'ID 9 casse le projectile
+            int tileId = mapRoom[gridY][gridX];
+            if (tileId == 5 || tileId == 6 || tileId == 7 || 
+                    tileId == 12 || tileId == 14 || 
+                    tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18 || tileId == 19) {
                 projectiles[i].active = 0;
             }
         }
