@@ -45,7 +45,8 @@ Les joueurs peuvent s'affronter dans des combats dynamiques et stratégiques, aj
 ### Prérequis
 Avant de pouvoir utiliser **Landtales 2**, assurez-vous d'avoir installé les prérequis suivants :
 - **SDL2** : La bibliothèque principale pour la gestion des graphiques et des entrées.
-- **SDL2_ttf**, **SDL2_image**, **SDL2_net** : Extensions nécessaires pour gérer les polices, les images et les communications réseau.
+- **SDL2_ttf**, **SDL2_image**, **SDL2_net**, **SDL_mixer** : Extensions nécessaires pour gérer les polices, les images, les communications réseau ainsi que le son.
+- **FFMPEG** : Un librairie facilitant le lancement de vidéos et compatible avec SDL2.
 - **GCC** : Le compilateur C utilisé pour construire le projet.
 - **make** : L'outil permettant la compilation et le build du programme à partir de plusieurs fichiers de codes.
 
@@ -91,26 +92,19 @@ Landtales 2 propose différents plugins pour customiser votre façon de jouer :
 
 - Un plugin pour s'amuser à générer une map comme bon nous semble. 
 
-Pour modifier le fichier, rendez-vous dans 
-
-```bash
-cd src/plugins/map_editor.c
-```
-
-Pour compiler ce plugin, écrivez la commande suivante : 
-
-```bash
-gcc -shared -o plugins/map_editor.so -fPIC src/plugins/map_editor.c
-```
-
 - Un plugin pour ajouter de nouveaux bonus 
 
+Une fois que vous avez apporté vos modifications aux plugins, vous pouvez les compiler grâce à la commande suivante : 
 
 ```bash
-gcc -shared -o plugins/plugin_bonus.so -fPIC src/plugins/plugin_bonus.c
+make plugin
 ```
+Vous obtiendrez des fichier .so sur linux et .dll sur windows.
 
-- Un plugin pour choisir personnaliser le template des sprite du jeu
+Pour nettoyer les plugins déjà compilés, utilisez la commande suivante : 
+```bash
+make plugin_clean
+```
 
 **NB** : Pour des raisons de cohérences et de fonctionnement, nous partons du principe que vous suivrez les indications marquées dans chaque fichier de plugins. 
 
