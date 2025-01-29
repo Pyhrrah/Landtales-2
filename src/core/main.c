@@ -10,8 +10,6 @@
 #define WINDOW_WIDTH 672
 #define WINDOW_HEIGHT 544
 
-#define WINDOW_WIDTH 672
-#define WINDOW_HEIGHT 544
 
 int main(int argc, char * argv[]) {
     char * throw;

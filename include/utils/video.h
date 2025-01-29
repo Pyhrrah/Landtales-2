@@ -15,10 +15,10 @@
 int init_audio();
 
 // Nettoyage des ressources audio
-void cleanup_audio();
+void cleanup_audio(Mix_Music *music);
 
 // Lecture d'un fichier audio
-void play_audio(const char *filename);
+Mix_Music *play_audio(const char *filename);
 
 // Lecture et affichage d'une image vidéo
 void display_video_frame(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame, SDL_Rect *rect,

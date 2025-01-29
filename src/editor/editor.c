@@ -120,9 +120,13 @@ void launch_editor(SDL_Renderer *renderer) {
     }
 }
 
+
 // Affichage de la liste des fichiers
 int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects, SDL_Rect *deleteButtons, char fileNames[100][256], int *scrollOffset) {
     SDL_Color textColor = {255, 255, 255, 255};
+
+    system("mkdir -p ./data/editor");
+
     FILE *fp = popen("ls ./data/editor", "r");
     if (!fp) {
         fprintf(stderr, "Erreur lors de l'ouverture du dossier\n");
@@ -157,10 +161,25 @@ int render_file_list(SDL_Renderer *renderer, TTF_Font *font, SDL_Rect *fileRects
             SDL_DestroyTexture(fileTexture);
         }
 
+        SDL_Texture *buttonTexture = load_texture(renderer, "./assets/images/boutons/Supprimer.png");
+
         if (y_offset >= scroll_start_y && y_offset + 30 <= scroll_end_y) {
             deleteButtons[fileCount] = (SDL_Rect) {WINDOW_WIDTH - 100, y_offset, 80, 30};
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            SDL_RenderFillRect(renderer, &deleteButtons[fileCount]);
+
+            if (buttonTexture) {
+                // Si la texture est chargée, dessiner l'image
+                render_texture(renderer, buttonTexture, deleteButtons[fileCount].x, deleteButtons[fileCount].y, 
+                            deleteButtons[fileCount].w, deleteButtons[fileCount].h);
+            } else {
+                // Sinon, dessiner un rectangle rouge
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_RenderFillRect(renderer, &deleteButtons[fileCount]);
+            }
+        }
+
+        // Libération de la texture à la fin du programme
+        if (buttonTexture) {
+            SDL_DestroyTexture(buttonTexture);
         }
 
         y_offset += file_spacing;
@@ -197,19 +216,25 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
     SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
     SDL_Rect generation_button = {20, 20, 200, 60};  // Bouton "Génération"
 
+    // Charger les textures des boutons avec la fonction load_texture
+    SDL_Texture* newRoomButtonTexture = load_texture(renderer, "./assets/images/boutons/NouvelleMap.png");
+    SDL_Texture* quitButtonTexture = load_texture(renderer, "./assets/images/boutons/Quitter.png");
+    SDL_Texture* generationButtonTexture = load_texture(renderer, "./assets/images/boutons/Generation.png");
+
+    if (!newRoomButtonTexture || !quitButtonTexture || !generationButtonTexture) {
+        fprintf(stderr, "Erreur lors du chargement des images des boutons\n");
+        return NULL;
+    }
+
     while (running) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
         SDL_RenderClear(renderer);
 
-        SDL_Color textColor = {255, 255, 255, 255};  
-        SDL_Color newRoomButtonColor = {0, 128, 0, 255}; 
-        SDL_Color quitButtonColor = {255, 0, 0, 255};  
-        SDL_Color generationButtonColor = {0, 0, 255, 255};  
+        // Affichage des boutons comme des textures avec render_texture
+        render_texture(renderer, newRoomButtonTexture, new_room_button->x, new_room_button->y, new_room_button->w, new_room_button->h);
+        render_texture(renderer, quitButtonTexture, quit_button.x, quit_button.y, quit_button.w, quit_button.h);
+        render_texture(renderer, generationButtonTexture, generation_button.x, generation_button.y, generation_button.w, generation_button.h);
 
-        // Appels à la nouvelle fonction render_button
-        render_button(renderer, new_room_button, "Créer une Map", textColor, newRoomButtonColor, font);
-        render_button(renderer, &quit_button, "Quitter", textColor, quitButtonColor, font);
-        render_button(renderer, &generation_button, "Génération", textColor, generationButtonColor, font);
         render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
 
         SDL_RenderPresent(renderer);
@@ -304,6 +329,11 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
         }
     }
 
+    // Libérer les textures des boutons
+    SDL_DestroyTexture(newRoomButtonTexture);
+    SDL_DestroyTexture(quitButtonTexture);
+    SDL_DestroyTexture(generationButtonTexture);
+
     return fichier;  
 }
 
@@ -313,26 +343,19 @@ void show_menu(SDL_Renderer *renderer) {
     SDL_RenderClear(renderer);
 
     // Charger la police en utilisant la fonction load_font
-    TTF_Font *font = load_font("./assets/fonts/DejaVuSans.ttf", 28);
+    TTF_Font *font = load_font("./assets/fonts/font.ttf", 28);
     if (!font) {
         fprintf(stderr, "Erreur lors de l'ouverture de la police\n");
         return;
     }
 
-    SDL_Color textColor = {0, 0, 0, 255}; 
-    SDL_Color newRoomButtonColor = {0, 128, 0, 255};  
-    SDL_Color quitButtonColor = {255, 0, 0, 255};
-
     SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
-    render_button(renderer, &new_room_button, "Créer une Map", textColor, newRoomButtonColor, font);
+
 
     SDL_Rect fileRects[100], deleteButtons[100];
     char fileNames[100][256];
     int fileCount = 0;
     fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
-
-    SDL_Rect quit_button = {WINDOW_WIDTH - 150, WINDOW_HEIGHT - 100, 120, 40};
-    render_button(renderer, &quit_button, "Quitter", textColor, quitButtonColor, font);
 
     SDL_RenderPresent(renderer);
 
@@ -366,7 +389,7 @@ void start_editor_mode(SDL_Renderer *renderer) {
         return;
     }
 
-    font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 28);
+    font = TTF_OpenFont("./assets/fonts/font.ttf", 28);
     if (!font) {
         fprintf(stderr, "Erreur lors de l'ouverture de la police: %s\n", TTF_GetError());
         return;

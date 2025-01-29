@@ -19,24 +19,29 @@ int init_audio() {
     return 0;
 }
 
-void cleanup_audio() {
+void cleanup_audio(Mix_Music *music) {
+    if (music) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(music);
+    }
     Mix_CloseAudio();
     Mix_Quit();
-    SDL_Quit();
 }
 
-void play_audio(const char *filename) {
+Mix_Music *play_audio(const char *filename) {
     Mix_Music *music = Mix_LoadMUS(filename);
     if (!music) {
         fprintf(stderr, "Erreur: Impossible de charger la musique: %s\n", Mix_GetError());
-        return;
+        return NULL;
     }
 
     if (Mix_PlayMusic(music, -1) == -1) {
         fprintf(stderr, "Erreur: Impossible de jouer la musique: %s\n", Mix_GetError());
         Mix_FreeMusic(music);
-        return;
+        return NULL;
     }
+
+    return music;
 }
 
 

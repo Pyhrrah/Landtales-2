@@ -1,12 +1,15 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "./../../include/game/map.h"
+#include "./../../include/utils/video.h"
 
 void displayCredits(SDL_Renderer *renderer) {
     if (TTF_Init() < 0) {
         SDL_Log("Impossible d'initialiser SDL_ttf: %s", TTF_GetError());
         return;
     }
+    init_audio();
+    Mix_Music *music = play_audio("./assets/music/audio_video.mp3");
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
     if (!font) {
@@ -80,7 +83,7 @@ void displayCredits(SDL_Renderer *renderer) {
 
         SDL_Delay(16);
     }
-
+    cleanup_audio(music);
     TTF_CloseFont(font);
     TTF_Quit();
 }

@@ -113,12 +113,13 @@ void handle_menu(SDL_Renderer *renderer) {
                     konami_index = (konami_index + 1) % KONAMI_LENGTH;
 
                     if (check_konami_code() && konami_did == 0) {
+                        Mix_Music *music = NULL;
                         if (!music_played) {
-                            play_audio("./assets/music/audio_video.mp3"); 
+                            music = play_audio("./assets/music/audio_video.mp3"); 
                             music_played = 1;
                         }
                         play_video("./assets/video/video.mp4", renderer);
-                        cleanup_audio();
+                        cleanup_audio(music);
                         konami_did = 1;
 
                         running = 0;
