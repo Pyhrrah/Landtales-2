@@ -9,7 +9,7 @@ void displayCredits(SDL_Renderer *renderer) {
         return;
     }
     init_audio();
-    Mix_Music *music = play_audio("./assets/music/audio_video.mp3");
+    play_audio("./assets/music/generique.mp3");
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
     if (!font) {
@@ -24,6 +24,33 @@ void displayCredits(SDL_Renderer *renderer) {
         "Ce jeu a \u00e9t\u00e9 cr\u00e9\u00e9 par l'\u00e9quipe de Landtales.",
         "Nous esp\u00e9rons que vous avez appr\u00e9ci\u00e9 votre aventure.",
         "A bient\u00f4t !",
+        "",
+        "L' \u00e9quipe de Landtales 2 :",
+        "",
+        "R\u00e9alisateur :",
+        "Bryan",
+        "R\u00e9my",
+        "Elias",
+        "D\u00e9veloppeurs :",
+        "R\u00e9my",
+        "Bryan",
+        "Designers :",
+        "R\u00e9my",
+        "Ing\u00e9nieurs SDL2 :",
+        "R\u00e9my",
+        "Ing\u00e9nieurs Génération :",
+        "Bryan",
+        "Doubleurs :",
+        "Killian BADAUX",
+        "Supports : ",
+        "PDF de 1166 pages de Monsieur Trancho",
+        "Documentation SDL2",
+        "Documentation FFMPEG",
+        "Obscurantisme au laboratoire CodinGame",
+        " ",
+        "CODE SECRET : ",
+        "trancho",
+        "Merci et à bientôt pour de nouvelles aventures !",
         NULL
     };
 
@@ -83,7 +110,8 @@ void displayCredits(SDL_Renderer *renderer) {
 
         SDL_Delay(16);
     }
-    cleanup_audio(music);
+    check_and_free_music();
+    cleanup_audio();
     TTF_CloseFont(font);
     TTF_Quit();
 }

@@ -17,6 +17,7 @@
 #include "./../../include/game/boss.h"
 #include "./../../include/game/chest.h"
 #include "./../../include/plugins/open_plugin_bonus.h"
+#include "./../../include/utils/video.h"
 
 
 #define TILE_SIZE 32
@@ -307,6 +308,8 @@ void drawPlayer(Player *player, SDL_Renderer *renderer, int *stepCount) {
 
 void allGame(int saveNumber, SDL_Renderer *renderer) {
 
+    init_audio();
+
     static char lastOrientation = '\0';
     int stepCount = 0;
 
@@ -525,8 +528,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         } else if (room == 100) {
                             printf("Boss room\n");
                             initBigBoss();
+                            play_audio("./assets/music/sons/Ici.mp3");
                         }
-
                 }
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 switch (event.button.button) {
@@ -746,6 +749,7 @@ void start_game_mode(SDL_Renderer *renderer) {
     }
 
     // Nettoyer les ressources
+    cleanup_audio();
     SDL_DestroyTexture(backgroundTexture);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);

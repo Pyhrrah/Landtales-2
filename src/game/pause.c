@@ -31,7 +31,8 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
     render_button(renderer, &resumeButton, "Reprendre", (SDL_Color){255, 255, 255, 255}, resumeButtonColor, font);
     render_button(renderer, &quitButton, "Quitter", (SDL_Color){255, 255, 255, 255}, quitButtonColor, font);
 
-    int mapSize = 11;
+    if (salle !=0 && salle != 100) {
+        int mapSize = 11;
     int tileSize = 30;
     int mapStartX = 50;
     int mapStartY = 150;
@@ -79,6 +80,9 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
             }
         }
     }
+    }
+
+    
 
     SDL_RenderPresent(renderer);
 }

@@ -11,14 +11,16 @@
 #include <libavformat/avformat.h>
 #include <libswresample/swresample.h>
 
+extern Mix_Music *currentMusic;
+
 // Initialisation de l'audio
 int init_audio();
 
 // Nettoyage des ressources audio
-void cleanup_audio(Mix_Music *music);
+void cleanup_audio();
 
 // Lecture d'un fichier audio
-Mix_Music *play_audio(const char *filename);
+void play_audio(const char *filename);
 
 // Lecture et affichage d'une image vidéo
 void display_video_frame(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame, SDL_Rect *rect,
@@ -26,5 +28,11 @@ void display_video_frame(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame, SDL
 
 // Lecture d'un fichier vidéo
 void play_video(const char *filename, SDL_Renderer *renderer);
+
+// Libération de la mémoire allouée pour la musique
+void free_music();
+
+// Vérification et libération de la musique
+void check_and_free_music();
 
 #endif // VIDEO_H

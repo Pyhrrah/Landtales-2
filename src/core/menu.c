@@ -12,6 +12,7 @@
 #define WINDOW_HEIGHT 960
 #define KONAMI_LENGTH 7 
 
+
 const SDL_Keycode konami_code[KONAMI_LENGTH] = {
     SDLK_t, SDLK_r, SDLK_a, SDLK_n, SDLK_c, SDLK_h, SDLK_o
 };
@@ -113,13 +114,13 @@ void handle_menu(SDL_Renderer *renderer) {
                     konami_index = (konami_index + 1) % KONAMI_LENGTH;
 
                     if (check_konami_code() && konami_did == 0) {
-                        Mix_Music *music = NULL;
                         if (!music_played) {
-                            music = play_audio("./assets/music/audio_video.mp3"); 
+                            play_audio("./assets/music/audio_video.mp3"); 
                             music_played = 1;
                         }
                         play_video("./assets/video/video.mp4", renderer);
-                        cleanup_audio(music);
+                        check_and_free_music();
+                        cleanup_audio();
                         konami_did = 1;
 
                         running = 0;

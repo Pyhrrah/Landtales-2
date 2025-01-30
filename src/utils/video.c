@@ -1,5 +1,7 @@
 #include "./../../include/utils/video.h"
+#include <stdio.h>
 
+Mix_Music *currentMusic = NULL;
 int init_audio() {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         fprintf(stderr, "Erreur: SDL_Init failed: %s\n", SDL_GetError());
@@ -12,36 +14,48 @@ int init_audio() {
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        fprintf(stderr, "Erreur: Mix_OpenAudio failed: %s\n", Mix_GetError());
-        return -1;
+        printf("Erreur lors de l'initialisation de SDL_mixer: %s\n", Mix_GetError());
     }
 
     return 0;
 }
 
-void cleanup_audio(Mix_Music *music) {
-    if (music) {
-        Mix_HaltMusic();
-        Mix_FreeMusic(music);
+void cleanup_audio() {
+    if (currentMusic) {
+        Mix_FreeMusic(currentMusic);
+        currentMusic = NULL;
     }
     Mix_CloseAudio();
     Mix_Quit();
 }
 
-Mix_Music *play_audio(const char *filename) {
-    Mix_Music *music = Mix_LoadMUS(filename);
-    if (!music) {
+void free_music() {
+    if (currentMusic) {
+        Mix_FreeMusic(currentMusic);
+        currentMusic = NULL;
+    }
+}
+
+void play_audio(const char *filename) {
+    // Si une musique est déjà en cours, on la libère d'abord
+    free_music();
+
+    currentMusic = Mix_LoadMUS(filename);
+    if (!currentMusic) {
         fprintf(stderr, "Erreur: Impossible de charger la musique: %s\n", Mix_GetError());
-        return NULL;
+        return;
     }
 
-    if (Mix_PlayMusic(music, -1) == -1) {
+    if (Mix_PlayMusic(currentMusic, 1) == -1) {  // Joue une seule fois
         fprintf(stderr, "Erreur: Impossible de jouer la musique: %s\n", Mix_GetError());
-        Mix_FreeMusic(music);
-        return NULL;
+        free_music();
     }
+}
 
-    return music;
+void check_and_free_music() {
+    if (!Mix_PlayingMusic() && currentMusic) {
+        free_music();
+    }
 }
 
 

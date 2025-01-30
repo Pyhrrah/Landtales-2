@@ -9,6 +9,7 @@
 #include "./../../include/game/file.h"
 #include "./../../include/game/map.h"
 #include "./../../include/game/boss.h"
+#include "./../../include/utils/video.h"
 
 #define ROWS 15
 #define COLS 21
@@ -19,10 +20,48 @@ extern Enemy enemies[];
 extern int enemyCount;
 
 SDL_Rect bossDoor = {0, 0, 0, 0};
-
-// Structure pour les projectiles
-
 Projectile projectiles[MAX_PROJECTILES];
+
+
+time_t timestampLastSong = 0;
+const char *lastSong = NULL;
+
+void playRandomSound() {
+    const char *sounds[] = {
+        "assets/music/sons/Edusign.mp3",
+        "assets/music/sons/Eleves.mp3",
+        "assets/music/sons/Etudiants.mp3",
+        "assets/music/sons/Langage.mp3",
+        "assets/music/sons/Rotation.mp3"
+    };
+    int numSounds = sizeof(sounds) / sizeof(sounds[0]);
+
+    // Vérifier le temps écoulé
+    time_t now = time(NULL);
+    if (now < timestampLastSong) {
+        return; // Trop tôt, on ne joue rien
+    }
+
+    // Tirage aléatoire d'un son différent du précédent
+    int index, attempts = 0;
+    do {
+        index = rand() % numSounds;
+        attempts++;
+    } while (attempts < 10 && lastSong && strcmp(lastSong, sounds[index]) == 0);
+
+    lastSong = sounds[index];
+
+    // Libérer la musique précédente si nécessaire
+    check_and_free_music();
+
+    // Jouer la nouvelle musique
+    play_audio(sounds[index]);
+
+    // Mettre à jour le timestamp
+    timestampLastSong = now + 5;
+}
+
+
 
 void initProjectilesBoss() {
     printf("Initialisation des projectiles pour le boss final.\n");
@@ -32,7 +71,6 @@ void initProjectilesBoss() {
 }
 
 void spawnProjectileBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) {
-    printf("Projectile lancé par le boss.\n");
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (!projectiles[i].active) {
             projectiles[i].rect.x = bossRect->x + bossRect->w / 2;
@@ -117,6 +155,7 @@ void initBigBoss() {
     enemies[0].type = 100;
     enemies[0].id = 0;
     enemyCount = 1;
+    timestampLastSong = time(NULL) + 5;
 }
 
 void checkAndActivateBossDoor(int room, int enemyCount) {
@@ -183,7 +222,6 @@ void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) 
 }
 
 void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player) {
-    printf("Gestion des projectiles du boss.\n");
     // Mettre à jour les projectiles
     updateProjectilesBoss(mapRoom);
 
@@ -192,4 +230,5 @@ void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Play
 
     // Afficher les projectiles à l'écran
     renderProjectilesBoss(renderer);
+    playRandomSound();
 }
