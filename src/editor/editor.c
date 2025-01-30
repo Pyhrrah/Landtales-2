@@ -226,11 +226,15 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
         return NULL;
     }
 
-    while (running) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
-        SDL_RenderClear(renderer);
+    SDL_Texture* backgroundTexture = load_texture(renderer, "./assets/images/fondVierge.png");
+    if (!backgroundTexture) {
+        fprintf(stderr, "Erreur de chargement de l'image de fond : %s\n", IMG_GetError());
+        return NULL;
+    }
 
-        // Affichage des boutons comme des textures avec render_texture
+    while (running) {
+        SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
+
         render_texture(renderer, newRoomButtonTexture, new_room_button->x, new_room_button->y, new_room_button->w, new_room_button->h);
         render_texture(renderer, quitButtonTexture, quit_button.x, quit_button.y, quit_button.w, quit_button.h);
         render_texture(renderer, generationButtonTexture, generation_button.x, generation_button.y, generation_button.w, generation_button.h);
@@ -247,7 +251,6 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                 int y = event.button.y;
 
                 if (event.button.button == SDL_BUTTON_LEFT) {
-                    // Vérification du clic sur "Créer une Map"
                     if (x >= new_room_button->x && x <= new_room_button->x + new_room_button->w &&
                         y >= new_room_button->y && y <= new_room_button->y + new_room_button->h) {
                         fichier = "nouvelle_map";
@@ -255,7 +258,6 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                         running = 0;  
                     }
 
-                    // Vérification du clic sur "Génération"
                     if (x >= generation_button.x && x <= generation_button.x + generation_button.w &&
                         y >= generation_button.y && y <= generation_button.y + generation_button.h) {
                         fichier = "generation";
@@ -263,7 +265,6 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                         running = 0;  
                     }
 
-                    // Vérification des clics sur les fichiers
                     for (int i = 0; i < *fileCount; i++) {
                         if (x >= fileRects[i].x && x <= fileRects[i].x + fileRects[i].w &&
                             y >= fileRects[i].y && y <= fileRects[i].y + fileRects[i].h) {
@@ -275,7 +276,6 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                             break;
                         }
 
-                        // Vérification des clics sur les boutons "Supprimer"
                         if (x >= deleteButtons[i].x && x <= deleteButtons[i].x + deleteButtons[i].w &&
                             y >= deleteButtons[i].y && y <= deleteButtons[i].y + deleteButtons[i].h) {
                             SDL_MessageBoxButtonData buttons[2] = {
@@ -310,7 +310,6 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                         }
                     }
 
-                    // Vérification du clic sur "Quitter"
                     if (x >= quit_button.x && x <= quit_button.x + quit_button.w &&
                         y >= quit_button.y && y <= quit_button.y + quit_button.h) {
                         running = 0; 
@@ -329,39 +328,60 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
         }
     }
 
-    // Libérer les textures des boutons
     SDL_DestroyTexture(newRoomButtonTexture);
     SDL_DestroyTexture(quitButtonTexture);
     SDL_DestroyTexture(generationButtonTexture);
+
+    SDL_DestroyTexture(backgroundTexture);
 
     return fichier;  
 }
 
 // Affichage du menu
 void show_menu(SDL_Renderer *renderer) {
+    SDL_Surface* backgroundSurface = IMG_Load("./assets/images/fondVierge.png");
+    if (!backgroundSurface) {
+        fprintf(stderr, "Erreur de chargement de l'image de fond : %s\n", IMG_GetError());
+        return;
+    }
+    SDL_Texture* backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface);
+
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
     SDL_RenderClear(renderer);
+
+
+    SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
 
     // Charger la police en utilisant la fonction load_font
     TTF_Font *font = load_font("./assets/fonts/font.ttf", 28);
     if (!font) {
         fprintf(stderr, "Erreur lors de l'ouverture de la police\n");
+        SDL_DestroyTexture(backgroundTexture); // Nettoyer la texture en cas d'erreur
         return;
     }
 
+    // Définir le bouton "Nouvelle salle"
     SDL_Rect new_room_button = {WINDOW_WIDTH - 250, 20, 200, 60};
 
-
+    // Variables pour la liste des fichiers
     SDL_Rect fileRects[100], deleteButtons[100];
     char fileNames[100][256];
     int fileCount = 0;
+    int scrollOffset = 0; // Ajouter une variable pour gérer le défilement
+
     fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
 
     SDL_RenderPresent(renderer);
 
+    // Gérer les événements du menu
     char *selectedFile = handle_menu_events(renderer, &new_room_button, fileRects, deleteButtons, fileNames, &fileCount);
 
+    // Fermer la police
     TTF_CloseFont(font);
+
+    SDL_DestroyTexture(backgroundTexture);
 
     if (selectedFile) {
         if (strcmp(selectedFile, "nouvelle_map") == 0) {

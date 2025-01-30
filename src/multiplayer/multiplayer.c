@@ -5,6 +5,7 @@
 #include "./../../include/multiplayer/check_maze.h"
 #include "./../../include/multiplayer/client.h"
 #include "./../../include/multiplayer/server.h"
+#include "./../../include/utils/sdl_utils.h"
 
 // Structure pour les données du client
 typedef struct {
@@ -68,9 +69,19 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
     int scroll_offset = 0;  
     const int max_files_on_screen = 9; 
 
+    // Charger l'image de fond
+    SDL_Surface* backgroundSurface = IMG_Load("./assets/images/fondChoixMap.png");
+    if (!backgroundSurface) {
+        fprintf(stderr, "Erreur de chargement de l'image de fond : %s\n", IMG_GetError());
+        return;
+    }
+    SDL_Texture* backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface); 
+
     FILE *fp = popen("ls ./data/editor", "r");
     if (!fp) {
         fprintf(stderr, "Erreur lors de l'ouverture du dossier\n");
+        SDL_DestroyTexture(backgroundTexture); 
         return;
     }
 
@@ -150,9 +161,13 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
             }
         }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        // Effacer l'écran
         SDL_RenderClear(renderer);
 
+        // Afficher l'image de fond
+        SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
+
+        // Afficher les fichiers
         y_offset = 100;
         for (int i = scroll_offset; i < scroll_offset + max_files_on_screen && i < fileCount; i++) {
             SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, fileNames[i], textColor);
@@ -170,8 +185,12 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
             y_offset += 50;
         }
 
+        // Mettre à jour l'affichage
         SDL_RenderPresent(renderer);
     }
+
+    // Nettoyer la texture de fond
+    SDL_DestroyTexture(backgroundTexture);
 }
 
 // Fonction pour saisir l'IP de l'hôte en mode client
@@ -196,6 +215,12 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
     backButton.y = screen_height - backButton.h - 20;
 
     SDL_Color backButtonColor = {50, 50, 50, 255}; 
+
+    SDL_Texture* backgroundTexture = load_texture(renderer, "./assets/images/fondVierge.png");
+    if (!backgroundTexture) {
+        fprintf(stderr, "Erreur de chargement de l'image de fond : %s\n", IMG_GetError());
+        return;
+    }
 
     while (running) {
         SDL_Event event;
@@ -226,8 +251,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
             }
         }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
 
         SDL_Surface *messageSurface = TTF_RenderUTF8_Solid(font, "Renseignez l'IP de l'hôte :", textColor);
         if (messageSurface) {
@@ -289,6 +313,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
 
         SDL_RenderPresent(renderer);
     }
+    SDL_DestroyTexture(backgroundTexture);
 
     SDL_StopTextInput();
 }
@@ -319,24 +344,24 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
         return;
     }
 
-    SDL_Color textColor = {255, 255, 255, 255};  // Texte blanc
-    SDL_Color buttonColor = {205, 133, 63, 255};  // Marron clair
+    SDL_Color textColor = {255, 255, 255, 255}; 
+    SDL_Color buttonColor = {205, 133, 63, 255}; 
 
     // Charger l'image de fond
-    SDL_Surface *bgSurface = IMG_Load("./assets/images/fondMulti.png"); // Assure-toi que le chemin de l'image est correct
+    SDL_Surface *bgSurface = IMG_Load("./assets/images/fondMulti.png"); 
     if (!bgSurface) {
         printf("Erreur lors du chargement de l'image de fond : %s\n", SDL_GetError());
         return;
     }
 
     SDL_Texture *bgTexture = SDL_CreateTextureFromSurface(renderer, bgSurface);
-    SDL_FreeSurface(bgSurface);  // Libère la surface après avoir créé la texture
+    SDL_FreeSurface(bgSurface);
     if (!bgTexture) {
         printf("Erreur lors de la création de la texture de fond : %s\n", SDL_GetError());
         return;
     }
 
-    int selectedButton = 0;  // Indique quel bouton est sélectionné (0 = rejoindre, 1 = héberger, 2 = retour)
+    int selectedButton = 0;  
     int running = 1;
     while (running) {
         SDL_Event event;
@@ -347,7 +372,6 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
                 int x = event.button.x;
                 int y = event.button.y;
 
-                // Vérifier quel bouton a été cliqué
                 if (x > joinButton.x && x < joinButton.x + joinButton.w &&
                     y > joinButton.y && y < joinButton.y + joinButton.h) {
                     client_mode_input(renderer, font);
@@ -360,13 +384,10 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
                 }
             } else if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_DOWN || event.key.keysym.sym == SDLK_RIGHT) {
-                    // Sélectionner le bouton suivant
                     selectedButton = (selectedButton + 1) % 3;
                 } else if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_LEFT) {
-                    // Sélectionner le bouton précédent
                     selectedButton = (selectedButton + 2) % 3;
                 } else if (event.key.keysym.sym == SDLK_RETURN) {
-                    // Activer le bouton sélectionné
                     if (selectedButton == 0) {
                         client_mode_input(renderer, font);
                     } else if (selectedButton == 1) {
@@ -393,13 +414,11 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
 
         SDL_RenderCopy(renderer, bgTexture, NULL, NULL);
 
-        // Dessiner les fonds des boutons (marron clair)
         SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
         SDL_RenderFillRect(renderer, &joinButton);
         SDL_RenderFillRect(renderer, &hostButton);
         SDL_RenderFillRect(renderer, &backButton);
 
-        // Dessiner le texte des boutons
         draw_button_text(renderer, joinButton, "Rejoindre", font, textColor);
         draw_button_text(renderer, hostButton, "Héberger", font, textColor);
         draw_button_text(renderer, backButton, "Retour", font, textColor);
