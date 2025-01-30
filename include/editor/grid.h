@@ -4,22 +4,32 @@
 #include <SDL2/SDL.h>
 
 // Définitions des dimensions de la grille
-#define GRID_WIDTH 21  // Largeur de la grille en nombre de cases (anciennement 15)
-#define GRID_HEIGHT 15 // Hauteur de la grille en nombre de cases (anciennement 21)
+#define GRID_WIDTH 21  // Largeur de la grille en nombre de cases 
+#define GRID_HEIGHT 15 // Hauteur de la grille en nombre de cases
 
-// Taille maximale de la pile d'annulations
+/**
+ * Nombre maximum de grilles pouvant être stockées dans la pile d'annulation.
+ */
 #define UNDO_STACK_SIZE 100
 
-// Grille principale de l'éditeur
-extern int grid[GRID_HEIGHT][GRID_WIDTH]; // Grille de 15x21
+/**
+ * Valeur par défaut pour une case vide dans la grille.
+ */
+extern int grid[GRID_HEIGHT][GRID_WIDTH];
 
-// Pile pour gérer les états précédents de la grille (annulation)
-extern int undoStack[UNDO_STACK_SIZE][GRID_HEIGHT][GRID_WIDTH]; // Pile de grilles 15x21
+/**
+ * Pile de grilles pour stocker les états précédents de la grille.
+ */
+extern int undoStack[UNDO_STACK_SIZE][GRID_HEIGHT][GRID_WIDTH];
 
-// Index actuel dans la pile d'annulation
+/**
+ * Indice de la pile d'annulation pour suivre la dernière modification.
+ */
 extern int undoIndex;
 
-// Chemin vers le fichier actuellement sélectionné pour la grille
+/**
+ * Chemin du fichier actuellement sélectionné.
+ */
 extern char *selectedFile;
 
 /**
@@ -31,7 +41,6 @@ void init_grid(const char *file_path);
 
 /**
  * Sauvegarde la grille actuelle dans un fichier.
- * 
  * @param renderer : Le renderer SDL utilisé pour afficher des messages ou confirmations.
  */
 void save_grid(SDL_Renderer *renderer);
@@ -53,14 +62,12 @@ void reset_grid();
 
 /**
  * Dessine la grille à l'écran.
- * 
  * @param renderer : Le renderer SDL utilisé pour afficher la grille.
  */
 void draw(SDL_Renderer *renderer);
 
 /**
  * Vérifie si un répertoire existe.
- * 
  * @param path : Chemin du répertoire à vérifier.
  * @return 1 si le répertoire existe, 0 sinon.
  */
@@ -68,7 +75,6 @@ int directory_exists(const char *path);
 
 /**
  * Crée un répertoire à l'emplacement spécifié.
- * 
  * @param path : Chemin du répertoire à créer.
  */
 void create_directory(const char *path);

@@ -65,6 +65,8 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
     SDL_Rect fileRects[100]; 
     int fileCount = 0;
     int y_offset = 100;
+    int scroll_offset = 0;  
+    const int max_files_on_screen = 9; 
 
     FILE *fp = popen("ls ./data/editor", "r");
     if (!fp) {
@@ -83,8 +85,6 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
 
             SDL_Rect textRect = {50, y_offset, textSurface->w, textSurface->h};
             fileRects[fileCount] = textRect;
-
-            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
 
             SDL_FreeSurface(textSurface);
             SDL_DestroyTexture(textTexture);
@@ -112,8 +112,6 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                     if (x > fileRects[i].x && x < fileRects[i].x + fileRects[i].w &&
                         y > fileRects[i].y && y < fileRects[i].y + fileRects[i].h) {
 
-
-                            // Passage en mode thread si la map est trouvé : le serveur se lance en parallèle du client qui profite de la fenetre SDL déjà ouverte
                         if (!load_grid(fileNames[i], grid)) {
                             printf("Erreur lors du chargement de la grille\n");
                         } else {
@@ -127,12 +125,10 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                                     exit(EXIT_FAILURE);
                                 }
 
-                                SDL_Delay(2000); // Délai permettant au serveur d'être lancé
-                                // Sans ce délai, le client essaie de se connecter instantanément au serveur pas encore prêt. 
-                                // Donc il plante et fait crasher le programme.
+                                SDL_Delay(2000);
 
                                 ClientData clientData = { 
-                                    "127.0.0.1", // Le serveur et un client sont lancé en simultané sur la même machine, donc l'adresse IP est localhost
+                                    "127.0.0.1",
                                     renderer     
                                 };
 
@@ -145,6 +141,12 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                         }
                     }
                 }
+            } else if (event.type == SDL_MOUSEWHEEL) {  
+                if (event.wheel.y > 0) {  
+                    scroll_offset = (scroll_offset > 0) ? scroll_offset - 1 : 0;
+                } else if (event.wheel.y < 0) {  
+                    scroll_offset = (scroll_offset < fileCount - max_files_on_screen) ? scroll_offset + 1 : scroll_offset;
+                }
             }
         }
 
@@ -152,16 +154,20 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_RenderClear(renderer);
 
         y_offset = 100;
-        for (int i = 0; i < fileCount; i++) {
+        for (int i = scroll_offset; i < scroll_offset + max_files_on_screen && i < fileCount; i++) {
             SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, fileNames[i], textColor);
             if (textSurface) {
                 SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
-                SDL_RenderCopy(renderer, textTexture, NULL, &fileRects[i]);
+                SDL_Rect adjustedRect = fileRects[i];
+                adjustedRect.y = y_offset; 
+
+                SDL_RenderCopy(renderer, textTexture, NULL, &adjustedRect);
 
                 SDL_FreeSurface(textSurface);
                 SDL_DestroyTexture(textTexture);
             }
+            y_offset += 50;
         }
 
         SDL_RenderPresent(renderer);

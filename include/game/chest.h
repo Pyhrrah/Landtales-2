@@ -9,10 +9,27 @@
 #define ROWS 15
 #define COLS 21
 
+/**
+ * Vérifie si le joueur est en collision avec un coffre
+ * @param player : le joueur
+ * @param mapRoom : la map
+ * @param filename : le nom du fichier de la map
+ */
 int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], const char *filename);
+
+/**
+ * Vérifie si le joueur est en collision avec un coffre
+ * @param player : le joueur
+ * @param mapRoom : la map
+ * @param playerX : la position en x du joueur
+ * @param playerY : la position en y du joueur
+ */
 int checkChestDirection(Player *player, int mapRoom[ROWS][COLS], int playerX, int playerY);
 
-
+/**
+* Update les fichiers de la map une fois le coffre ouvert
+* @param filename : le nom du fichier de la map
+*/
 void updateMapFile(const char *filename);
 
 

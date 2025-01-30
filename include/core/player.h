@@ -5,6 +5,12 @@
 #include <time.h>
 #include "ennemies.h"
 
+/**
+ * Enumération des types d'armes disponibles.
+ * - EPEE : épée
+ * - ARC : arc
+ * - FOUDRE : foudre
+ */
 typedef enum {
     EPEE,  // 0 : épée
     ARC,   // 1 : arc
@@ -71,7 +77,6 @@ typedef struct {
 * - framesLeft : nombre de frames restantes avant la fin de l'attaque.
 * - active : indique si la foudre est actuellement active.
 */
-
 typedef struct {
     SDL_Rect rect;       // Position et taille de la foudre
     int framesLeft;      // Nombre de frames restantes

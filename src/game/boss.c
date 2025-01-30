@@ -10,6 +10,7 @@
 #include "./../../include/game/map.h"
 #include "./../../include/game/boss.h"
 #include "./../../include/utils/video.h"
+#include "./../../include/game/projectile.h"
 
 #define ROWS 15
 #define COLS 21
@@ -20,8 +21,6 @@ extern Enemy enemies[];
 extern int enemyCount;
 
 SDL_Rect bossDoor = {0, 0, 0, 0};
-Projectile projectiles[MAX_PROJECTILES];
-
 
 time_t timestampLastSong = 0;
 const char *lastSong = NULL;
@@ -61,79 +60,32 @@ void playRandomSound() {
     timestampLastSong = now + 5;
 }
 
-
-
+// Initier les projectiles pour le boss
 void initProjectilesBoss() {
-    printf("Initialisation des projectiles pour le boss final.\n");
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        projectiles[i].active = 0;
-    }
+    initProjectiles();  // Utiliser la fonction générique d'initialisation
 }
 
-void spawnProjectileBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) {
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (!projectiles[i].active) {
-            projectiles[i].rect.x = bossRect->x + bossRect->w / 2;
-            projectiles[i].rect.y = bossRect->y + bossRect->h / 2;
-            projectiles[i].rect.w = 16;
-            projectiles[i].rect.h = 16;
-            
-            float angle = atan2(playerRect->y - projectiles[i].rect.y, playerRect->x - projectiles[i].rect.x);
-            projectiles[i].dx = cos(angle) * 5;
-            projectiles[i].dy = sin(angle) * 5;
-
-            projectiles[i].active = 1;
-            break;
-        }
-    }
+// Spawn un projectile pour le boss
+void spawnBossProjectile(SDL_Rect *bossRect, SDL_Rect *playerRect) {
+    spawnProjectile(bossRect, playerRect, 5); // Utiliser la fonction générique de spawn
 }
 
-void updateProjectilesBoss(int mapRoom[ROWS][COLS]) {
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].active) {
-            projectiles[i].rect.x += (int)projectiles[i].dx;
-            projectiles[i].rect.y += (int)projectiles[i].dy;
-
-            // Vérifier si le projectile sort de l'écran
-            if (projectiles[i].rect.x < 0 || projectiles[i].rect.y < 0 ||
-                projectiles[i].rect.x >= COLS * TILE_SIZE || projectiles[i].rect.y >= ROWS * TILE_SIZE) {
-                projectiles[i].active = 0;
-                continue;
-            }
-
-            // Vérifier les collisions avec les obstacles
-            int gridX = projectiles[i].rect.x / TILE_SIZE;
-            int gridY = projectiles[i].rect.y / TILE_SIZE;
-
-            int tileId = mapRoom[gridY][gridX];
-            if (tileId == 5 || tileId == 6 || tileId == 7 || 
-                    tileId == 12 || tileId == 14 || 
-                    tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18 || tileId == 19) {
-                projectiles[i].active = 0;
-            }
-        }
-    }
+// Mettre à jour les projectiles du boss
+void updateBossProjectiles(int mapRoom[ROWS][COLS]) {
+    updateProjectiles(mapRoom); // Utiliser la fonction générique de mise à jour
 }
 
-void checkProjectileCollisionsBoss(Player *player) {
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].active && SDL_HasIntersection(&projectiles[i].rect, &player->rect)) {
-            projectiles[i].active = 0;
-            player->vie -= 10; // Réduit la vie du joueur de 10
-            printf("Projectile touche le joueur ! Vie restante : %d\n", player->vie);
-        }
-    }
+// Vérifier les collisions des projectiles du boss avec le joueur
+void checkBossProjectileCollisions(Player *player) {
+    checkProjectileCollisions(player); // Utiliser la fonction générique de vérification de collisions
 }
 
-void renderProjectilesBoss(SDL_Renderer *renderer) {
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].active) {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour les projectiles
-            SDL_RenderFillRect(renderer, &projectiles[i].rect);
-        }
-    }
+// Afficher les projectiles du boss à l'écran
+void renderBossProjectiles(SDL_Renderer *renderer) {
+    renderProjectiles(renderer); // Utiliser la fonction générique pour afficher les projectiles
 }
 
+// Vérifie si le boss est en vie
 int isBossAlive(int enemyCount, int type) {
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i].type == type) {
@@ -143,6 +95,7 @@ int isBossAlive(int enemyCount, int type) {
     return 0;
 }
 
+// Initialisation du boss
 void initBigBoss() {
     clearEnemies();
     enemies[0].rect.x = 320 - 32;
@@ -158,6 +111,7 @@ void initBigBoss() {
     timestampLastSong = time(NULL) + 5;
 }
 
+// Gérer la porte du boss
 void checkAndActivateBossDoor(int room, int enemyCount) {
     if (room == 2) {
         if (isBossAlive(enemyCount, 1) != 1) {
@@ -168,7 +122,6 @@ void checkAndActivateBossDoor(int room, int enemyCount) {
         }
     }
 }
-
 void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect, 
                              int *room, char *mapFilename, int mapRoom[ROWS][COLS], int saveNumber, 
                              int tentative, int *etage, Player *player, int mapData[11][11], char *stageFilename) {
@@ -211,24 +164,26 @@ void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect,
     }
 }
 
+// Lancer un projectile avec un cooldown
 void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) {
     static Uint32 lastProjectileTime = 0;
     Uint32 currentTime = SDL_GetTicks();
 
     if (currentTime > lastProjectileTime + 3000) { // 3 secondes d'intervalle
-        spawnProjectileBoss(bossRect, playerRect);
+        spawnBossProjectile(bossRect, playerRect);
         lastProjectileTime = currentTime;
     }
 }
 
+// Gérer tous les projectiles du boss
 void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player) {
     // Mettre à jour les projectiles
-    updateProjectilesBoss(mapRoom);
+    updateBossProjectiles(mapRoom);
 
     // Vérifier les collisions entre les projectiles et le joueur
-    checkProjectileCollisionsBoss(player);
+    checkBossProjectileCollisions(player);
 
     // Afficher les projectiles à l'écran
-    renderProjectilesBoss(renderer);
+    renderBossProjectiles(renderer);
     playRandomSound();
 }
