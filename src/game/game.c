@@ -27,28 +27,53 @@
 #define FRAME_DELAY (1000 / TARGET_FPS)
 
 
+#ifdef _WIN32
+    #define PLUGIN_BONUS "./plugins/plugin_bonus.dll"
+#else
+    #define PLUGIN_BONUS "./plugins/plugin_bonus.so"
+#endif
+
 // Fonction pour vérifier la collision du joueur avec les murs et les ennemis
 int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int enemyCount) {
-    int tileX = player->rect.x / TILE_SIZE;
-    int tileY = player->rect.y / TILE_SIZE;
+    // Coordonnées du joueur en pixels
+    int leftX   = player->rect.x;
+    int rightX  = player->rect.x + player->rect.w - 1;
+    int topY    = player->rect.y;
+    int bottomY = player->rect.y + player->rect.h - 1;
 
-    if (tileX >= 0 && tileX < COLS && tileY >= 0 && tileY < ROWS) {
-        int tileId = mapRoom[tileY][tileX];
-        if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
-            tileId == 12 || tileId == 13 || tileId == 14 || 
-            tileId == 15 || tileId == 16 || tileId == 17 || tileId == 18 || tileId == 19) {
-            return 1;  // Collision avec un mur, retour 1
+    // Convertir en coordonnées de tuiles
+    int leftTile   = leftX / TILE_SIZE;
+    int rightTile  = rightX / TILE_SIZE;
+    int topTile    = topY / TILE_SIZE;
+    int bottomTile = bottomY / TILE_SIZE;
+
+    // Vérifier toutes les tuiles touchées par le joueur
+    for (int y = topTile; y <= bottomTile; y++) {
+        for (int x = leftTile; x <= rightTile; x++) {
+            if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+                int tileId = mapRoom[y][x];
+
+                // Liste des tuiles bloquantes
+                if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
+                    tileId == 12 || tileId == 13 || tileId == 14 || 
+                    tileId == 15 || tileId == 16 || tileId == 17 || 
+                    tileId == 18 || tileId == 19) {
+                    return 1;  // Collision détectée
+                }
+            }
         }
     }
 
+    // Vérifier la collision avec les ennemis
     for (int i = 0; i < enemyCount; i++) {
         if (SDL_HasIntersection(&player->rect, &enemies[i].rect)) {
             player->vie -= 10; 
             printf("Collision avec un ennemi ! PV restants: %d\n", player->vie);
-            return 1;  // Collision avec un ennemi, retour 1
+            return 1;  // Collision détectée
         }
     }
-    return 0;  // Pas de collision, retour 0
+
+    return 0;  // Pas de collision
 }
 
 // Fonction pour gérer la transition de porte (redirection vers la bonne salle etc.)
@@ -304,23 +329,12 @@ void restoreArticles(int *attackBought, int *defenseBought, int *maxHealthBought
     }
 }
 
-void drawPlayer(Player *player, SDL_Renderer *renderer, int *stepCount) {
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge
-    SDL_RenderFillRect(renderer, &player->rect);
-    *stepCount += 1;
-    *stepCount -= 1;
-    //printf("Nombre de pas modulo 7: %d\n", *stepCount % 7);
-}
-
 
 void allGame(int saveNumber, SDL_Renderer *renderer) {
 
     init_audio();
 
-    static char lastOrientation = '\0';
-    int stepCount = 0;
-
-    loadPlugin("./plugins/plugin_bonus.so");
+    loadPlugin(PLUGIN_BONUS);
     char mapFilename[100] = "";
     char stageFilename[100] = "";
     int dataMap[11][11];
@@ -382,7 +396,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 // Appel à initPlayer           
     Player  player;
     printf("Taille de player : %ld\n", sizeof(player));
-    initPlayer(&player, TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE, vie, piece, attaque, defense, max_vie);
+    initPlayer(&player, TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE, vie, piece, attaque, defense, max_vie, renderer);
 
     sprintf(stageFilename, "./data/game/save%d/map/map.txt", saveNumber);
     loadMap(stageFilename, dataMap);
@@ -476,25 +490,25 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             } else if (event.type == SDL_KEYDOWN) {
                 int oldX = player.rect.x, oldY = player.rect.y;
                 switch (event.key.keysym.sym) {
-                    case SDLK_z:  // Déplacement vers le haut
-                        player.rect.y -= TILE_SIZE;  // Déplacer le joueur d'un pas plus petit
+                    case SDLK_z:
+                        player.rect.y -= TILE_SIZE;
                         player.orientation = 'U';
-                        stepCount++;
-                        break;
-                    case SDLK_s:  // Déplacement vers le bas
+                        player.frame = (player.frame + 1) % 3;
+                        break; 
+                    case SDLK_s:
                         player.rect.y += TILE_SIZE;
                         player.orientation = 'D';
-                        stepCount++;
+                        player.frame = (player.frame + 1) % 3;
                         break;
-                    case SDLK_q:  // Déplacement vers la gauche
+                    case SDLK_q:
                         player.rect.x -= TILE_SIZE;
                         player.orientation = 'L';
-                        stepCount++;
+                        player.frame = (player.frame + 1) % 3;
                         break;
-                    case SDLK_d:  // Déplacement vers la droite
+                    case SDLK_d:
                         player.rect.x += TILE_SIZE;
                         player.orientation = 'R';
-                        stepCount++;
+                        player.frame = (player.frame + 1) % 3;
                         break;
                     case SDLK_e:
                         regeneratePlayer(&player);  
@@ -550,14 +564,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         break;
                 }
             }
-        }
-
-        if (player.orientation != lastOrientation) {
-        stepCount = 0;
-        }
-
-        lastOrientation = player.orientation;  
-        
+        }        
 
         if (room == 0) {
             renderLobby(renderer, &player, &attackBought, &defenseBought, &maxHealthBought);
@@ -596,7 +603,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             renderArrows(renderer, &player);
         }
 
-        drawPlayer(&player, renderer, &stepCount);
+        drawPlayerWithFrame(&player, renderer);
         updateAndRenderLightning(renderer);
         updateAndRenderRegenAnimation(renderer, &player);
 

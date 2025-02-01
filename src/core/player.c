@@ -3,6 +3,9 @@
 #include "./../../include/core/ennemies.h"
 #include "./../../include/core/player.h"
 #include "./../../include/utils/video.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -12,8 +15,29 @@ Lightning lightning = {0};
 RegenAnimation regenAnimation = {0};
 
 
-// Initialisation du joueur
-void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent, int attaque, int defense, int max_vie) {
+void load_skin_from_file(const char *filename, char *output_path) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        fprintf(stderr, "Erreur lors de l'ouverture du fichier : %s\n", filename);
+        return;
+    }
+
+    char skin_name[256];
+    if (fgets(skin_name, sizeof(skin_name), file) == NULL) {
+        fprintf(stderr, "Erreur lors de la lecture du fichier : %s\n", filename);
+        fclose(file);
+        return;
+    }
+
+    skin_name[strcspn(skin_name, "\n")] = 0;
+
+    const char *base_path = "assets/images/sprite/player/";
+    snprintf(output_path, 512, "%s%s", base_path, skin_name);
+
+    fclose(file);
+}
+
+void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent, int attaque, int defense, int max_vie, SDL_Renderer *renderer) {
     player->rect.x = x;
     player->rect.y = y;
     player->rect.w = w;
@@ -27,58 +51,72 @@ void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent,
     player->regen_dispo = 1;
     player->argent = argent;
     player->arrowCount = 3;
+    
     for (int i = 0; i < player->arrowCount; i++) {
         player->arrows[i].active = 0;
         player->arrowTimestamps[i] = 0;
     }
+    
     player->last_regen = 0;
     player->last_lightning = 0;
+    player->frame = 0;
+
+
+    char skin_path[512];
+    load_skin_from_file("assets/skin_config.txt", skin_path);
+
+    SDL_Surface *surface = IMG_Load(skin_path);
+    if (!surface) {
+        printf("Erreur chargement image joueur : %s\n", IMG_GetError());
+        return;
+    }
+
+    player->texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    if (!player->texture) {
+        printf("Erreur création texture joueur : %s\n", SDL_GetError());
+    }
 }
-
-
-
 
 // Fonction pour calculer les dégâts en fonction du type d'arme
 int calculateDamage(int playerAttack, int ennemyDefense, ArmeType type) {
     int damage;
 
-    // Appliquer la défense de l'ennemi selon le type d'arme
     switch (type) {
         case EPEE:
-            damage = playerAttack - ennemyDefense;  // Défense normale pour l'épée
+            damage = playerAttack - ennemyDefense;  
             break;
         case ARC:
-            damage = playerAttack - (ennemyDefense / 2);  // Moins de défense contre l'arc
+            damage = playerAttack - (ennemyDefense / 2);  
             break;
         case FOUDRE:
-            damage = playerAttack;  // Pas de défense contre la foudre
+            damage = playerAttack;  
             break;
         default:
-            damage = playerAttack - ennemyDefense;  // Défense normale par défaut
+            damage = playerAttack - ennemyDefense;  
             break;
     }
 
     if (damage < 0) {
-        damage = 0;  // Pas de dégâts négatifs
+        damage = 0; 
     }
 
-    // Ajouter un facteur de variation aléatoire entre -5 et +5
     damage += (rand() % 11) - 5;
 
     if (damage < 0) {
-        damage = 0;  // Assurer que les dégâts ne soient pas négatifs
+        damage = 0; 
     }
 
-    // Ajouter des bonus en fonction du type d'arme
     switch (type) {
         case EPEE:
-            damage += 5;  // +5 pour l'épée
+            damage += 5;  
             break;
         case ARC:
-            damage += 2;  // +2 pour l'arc
+            damage += 2;  
             break;
         case FOUDRE:
-            damage += 10; // +10 pour la foudre
+            damage += 10; 
             break;
         default:
             break;
@@ -119,7 +157,7 @@ void attackWithSword(SDL_Renderer *renderer, Player *player, char orientation, i
             return;  
     }
 
-    if (SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255) == 1) {
+    if (SDL_SetRenderDrawColor(renderer, 206, 206, 206, 255) == 1) {
         printf("Erreur lors du changement de couleur : %s\n", SDL_GetError());
     }
     if (SDL_RenderFillRect(renderer, &swordRect) == 1) {
@@ -145,28 +183,36 @@ void shootArrow(Player *player) {
     Uint32 currentTime = SDL_GetTicks();
     for (int i = 0; i < 3; i++) {
         if (!player->arrows[i].active && currentTime - player->arrowTimestamps[i] >= 10000) {
-            player->arrows[i].active = 1; // Activation de la flèche
+            player->arrows[i].active = 1; 
             player->arrows[i].orientation = player->orientation;
-            player->arrows[i].rect.w = 8;
-            player->arrows[i].rect.h = 8;
+            
             switch (player->orientation) {
-                case 'U':
+                case 'U':  
+                    player->arrows[i].rect.w = 4;    
+                    player->arrows[i].rect.h = 16;  
                     player->arrows[i].rect.x = player->rect.x + (player->rect.w / 2) - (player->arrows[i].rect.w / 2);
                     player->arrows[i].rect.y = player->rect.y - player->arrows[i].rect.h;
                     break;
-                case 'D':
+                case 'D':  
+                    player->arrows[i].rect.w = 4;    
+                    player->arrows[i].rect.h = 16;   
                     player->arrows[i].rect.x = player->rect.x + (player->rect.w / 2) - (player->arrows[i].rect.w / 2);
                     player->arrows[i].rect.y = player->rect.y + player->rect.h;
                     break;
-                case 'L':
+                case 'L': 
+                    player->arrows[i].rect.w = 16;   
+                    player->arrows[i].rect.h = 4;    
                     player->arrows[i].rect.x = player->rect.x - player->arrows[i].rect.w;
                     player->arrows[i].rect.y = player->rect.y + (player->rect.h / 2) - (player->arrows[i].rect.h / 2);
                     break;
-                case 'R':
+                case 'R': 
+                    player->arrows[i].rect.w = 16;   
+                    player->arrows[i].rect.h = 4;    
                     player->arrows[i].rect.x = player->rect.x + player->rect.w;
                     player->arrows[i].rect.y = player->rect.y + (player->rect.h / 2) - (player->arrows[i].rect.h / 2);
                     break;
             }
+
             player->arrowCount++;
             player->arrowTimestamps[i] = currentTime;
             break;
@@ -174,7 +220,6 @@ void shootArrow(Player *player) {
     }
 }
 
-// Autres fonctions restent inchangées, sauf conversion de `bool` en `int`...
 // Mettre à jour les flèches
 void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, const char *enemyFilename) {
     for (int i = 0; i < 3; i++) {
@@ -232,7 +277,7 @@ void updateArrows(Player *player, int mapRoom[ROWS][COLS], int *enemyCount, cons
 
 // Rendu des flèches
 void renderArrows(SDL_Renderer *renderer, Player *player) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 93, 53, 23, 255);
     for (int i = 0; i < 3; i++) {
         if (player->arrows[i].active) {
             SDL_RenderFillRect(renderer, &player->arrows[i].rect);
@@ -249,7 +294,6 @@ int areArrowsActive(Player *player) {
     return 0;
 }
 
-// Fonction de régénération du joueur
 void regeneratePlayer(Player *player) {
     time_t currentTime = time(NULL);
     double secondsSinceLastRegen = difftime(currentTime, player->last_regen);
@@ -392,4 +436,32 @@ int getRegenCooldown(Player *player) {
     time_t currentTime = time(NULL);
     int cooldown = 180 - difftime(currentTime, player->last_regen);
     return (cooldown > 0) ? cooldown : 0;
+}
+
+
+void drawPlayerWithFrame(Player *player, SDL_Renderer *renderer) {
+    SDL_Rect srcRect, dstRect;
+    int frameWidth = 32;  
+    int frameHeight = 32;
+
+    int row = 0;  
+    
+    switch (player->orientation) {
+        case 'D': row = 0; break; 
+        case 'L': row = 1; break; 
+        case 'R': row = 2; break; 
+        case 'U': row = 3; break; 
+    }
+
+    srcRect.x = (player->frame % 3) * frameWidth; 
+    srcRect.y = row * frameHeight;  
+    srcRect.w = frameWidth;
+    srcRect.h = frameHeight;
+
+    dstRect.x = player->rect.x;
+    dstRect.y = player->rect.y;
+    dstRect.w = frameWidth;
+    dstRect.h = frameHeight;
+
+    SDL_RenderCopy(renderer, player->texture, &srcRect, &dstRect);
 }

@@ -61,6 +61,8 @@ typedef struct {
     time_t arrowTimestamps[3];
     time_t last_regen;
     time_t last_lightning;
+    int frame;
+    SDL_Texture *texture;
 } Player;
 
 /**
@@ -109,7 +111,7 @@ typedef struct {
  * @param defense : points de défense initiaux.
  * @param max_vie : points de vie maximum.
  */
-void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent, int attaque, int defense, int max_vie);
+void initPlayer(Player *player, int x, int y, int w, int h, int vie, int argent, int attaque, int defense, int max_vie, SDL_Renderer *renderer);
 
 /**
  * Effectue une attaque avec une épée.
@@ -192,5 +194,22 @@ int getRegenCooldown(Player *player);
  * @param player : pointeur vers le joueur à régénérer.
  */
 void updateAndRenderRegenAnimation(SDL_Renderer *renderer, Player *player);
+
+
+/**
+ * Dessine le joueur sur l'écran.
+ * @param player : pointeur vers le joueur à dessiner.
+ * @param renderer : renderer SDL pour dessiner le joueur.
+ */
+void drawPlayerWithFrame(Player *player, SDL_Renderer *renderer);
+
+
+
+/**
+ * Récupère le chemin du fichier du skin du joueur.
+ * @param filename : chemin du fichier de sauvegarde du joueur.
+ * @param output_path : chaîne de caractères pour stocker le chemin du skin.
+ */
+void load_skin_from_file(const char *filename, char *output_path);
 
 #endif // PLAYER_H

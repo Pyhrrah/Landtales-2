@@ -160,7 +160,7 @@ void launchProjectileWithCooldownEnnemies(SDL_Rect *playerRect) {
             } while (selectedEnemies[randomIndex]); 
 
             selectedEnemies[randomIndex] = 1;  
-            spawnProjectile(&enemies[randomIndex].rect, playerRect, 5.0f);
+            spawnProjectile(&enemies[randomIndex].rect, playerRect, 3.0f);
         }
 
         lastProjectileTime = currentTime;  

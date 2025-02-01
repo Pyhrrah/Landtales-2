@@ -15,15 +15,24 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_Rect hudRect = {0, screenHeight - hudHeight, screenWidth, hudHeight};
     SDL_RenderFillRect(renderer, &hudRect);
 
-    // Charger l'image à gauche (48x48 pixels)
-    SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/player.png");
+    // Charger l'image du joueur à partir du fichier
+    char skin_path[512];
+    load_skin_from_file("assets/skin_config.txt", skin_path);
+
+    SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, skin_path);
     if (!leftImageTexture) {
         printf("Erreur lors du chargement de l'image : %s\n", IMG_GetError());
     } else {
         // Centrer l'image verticalement dans la zone noire du HUD
         int leftImageY = screenHeight - hudHeight + 10;
-        SDL_Rect leftImageRect = {25, leftImageY, 48, 48}; 
-        SDL_RenderCopy(renderer, leftImageTexture, NULL, &leftImageRect);
+        
+        // Définir le rectangle source (portion de l'image à utiliser)
+        SDL_Rect srcRect = {0, 0, 32, 32};  // Prendre les 32x32 pixels en haut de l'image
+        SDL_Rect destRect = {25, leftImageY, 48, 48};  // L'image sera rendue à cette position et dimension
+
+        // Rendu de l'image découpée
+        SDL_RenderCopy(renderer, leftImageTexture, &srcRect, &destRect);
+
         SDL_DestroyTexture(leftImageTexture);
     }
 
