@@ -227,16 +227,14 @@ void draw(SDL_Renderer *renderer) {
         }
     }
 
-    // Dessiner les boutons Save et Reset en utilisant render_button
-    SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - 50, 80, 40};
+    SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - 50, 90, 40};
     SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - 50, 80, 40};
     
-    SDL_Color buttonTextColor = {255, 255, 255, 255};  // Texte blanc
-    SDL_Color saveButtonColor = {150, 150, 150, 255};  // Fond gris pour "Save"
-    SDL_Color resetButtonColor = {100, 100, 100, 255}; // Fond gris pour "Reset"
+    SDL_Color buttonTextColor = {255, 255, 255, 255};  
+    SDL_Color saveButtonColor = {150, 150, 150, 255};  
+    SDL_Color resetButtonColor = {100, 100, 100, 255};
     
-    // Utilisation de la fonction render_button pour les boutons
-    render_button(renderer, &save_button, "Save", buttonTextColor, saveButtonColor, font);
+    render_button(renderer, &save_button, "Tester", buttonTextColor, saveButtonColor, font);
     render_button(renderer, &reset_button, "Reset", buttonTextColor, resetButtonColor, font);
 
     // Afficher tout ce qui a été dessiné

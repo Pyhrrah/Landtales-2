@@ -1,9 +1,8 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include "./../../include/core/player.h"
+#include "./../../include/utils/sdl_utils.h"
 
 #define SOL 1
 #define SOL_VARIANT_1 2
@@ -89,6 +88,9 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
     SDL_RenderClear(renderer);
 
+    const int screenHeight = 544;
+    const int hudHeight = 544 - (32 * 15);
+
     static int textures_loaded = 0;
     if (!textures_loaded) {
         load_textures(renderer); 
@@ -123,7 +125,32 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
             SDL_RenderFillRect(renderer, &cell);
         }
     }
+        char skin_path[512];
+        load_skin_from_file("assets/skin_config.txt", skin_path);
+        int leftImageY = screenHeight - hudHeight + 10;
 
+        SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, skin_path);
+        if (!leftImageTexture) {
+            printf("Erreur lors du chargement de l'image : %s\n", IMG_GetError());
+        } else {
+            
+            
+            SDL_Rect srcRect = {0, 0, 32, 32};  
+            SDL_Rect destRect = {25, leftImageY, 48, 48};  
+
+            SDL_RenderCopy(renderer, leftImageTexture, &srcRect, &destRect);
+
+            SDL_DestroyTexture(leftImageTexture);
+        }
+
+        // Ecrire du texte sur le reste de la zone disponible : "Rejoignez l'autre spawn pour sauvegarder cette carte."
+        TTF_Font *textFooter = load_font("./assets/fonts/font.ttf", 18);
+        if (!textFooter) {
+            fprintf(stderr, "Impossible de charger la police.\n");
+            return;
+        }
+        SDL_Color textColor = {0, 0, 0, 255};
+        render_text(renderer, "Rejoignez l'autre spawn pour sauvegarder cette carte.", 100, leftImageY+10, textFooter, textColor);
     
         drawPlayer(renderer, player_x, player_y, orientation, frame); 
     
