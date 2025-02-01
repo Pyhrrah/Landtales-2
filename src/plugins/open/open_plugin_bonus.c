@@ -21,7 +21,7 @@
 
 
 void (*spawnBonus)(int, int);
-void (*checkBonusCollision)(Player*);
+int (*checkBonusCollision)(Player*);
 void (*drawBonuses)(SDL_Renderer*);
 void (*openChest)(Player*);
 
@@ -62,9 +62,15 @@ void createBonus(int x, int y) {
     }
 }
 
-void checkPlayerBonusCollision(Player *player) {
+int checkPlayerBonusCollision(Player *player) {
     if (checkBonusCollision) {
-        checkBonusCollision(player);
+        if(checkBonusCollision(player)){
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
     }
 }
 

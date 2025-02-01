@@ -59,4 +59,10 @@ void free_music();
  */
 void check_and_free_music();
 
+/**
+ * Lecture d'un son
+ * @param sound : le son à jouer
+ */
+void playSong(char *sound);
+
 #endif // VIDEO_H

@@ -27,7 +27,7 @@ void spawnBonus(int x, int y) {
 }
 
 // Implémentation de la fonction pour vérifier les collisions avec le joueur
-void checkBonusCollision(Player *player) {
+int checkBonusCollision(Player *player) {
     for (int i = 0; i < 6; i++) {  
         if (bonuses[i].active && SDL_HasIntersection(&player->rect, &bonuses[i].rect)) {
             if (bonuses[i].type == 0) {  
@@ -44,8 +44,10 @@ void checkBonusCollision(Player *player) {
                 printf("Le joueur récupère 5 points d'attaque\n");
             }
             bonuses[i].active = 0;  
+            return 1;
         }
     }
+    return 0;
 }
 
 // Fonction pour dessiner les bonus

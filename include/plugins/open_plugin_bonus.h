@@ -25,8 +25,9 @@ void createBonus(int x, int y);
 
 /**
  * Mettre à jour les bonus
+ * @param player : le joueur
  */
-void checkPlayerBonusCollision(Player *player);
+int checkPlayerBonusCollision(Player *player);
 
 /**
  * Rendre les bonus

@@ -9,7 +9,7 @@ void displayCredits(SDL_Renderer *renderer) {
         return;
     }
     init_audio();
-    play_audio("./assets/music/generique.mp3");
+    playSong("./assets/music/generique.mp3");
 
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
     if (!font) {

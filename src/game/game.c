@@ -260,7 +260,7 @@ void handleLobbyInteraction(Player *player, int *attackBought, int *defenseBough
     SDL_Rect attackTile = {tableX + 0 * 32, tableY, 32, 32};
     SDL_Rect defenseTile = {tableX + 1 * 32, tableY, 32, 32};
     SDL_Rect maxHealthTile = {tableX + 2 * 32, tableY, 32, 32};
-
+    int bought = 0;
 
     if (*alreadyBoughtInSession == 0 && player->argent >= 10) {
         int collision = checkCollisionTable(player, &attackTile, &defenseTile, &maxHealthTile);
@@ -270,20 +270,27 @@ void handleLobbyInteraction(Player *player, int *attackBought, int *defenseBough
             player->attaque += 10;
             *attackBought = 1;
             *alreadyBoughtInSession = 1;
+            bought = 1;
             printf("attaque achetée\n");
         } else if (collision == 2 && *defenseBought == 0) {
             player->argent -= 10;
             player->defense += 10;
             *defenseBought = 1;
             *alreadyBoughtInSession = 1;
+            bought = 1;
             printf("défense achetée\n");
         } else if (collision == 3 && *maxHealthBought == 0) {
             player->argent -= 10;
             player->max_vie += 10;
             *maxHealthBought = 1;
             *alreadyBoughtInSession = 1;
+            bought = 1;
             printf("max vie achetée\n");
         }
+    }
+
+    if (bought) {
+        playSong("./assets/music/sons/shop.mp3");
     }
 }
 
@@ -420,6 +427,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                 clearMapDirectory(saveNumber);
 
                 creerEtageEntier(1);
+                cleanup_audio();
 
                 displayCredits(renderer);
 
@@ -510,6 +518,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         } else {
                             if (checkChestCollision(&player, mapRoom, mapFilename)) {
                                 openChestWithPlugin(&player);
+                                playSong("./assets/music/sons/coffre.mp3");
                             }
                         }
                         break;
@@ -557,7 +566,9 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             // Appeler UpdateEnnemies ici 
             restoreArticles(&attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession, room);
 
-            checkPlayerBonusCollision(&player);
+            if (checkPlayerBonusCollision(&player) == 1) {
+                play_audio("./assets/music/sons/bonus.mp3");
+            }
             renderBonuses(renderer);
 
             handleBossDoorCollision(renderer, &player.rect, &room, mapFilename, mapRoom, saveNumber, 

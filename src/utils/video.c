@@ -37,8 +37,13 @@ void free_music() {
 }
 
 void play_audio(const char *filename) {
-    // Si une musique est déjà en cours, on la libère d'abord
-    free_music();
+    // Si une musique est déjà en cours, on ne joue pas la nouvelle musique, on garde l'ancienne
+    if (Mix_PlayingMusic()) {
+        return;  // Rien à faire, la musique est déjà en cours
+    }
+
+    // Sinon, on joue la musique
+    free_music();  // Libère l'ancienne musique si nécessaire
 
     currentMusic = Mix_LoadMUS(filename);
     if (!currentMusic) {
@@ -49,6 +54,26 @@ void play_audio(const char *filename) {
     if (Mix_PlayMusic(currentMusic, 1) == -1) {  // Joue une seule fois
         fprintf(stderr, "Erreur: Impossible de jouer la musique: %s\n", Mix_GetError());
         free_music();
+    }
+}
+
+void playSong(char *sound) {
+    // Si une musique est déjà en cours de lecture, on joue le son supplémentaire
+    if (Mix_PlayingMusic()) {
+        Mix_Chunk *newSound = Mix_LoadWAV(sound);
+        if (newSound == NULL) {
+            fprintf(stderr, "Erreur: Impossible de charger le son : %s\n", Mix_GetError());
+            return;
+        }
+
+        // Joue le son supplémentaire sur un canal libre (par exemple, canal 1)
+        if (Mix_PlayChannel(1, newSound, 0) == -1) {
+            fprintf(stderr, "Erreur: Impossible de jouer le son : %s\n", Mix_GetError());
+        }
+        Mix_FreeChunk(newSound);
+    } else {
+        // Si aucune musique n'est en cours, on la lance en fond et on joue le son supplémentaire
+        play_audio(sound);
     }
 }
 

@@ -2,6 +2,7 @@
 #include <time.h>
 #include "./../../include/core/ennemies.h"
 #include "./../../include/core/player.h"
+#include "./../../include/utils/video.h"
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -271,7 +272,7 @@ void regeneratePlayer(Player *player) {
                 0, 0, 5, 5 
             };
         }
-
+        playSong("./assets/music/sons/regen.mp3"); 
         player->last_regen = currentTime;
         printf("Régénération effectuée : +%d PV\n", regenAmount);
     } else {
@@ -339,7 +340,8 @@ void useLightning(Player *player, int *enemyCount, const char *enemyFilename) {
 
         lightning.rect = (SDL_Rect){mouseX - 20, mouseY - 20, 40, 40};
         lightning.framesLeft = 10; 
-        lightning.active = 1;      
+        lightning.active = 1; 
+        playSong("./assets/music/sons/foudre.mp3");     
 
         for (int i = 0; i < *enemyCount; i++) {
             if (SDL_HasIntersection(&lightning.rect, &enemies[i].rect)) {
