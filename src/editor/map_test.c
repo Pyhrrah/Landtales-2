@@ -179,7 +179,7 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
             } else if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     running = 0;
-                } else if (event.key.keysym.sym == SDLK_a) {
+                } else if (event.key.keysym.sym == SDLK_z) {
                     if (is_valid_move(player_x, player_y - 1, grid)) {
                         player_y--;
                         frame = (frame + 1) % 3;
