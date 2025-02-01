@@ -41,7 +41,7 @@ void displayCredits(SDL_Renderer *renderer) {
         "Ing\u00e9nieurs Génération :",
         "Bryan",
         "Doubleurs :",
-        "Killian BADAUX",
+        "Killian BIDAUX",
         "Supports : ",
         "PDF de 1166 pages de Monsieur Trancho",
         "Documentation SDL2",

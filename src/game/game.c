@@ -563,6 +563,11 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             handleBossDoorCollision(renderer, &player.rect, &room, mapFilename, mapRoom, saveNumber, 
                             tentative, &etage, &player, dataMap, stageFilename);
 
+            launchProjectileWithCooldownEnnemies(&player.rect);
+            updateProjectiles(mapRoom);
+            checkProjectileCollisions(&player);
+            renderProjectiles(renderer);
+
         }    
 
         if (room == 100){

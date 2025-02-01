@@ -44,17 +44,37 @@ void updateMapFile(const char *filename) {
     }
 
     int x, y, tileValue;
-    long pos;
-    
+    int data[1000][3];  
+    int count = 0;
+
     while (fscanf(file, "%d %d %d", &x, &y, &tileValue) != EOF) {
-        if (tileValue == 19) {
-            pos = ftell(file);  
-            fseek(file, pos - sizeof(int), SEEK_SET);  
-            fprintf(file, "1\n");  
+        data[count][0] = x;
+        data[count][1] = y;
+        data[count][2] = tileValue;
+        count++;
+    }
+
+    fclose(file);  
+
+    for (int i = 0; i < count; i++) {
+        if (data[i][2] == 19) {
+            data[i][2] = 1;  
         }
     }
 
-    fclose(file);
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Erreur d'ouverture du fichier pour écriture.\n");
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        fprintf(file, "%d %d %d\n", data[i][0], data[i][1], data[i][2]);
+    }
+
+    printf("Valeur de la case modifiée. %s\n", filename);
+
+    fclose(file);  
 }
 
 int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], const char *filename) {

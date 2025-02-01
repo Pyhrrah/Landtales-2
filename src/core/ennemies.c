@@ -4,10 +4,13 @@
 #include <SDL2/SDL.h>
 #include "./../../include/plugins/open_plugin_bonus.h"
 #include "./../../include/utils/sdl_utils.h"
+#include "./../../include/game/projectile.h"
 
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
 Bonus bonuses[5];
+static Uint32 lastProjectileTime = 0;  
+
 
 // Définition des couleurs des ennemis
 SDL_Color enemyColors[15] = {
@@ -139,4 +142,27 @@ void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyF
 
     fclose(file);
     printf("Le fichier %s a été mis à jour avec succès.\n", enemyFilename);
+}
+
+
+void launchProjectileWithCooldownEnnemies(SDL_Rect *playerRect) {
+    Uint32 currentTime = SDL_GetTicks();
+
+    if (enemyCount <= 0) return;  
+    if (currentTime > lastProjectileTime + 3000) {  
+        int numShooters = (enemyCount > 1) ? (rand() % (enemyCount / 2 + 1) + 1) : 1; 
+        int selectedEnemies[MAX_ENNEMIES] = {0};  
+
+        for (int i = 0; i < numShooters; i++) {
+            int randomIndex;
+            do {
+                randomIndex = rand() % enemyCount;
+            } while (selectedEnemies[randomIndex]); 
+
+            selectedEnemies[randomIndex] = 1;  
+            spawnProjectile(&enemies[randomIndex].rect, playerRect, 5.0f);
+        }
+
+        lastProjectileTime = currentTime;  
+    }
 }

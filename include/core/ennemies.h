@@ -73,4 +73,11 @@ void clearEnemies();
 void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyFilename);
 
 
+/**
+ * Lance un projectile avec un cooldown pour les ennemis.
+ * @param playerRect : rectangle du joueur pour déterminer la direction du projectile.
+ */
+void launchProjectileWithCooldownEnnemies(SDL_Rect *playerRect);
+
+
 #endif // ENNEMIES_H
