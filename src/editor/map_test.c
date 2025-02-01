@@ -1,7 +1,9 @@
 #include "./../../include/editor/map_test.h"
 #include "./../../include/editor/colors.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
+#include "./../../include/core/player.h"
 
 #define SOL 1
 #define SOL_VARIANT_1 2
@@ -18,61 +20,103 @@
 #define PLAYER_SPAWN 12  
 #define TARGET_SPAWN 13 
 
-#define GRID_WIDTH 21  // Nombre de colonnes (21)
-#define GRID_HEIGHT 15 // Nombre de lignes (15)
+#define GRID_WIDTH 21  
+#define GRID_HEIGHT 15
 #define CELL_SIZE 32
 
 int player_x = -1;  
 int player_y = -1;  
+int frame = 0;  
+char orientation = 'D';  
 
-// Vérifie si un mouvement est valide (en fonction de la tuile concernée)
-int is_valid_move(int x, int y, int grid[GRID_HEIGHT][GRID_WIDTH]) {
-    if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
-        return 0;  // Sortie si la position est en dehors des limites de la grille
+SDL_Texture *player_texture = NULL;  
+
+int load_player_texture(SDL_Renderer *renderer) {
+    char skin_path[512];
+    load_skin_from_file("assets/skin_config.txt", skin_path);
+    player_texture = IMG_LoadTexture(renderer, skin_path);  
+    if (!player_texture) {
+        printf("Erreur lors du chargement de la texture du joueur : %s\n", SDL_GetError());
+        return 0;
     }
-
-    // Vérifie si la cellule contient un bloc impassable
-    if (grid[y][x] == WALL_FRONT || grid[y][x] == WALL_LEFT || grid[y][x] == WALL_RIGHT ||
-        grid[y][x] == WATER_BLOCK || grid[y][x] == ROCK || grid[y][x] == DEBRIS || grid[y][x] == STUMP) {
-        return 0;  // Mouvement invalide s'il y a un mur ou un autre bloc impassable
-    }
-
-    return 1;  // Mouvement valide
+    return 1;
 }
 
-// Dessine la carte de test
+// Fonction pour vérifier la validité du mouvement
+int is_valid_move(int x, int y, int grid[GRID_HEIGHT][GRID_WIDTH]) {
+    if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
+        return 0;  
+    }
+
+    if (grid[y][x] == WALL_FRONT || grid[y][x] == WALL_LEFT || grid[y][x] == WALL_RIGHT ||
+        grid[y][x] == WATER_BLOCK || grid[y][x] == ROCK || grid[y][x] == DEBRIS || grid[y][x] == STUMP) {
+        return 0;  
+    }
+
+    return 1;  
+}
+
+// Fonction pour dessiner le joueur
+void drawPlayer(SDL_Renderer *renderer, int player_x, int player_y, char orientation, int frame) {
+    SDL_Rect srcRect, dstRect;
+    int frameWidth = 32;  
+    int frameHeight = 32; 
+
+    int row = 0; 
+    switch (orientation) {
+        case 'D': row = 0; break; 
+        case 'L': row = 1; break;  
+        case 'R': row = 2; break; 
+        case 'U': row = 3; break;  
+    }
+
+
+    srcRect.x = (frame % 3) * frameWidth;  
+    srcRect.y = row * frameHeight;
+    srcRect.w = frameWidth;
+    srcRect.h = frameHeight;
+
+    dstRect.x = player_x * CELL_SIZE;
+    dstRect.y = player_y * CELL_SIZE;
+    dstRect.w = frameWidth;
+    dstRect.h = frameHeight;
+
+    SDL_RenderCopy(renderer, player_texture, &srcRect, &dstRect);
+}
+
+// Fonction pour dessiner la carte
 void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
     SDL_RenderClear(renderer);
 
-    // Charger les textures si ce n'est pas déjà fait
-    static int textures_loaded = 0; 
+    static int textures_loaded = 0;
     if (!textures_loaded) {
-        load_textures(renderer);
+        load_textures(renderer); 
+        if (!load_player_texture(renderer)) {  
+            printf("Erreur de chargement de la texture du joueur\n");
+            return;
+        }
         textures_loaded = 1;
     }
 
-    // Parcours de la grille par lignes (y) et colonnes (x)
-    for (int y = 0; y < GRID_HEIGHT; y++) {  
-        for (int x = 0; x < GRID_WIDTH; x++) { 
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
             SDL_Rect cell = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
 
             int cell_id = grid[y][x];
 
-            // Dessiner la cellule avec une texture si elle existe
             if (cell_id >= 0 && (unsigned long)cell_id < sizeof(textures) / sizeof(textures[0])) {
                 SDL_Texture *current_texture = textures[cell_id];
                 if (current_texture != NULL) {
                     SDL_RenderCopy(renderer, current_texture, NULL, &cell);
-                    continue; // Passer à la cellule suivante après avoir dessiné la texture
+                    continue; 
                 }
             }
 
-            // Si aucune texture n'est disponible, utiliser les couleurs par défaut
             if (cell_id == PLAYER_SPAWN) {
-                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // Vert pour le spawn du joueur
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  
             } else if (cell_id == TARGET_SPAWN) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Rouge pour la cible
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  
             } else {
                 SDL_SetRenderDrawColor(renderer, colors[cell_id].r, colors[cell_id].g, colors[cell_id].b, colors[cell_id].a);
             }
@@ -80,19 +124,14 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
         }
     }
 
-    // Dessiner le joueur si sa position est valide
-    if (player_x != -1 && player_y != -1) {
-        SDL_SetRenderDrawColor(renderer, 56, 60, 126, 205);  // Couleur de joueur
-        SDL_Rect player_rect = {player_x * CELL_SIZE, player_y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-        SDL_RenderFillRect(renderer, &player_rect); 
-    }
+    
+        drawPlayer(renderer, player_x, player_y, orientation, frame); 
+    
 
     SDL_RenderPresent(renderer); 
 }
 
-
 // Test de la carte
-// Gestion d'un joueur pour tester la map
 int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
     int found_spawn = 0, target_spawn = 0;
 
@@ -101,7 +140,7 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
         for (int x = 0; x < GRID_WIDTH; x++) { 
             if (grid[y][x] == PLAYER_SPAWN) {
                 found_spawn = 1;
-                player_x = x;  // x et y sont inversés par rapport aux définitions de coordonnées
+                player_x = x;  
                 player_y = y;
             }
             if (grid[y][x] == TARGET_SPAWN) {
@@ -124,7 +163,7 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
 
     // Affichage de la carte
     printf("Déplacement du joueur avec les touches fléchées.\n");
-    for(int i = 0; i < GRID_HEIGHT; i++) {  // Affichage de la carte ligne par ligne
+    for(int i = 0; i < GRID_HEIGHT; i++) {
         for(int j = 0; j < GRID_WIDTH; j++) {
             printf("%d ", grid[i][j]);
         }
@@ -140,26 +179,35 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
             } else if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     running = 0;
-                } else if (event.key.keysym.sym == SDLK_UP) {
+                } else if (event.key.keysym.sym == SDLK_a) {
                     if (is_valid_move(player_x, player_y - 1, grid)) {
-                        player_y--;  // Déplacement vers le haut
+                        player_y--;
+                        frame = (frame + 1) % 3;
+                        orientation = 'U';
                     }
-                } else if (event.key.keysym.sym == SDLK_DOWN) {
+                } else if (event.key.keysym.sym == SDLK_s) {
                     if (is_valid_move(player_x, player_y + 1, grid)) {
-                        player_y++;  // Déplacement vers le bas
+                        player_y++; 
+                        frame = (frame + 1) % 3;
+                        orientation = 'D';
                     }
-                } else if (event.key.keysym.sym == SDLK_LEFT) {
+                } else if (event.key.keysym.sym == SDLK_q) {
                     if (is_valid_move(player_x - 1, player_y, grid)) {
-                        player_x--;  // Déplacement vers la gauche
+                        player_x--; 
+                        frame = (frame + 1) % 3;
+                        orientation = 'L';
                     }
-                } else if (event.key.keysym.sym == SDLK_RIGHT) {
+                } else if (event.key.keysym.sym == SDLK_d) {
                     if (is_valid_move(player_x + 1, player_y, grid)) {
-                        player_x++;  // Déplacement vers la droite
+                        player_x++; 
+                        frame = (frame + 1) % 3;
+                        orientation = 'R';
                     }
                 }
             }
         }
 
+        // Si le joueur atteint la cible, retourner 1
         if (grid[player_y][player_x] == TARGET_SPAWN) {
             return 1;
         }

@@ -23,14 +23,11 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     if (!leftImageTexture) {
         printf("Erreur lors du chargement de l'image : %s\n", IMG_GetError());
     } else {
-        // Centrer l'image verticalement dans la zone noire du HUD
         int leftImageY = screenHeight - hudHeight + 10;
         
-        // Définir le rectangle source (portion de l'image à utiliser)
-        SDL_Rect srcRect = {0, 0, 32, 32};  // Prendre les 32x32 pixels en haut de l'image
-        SDL_Rect destRect = {25, leftImageY, 48, 48};  // L'image sera rendue à cette position et dimension
+        SDL_Rect srcRect = {0, 0, 32, 32};  
+        SDL_Rect destRect = {25, leftImageY, 48, 48};  
 
-        // Rendu de l'image découpée
         SDL_RenderCopy(renderer, leftImageTexture, &srcRect, &destRect);
 
         SDL_DestroyTexture(leftImageTexture);
