@@ -35,45 +35,40 @@
 
 // Fonction pour vérifier la collision du joueur avec les murs et les ennemis
 int checkCollision(Player *player, int mapRoom[ROWS][COLS], Enemy enemies[], int enemyCount) {
-    // Coordonnées du joueur en pixels
     int leftX   = player->rect.x;
     int rightX  = player->rect.x + player->rect.w - 1;
     int topY    = player->rect.y;
     int bottomY = player->rect.y + player->rect.h - 1;
 
-    // Convertir en coordonnées de tuiles
     int leftTile   = leftX / TILE_SIZE;
     int rightTile  = rightX / TILE_SIZE;
     int topTile    = topY / TILE_SIZE;
     int bottomTile = bottomY / TILE_SIZE;
 
-    // Vérifier toutes les tuiles touchées par le joueur
     for (int y = topTile; y <= bottomTile; y++) {
         for (int x = leftTile; x <= rightTile; x++) {
             if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
                 int tileId = mapRoom[y][x];
 
-                // Liste des tuiles bloquantes
                 if (tileId == 5 || tileId == 6 || tileId == 7 || tileId == 11 || 
                     tileId == 12 || tileId == 13 || tileId == 14 || 
                     tileId == 15 || tileId == 16 || tileId == 17 || 
                     tileId == 18 || tileId == 19) {
-                    return 1;  // Collision détectée
+                    return 1;  
                 }
             }
         }
     }
 
-    // Vérifier la collision avec les ennemis
     for (int i = 0; i < enemyCount; i++) {
         if (SDL_HasIntersection(&player->rect, &enemies[i].rect)) {
             player->vie -= 10; 
             printf("Collision avec un ennemi ! PV restants: %d\n", player->vie);
-            return 1;  // Collision détectée
+            return 1; 
         }
     }
 
-    return 0;  // Pas de collision
+    return 0;  
 }
 
 // Fonction pour gérer la transition de porte (redirection vers la bonne salle etc.)

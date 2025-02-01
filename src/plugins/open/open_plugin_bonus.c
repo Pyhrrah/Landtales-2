@@ -10,15 +10,19 @@
     #define OuvrirPlugin(path) LoadLibrary(path)
     #define LancerPlugin(handle, symbol) GetProcAddress(handle, symbol)
     #define FermerPlugin(handle) FreeLibrary(handle)
+
+    // Fonction pour obtenir les erreurs sur Windows
+    #define getError() GetLastError()
 #else
     #include <dlfcn.h>
     typedef void* LibraryHandle;
     #define OuvrirPlugin(path) dlopen(path, RTLD_LAZY)
     #define LancerPlugin(handle, symbol) dlsym(handle, symbol)
     #define FermerPlugin(handle) dlclose(handle)
+
+    // Fonction pour obtenir les erreurs sur Linux
+    #define getError() dlerror()
 #endif
-
-
 
 void (*spawnBonus)(int, int);
 int (*checkBonusCollision)(Player*);
@@ -30,7 +34,8 @@ void *pluginHandle = NULL;
 int loadPlugin(const char *pluginPath) {
     pluginHandle = OuvrirPlugin(pluginPath);
     if (!pluginHandle) {
-        fprintf(stderr, "Erreur lors du chargement de la bibliothèque: %s\n", dlerror());
+        // Affichage de l'erreur appropriée
+        fprintf(stderr, "Erreur lors du chargement de la bibliothèque: %s\n", getError());
         return 0;  
     }
 
@@ -39,8 +44,8 @@ int loadPlugin(const char *pluginPath) {
     drawBonuses = LancerPlugin(pluginHandle, "drawBonuses");
     openChest = LancerPlugin(pluginHandle, "openChest");   
 
-    if (!spawnBonus || !checkBonusCollision || !drawBonuses) {
-        fprintf(stderr, "Erreur d'accès aux fonctions du plugin: %s\n", dlerror());
+    if (!spawnBonus || !checkBonusCollision || !drawBonuses || !openChest) {
+        fprintf(stderr, "Erreur d'accès aux fonctions du plugin: %s\n", getError());
         FermerPlugin(pluginHandle);  
         return 0;
     }

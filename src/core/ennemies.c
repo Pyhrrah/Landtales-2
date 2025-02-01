@@ -6,6 +6,13 @@
 #include "./../../include/utils/sdl_utils.h"
 #include "./../../include/game/projectile.h"
 
+
+#ifdef _WIN32
+    #define PLUGIN_BONUS "./plugins/plugin_bonus.dll"
+#else
+    #define PLUGIN_BONUS "./plugins/plugin_bonus.so"
+#endif
+
 Enemy enemies[MAX_ENNEMIES];  
 int enemyCount = 0;      
 Bonus bonuses[5];
@@ -122,7 +129,7 @@ void removeEnemy(Enemy enemies[], int *enemyCount, int index, const char *enemyF
         enemies[i] = enemies[i + 1];
     }
     (*enemyCount)--;
-    loadPlugin("./plugins/plugin_bonus.so");
+    loadPlugin(PLUGIN_BONUS);
     createBonus(bonusX, bonusY);
     unloadPlugin();
     

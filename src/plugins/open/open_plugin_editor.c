@@ -1,5 +1,3 @@
-// Dans editor.c
-#include <dlfcn.h>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -8,20 +6,30 @@
     #define OuvrirPlugin(path) LoadLibrary(path)
     #define LancerPlugin(handle, symbol) GetProcAddress(handle, symbol)
     #define FermerPlugin(handle) FreeLibrary(handle)
+
+    const char *plugin_path = "./plugins/map_editor.dll";
+
+    // Fonction pour obtenir les erreurs sur Windows
+    #define getError() GetLastError()
 #else
     #include <dlfcn.h>
     typedef void* LibraryHandle;
     #define OuvrirPlugin(path) dlopen(path, RTLD_LAZY)
     #define LancerPlugin(handle, symbol) dlsym(handle, symbol)
     #define FermerPlugin(handle) dlclose(handle)
+
+    // Fonction pour obtenir les erreurs sur Linux
+    const char *plugin_path = "./plugins/map_editor.so";
+
+    
+    #define getError() dlerror()
 #endif
 
-const char *plugin_path = "./plugins/map_editor.so";
 
 void load_and_run_plugin(int grid[15][21]) {
     void *plugin = OuvrirPlugin(plugin_path);
     if (!plugin) {
-        fprintf(stderr, "Erreur lors du chargement du plugin : %s\n", dlerror());
+        fprintf(stderr, "Erreur lors du chargement du plugin : %s\n", getError());
         return;
     }
 
@@ -33,5 +41,6 @@ void load_and_run_plugin(int grid[15][21]) {
     }
 
     generate_grid(grid);  
+
     FermerPlugin(plugin);
 }
