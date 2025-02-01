@@ -100,7 +100,6 @@ void display_video_frame(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame, SDL
 }
 
 void play_video(const char *filename, SDL_Renderer *renderer) {
-
     AVFormatContext *format_ctx = NULL;
     if (avformat_open_input(&format_ctx, filename, NULL, NULL) != 0) {
         fprintf(stderr, "Erreur: impossible d'ouvrir le fichier %s\n", filename);
@@ -145,11 +144,11 @@ void play_video(const char *filename, SDL_Renderer *renderer) {
         return;
     }
 
-    
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING,
                                              codec_params->width, codec_params->height);
 
-    SDL_Rect rect = {0, 0, codec_params->width, codec_params->height};
+    SDL_Rect rect = {0, 0, 672, 544};
+
     AVPacket *packet = av_packet_alloc();
     AVFrame *frame = av_frame_alloc();
 
@@ -177,7 +176,6 @@ void play_video(const char *filename, SDL_Renderer *renderer) {
     }
 
     SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
     av_frame_free(&frame);
     av_packet_free(&packet);
     avcodec_free_context(&codec_ctx);
