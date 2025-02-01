@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
-#include <stdio.h>
+#include <SDL2/SDL_image.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,9 +14,9 @@
 
 typedef struct {
     SDL_Rect rect;
+    char orientation;
 } Player;
 
-// Vérifie les collisions avec des tuiles bloquantes
 int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= ROWS) {
         return 0;
@@ -31,11 +31,8 @@ int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     return 1; 
 }
 
-// Reçoit la grille et l'identifiant du joueur
-void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id) {
+void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id, char *orientation) {
     memset(grid, 0, sizeof(int) * ROWS * COLS);
-
-    // Réception de la grille
     size_t grid_size = ROWS * COLS * sizeof(int);
     size_t received = 0;
     while (received < grid_size) {
@@ -46,8 +43,6 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id)
         }
         received += bytes;
     }
-
-    // Réception de l'identifiant du client
     received = 0;
     size_t id_size = sizeof(int);
     while (received < id_size) {
@@ -59,13 +54,22 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id)
         received += bytes;
     }
 
-    printf("Grille et identifiant client reçus avec succès.\n");
+    received = 0;
+    size_t orientation_size = sizeof(char);
+    while (received < orientation_size) {
+        int bytes = SDLNet_TCP_Recv(client_socket, (char *)orientation + received, orientation_size - received);
+        if (bytes <= 0) {
+            fprintf(stderr, "Erreur de réception de l'orientation : %s\n", SDLNet_GetError());
+            exit(EXIT_FAILURE);
+        }
+        received += bytes;
+    }
+
+    printf("Grille, identifiant client et orientation reçus avec succès.\n");
 }
 
-
-// Dessine la grille
 void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
-    static int textures_loaded = 0; // Charger les textures une seule fois
+    static int textures_loaded = 0;
     if (!textures_loaded) {
         load_textures(renderer);
         textures_loaded = 1;
@@ -93,13 +97,10 @@ void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
     }
 }
 
-
-// Initialise la position du joueur
 void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *opponent, int client_id) {
     int spawn_tile_player = (client_id == 1) ? 12 : 13;
     int spawn_tile_opponent = (client_id == 1) ? 13 : 12;
 
-    // Initialiser la position du joueur
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (grid[i][j] == spawn_tile_player) {
@@ -109,7 +110,6 @@ void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *op
         }
     }
 
-    // Initialiser la position de l'adversaire
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (grid[i][j] == spawn_tile_opponent) {
@@ -119,7 +119,6 @@ void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *op
         }
     }
 
-    // Vérification des erreurs
     if (player->rect.x == -1 || player->rect.y == -1) {
         fprintf(stderr, "Erreur : Position de spawn introuvable pour le joueur %d.\n", client_id);
         exit(EXIT_FAILURE);
@@ -131,21 +130,51 @@ void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *op
     }
 }
 
+void draw_player(SDL_Renderer *renderer, Player *player, const char *image_path) {
+    // Charger l'image du sprite
+    SDL_Texture *sprite_texture = IMG_LoadTexture(renderer, image_path);
+    if (!sprite_texture) {
+        fprintf(stderr, "Erreur de chargement du sprite : %s\n", SDL_GetError());
+        return;
+    }
 
-// Dessine un joueur
-void draw_player(SDL_Renderer *renderer, Player *player, SDL_Color color) {
-    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderFillRect(renderer, &player->rect);
+    // Déterminer la position de la sprite en fonction de l'orientation
+    SDL_Rect src_rect = {0, 0, 32, 32}; // La taille de chaque sprite est de 32x32
+
+    switch (player->orientation) {
+        case 'D': // Vers le bas (y=0)
+            src_rect.y = 0;
+            break;
+        case 'L': // Vers la gauche (y=32)
+            src_rect.y = 32;
+            break;
+        case 'R': // Vers la droite (y=64)
+            src_rect.y = 64;
+            break;
+        case 'U': // Vers le haut (y=96)
+            src_rect.y = 96;
+            break;
+        default:
+            fprintf(stderr, "Orientation non valide : %c\n", player->orientation);
+            return;
+    }
+
+    // Positionner le rectangle de destination où on veut afficher le sprite du joueur
+    SDL_Rect dest_rect = player->rect;
+
+    // Afficher le sprite du joueur avec la bonne orientation
+    SDL_RenderCopy(renderer, sprite_texture, &src_rect, &dest_rect);
+
+    // Libérer la texture après dessin
+    SDL_DestroyTexture(sprite_texture);
 }
 
-// Envoie la position du joueur au serveur
 void send_player_position(TCPsocket client_socket, Player *player) {
     char message[BUFFER_SIZE];
-    snprintf(message, sizeof(message), "MOVE %d %d\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE);
+    snprintf(message, sizeof(message), "MOVE %d %d %c\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE, player->orientation);
     SDLNet_TCP_Send(client_socket, message, strlen(message));
 }
 
-// Gère les messages du serveur
 void handle_server_messages(TCPsocket client_socket, Player *opponent) {
     char buffer[BUFFER_SIZE];
 
@@ -166,9 +195,11 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
             buffer[bytes_received] = '\0';
 
             int x, y;
-            if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
+            char orientation;
+            if (sscanf(buffer, "MOVE %d %d %c", &x, &y, &orientation) == 3) {
                 opponent->rect.x = x * CELL_SIZE;
                 opponent->rect.y = y * CELL_SIZE;
+                opponent->orientation = orientation;
             } else {
                 fprintf(stderr, "Format de message inconnu : %s\n", buffer);
             }
@@ -182,9 +213,6 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
     }
 }
 
-
-
-// Démarre le client
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
     if (SDLNet_Init() == -1) {
         fprintf(stderr, "Erreur d'initialisation de SDL_net : %s\n", SDLNet_GetError());
@@ -213,9 +241,10 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
     printf("Connecté au serveur.\n");
 
     int grid[ROWS][COLS] = {0}, client_id = 0;
-    receive_grid(client_socket, grid, &client_id);
+    char orientation;
+    receive_grid(client_socket, grid, &client_id, &orientation);
 
-    Player player, opponent = {.rect = {0, 0, CELL_SIZE, CELL_SIZE}};
+    Player player = {.orientation = orientation}, opponent = {.rect = {0, 0, CELL_SIZE, CELL_SIZE}, .orientation = 'U'};
     initialize_player_opponent(grid, &player, &opponent, client_id);
 
     SDL_Event event;
@@ -236,10 +265,10 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
                 int new_x = x, new_y = y;
 
                 switch (event.key.keysym.sym) {
-                    case SDLK_q: new_x--; break;
-                    case SDLK_d: new_x++; break;
-                    case SDLK_z: new_y--; break;
-                    case SDLK_s: new_y++; break;
+                    case SDLK_q: new_x--; player.orientation = 'L'; break;
+                    case SDLK_d: new_x++; player.orientation = 'R'; break;
+                    case SDLK_z: new_y--; player.orientation = 'U'; break;
+                    case SDLK_s: new_y++; player.orientation = 'D'; break;
                 }
 
                 if (check_collision(grid, new_x, new_y)) {
@@ -256,8 +285,8 @@ void start_client(const char *server_ip, SDL_Renderer *renderer) {
 
         SDL_RenderClear(renderer);
         draw_grid(renderer, grid);
-        draw_player(renderer, &player, (SDL_Color){255, 0, 0, 255});
-        draw_player(renderer, &opponent, (SDL_Color){0, 0, 255, 255});
+        draw_player(renderer, &player, "assets/images/sprite/player/1.png");
+        draw_player(renderer, &opponent, "assets/images/sprite/player/2.png");
         SDL_RenderPresent(renderer);
 
         SDL_Delay(16);

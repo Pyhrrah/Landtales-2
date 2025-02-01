@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Le serveur sert ici de messager entre les deux clients,
-// Il n'est pas prévu qu'il gère la logique des joueurs également (trop complexe pour le moment)
-
 #define PORT 12345
 #define BUFFER_SIZE 1024
 #define ROWS 15
@@ -17,32 +14,32 @@
 typedef struct {
     TCPsocket socket;
     int id;
-    int last_x, last_y;     
-    Uint32 last_move_time;  
+    int last_x, last_y;
+    Uint32 last_move_time;
+    char orientation;
 } Client;
 
 Client clients[MAX_CLIENTS];
 
-// Fonction pour envoyer la grille et l'identifiant au client
-void send_grid(TCPsocket client_socket, int grid[ROWS][COLS], int client_id) {
-
+void send_grid(TCPsocket client_socket, int grid[ROWS][COLS], int client_id, char orientation) {
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             SDLNet_TCP_Send(client_socket, &grid[i][j], sizeof(int));
         }
     }
     SDLNet_TCP_Send(client_socket, &client_id, sizeof(int));
+    SDLNet_TCP_Send(client_socket, &orientation, sizeof(char));
 }
 
-// Fonction pour démarrer le jeu et prévenir les clients
 void start_game(Client *clients) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         int start_game_signal = 1;
+        char initial_orientation = 'U';
         SDLNet_TCP_Send(clients[i].socket, &start_game_signal, sizeof(int));
+        SDLNet_TCP_Send(clients[i].socket, &initial_orientation, sizeof(char));
     }
 }
 
-// Fonction pour gérer les mouvements des joueurs et envoyer les mises à jour
 void handle_player_movements(Client *clients) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         char buffer[BUFFER_SIZE];
@@ -52,18 +49,18 @@ void handle_player_movements(Client *clients) {
             buffer[bytes_received] = '\0';
 
             int x, y;
-            if (sscanf(buffer, "MOVE %d %d", &x, &y) == 2) {
-                // Vérifier si les coordonnées ont changé et si assez de temps est passé
+            char orientation;
+            if (sscanf(buffer, "MOVE %d %d %c", &x, &y, &orientation) == 3) {
                 Uint32 current_time = SDL_GetTicks();
                 if ((x != clients[i].last_x || y != clients[i].last_y) && (current_time - clients[i].last_move_time > MOVE_DELAY)) {
                     clients[i].last_x = x;
                     clients[i].last_y = y;
                     clients[i].last_move_time = current_time;
+                    clients[i].orientation = orientation;
 
-                    // Envoyer le mouvement à l'autre joueur
                     int other_player_id = (clients[i].id == 1) ? 2 : 1;
                     char move_message[BUFFER_SIZE];
-                    snprintf(move_message, sizeof(move_message), "MOVE %d %d", x, y);
+                    snprintf(move_message, sizeof(move_message), "MOVE %d %d %c", x, y, orientation);
 
                     if (clients[other_player_id - 1].socket) {
                         SDLNet_TCP_Send(clients[other_player_id - 1].socket, move_message, strlen(move_message) + 1);
@@ -76,7 +73,6 @@ void handle_player_movements(Client *clients) {
     }
 }
 
-// Fonction principale du serveur
 void start_server(int grid[ROWS][COLS]) {
     TCPsocket server_socket, client_socket[MAX_CLIENTS];
     IPaddress ip;
@@ -127,10 +123,11 @@ void start_server(int grid[ROWS][COLS]) {
                     if (client_socket[client_count]) {
                         clients[client_count].socket = client_socket[client_count];
                         clients[client_count].id = client_count + 1;
-                        clients[client_count].last_x = -1; // Initialiser les coordonnées
+                        clients[client_count].last_x = -1;
                         clients[client_count].last_y = -1;
-                        clients[client_count].last_move_time = SDL_GetTicks(); // Temps initial
-                        send_grid(client_socket[client_count], grid, client_count + 1);
+                        clients[client_count].last_move_time = SDL_GetTicks();
+                        clients[client_count].orientation = 'U';
+                        send_grid(client_socket[client_count], grid, client_count + 1, 'U');
                         client_count++;
                         if (client_count >= MAX_CLIENTS) {
                             start_game(clients);
@@ -140,12 +137,10 @@ void start_server(int grid[ROWS][COLS]) {
             }
         }
 
-        // Gérer les mouvements des joueurs
         if (client_count == MAX_CLIENTS) {
             handle_player_movements(clients);
         }
 
-        // Vérifier les événements SDL
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 running = 0;
@@ -155,7 +150,6 @@ void start_server(int grid[ROWS][COLS]) {
         SDL_Delay(10);
     }
 
-    // Nettoyage des sockets
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (clients[i].socket) {
             SDLNet_TCP_Close(clients[i].socket);
