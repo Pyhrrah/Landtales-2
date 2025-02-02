@@ -15,7 +15,7 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
     render_texture(renderer, backgroundTexture, 0, 0, 672, 544);
     SDL_DestroyTexture(backgroundTexture);
 
-    TTF_Font *font = load_font("./assets/fonts/DejaVuSans.ttf", 24);
+    TTF_Font *font = load_font("./assets/fonts/font.ttf", 24);
     if (!font) {
         printf("Erreur lors de l'ouverture de la police: %s\n", TTF_GetError());
         return;

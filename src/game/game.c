@@ -19,6 +19,9 @@
 #include "./../../include/plugins/open_plugin_bonus.h"
 #include "./../../include/utils/video.h"
 
+#define initialiserEtage() creerEtageEntier(1);
+#define suppressionEtage() supprimerEtage();
+
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -265,8 +268,6 @@ void renderLobby(SDL_Renderer *renderer, Player *player, int *attackBought, int 
 
     TTF_CloseFont(font);
 
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_RenderFillRect(renderer, &player->rect);
 }
 
 
@@ -435,7 +436,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
                 clearMapDirectory(saveNumber);
 
-                creerEtageEntier(1);
+                initialiserEtage();
                 cleanup_audio();
 
                 displayCredits(renderer);
@@ -525,7 +526,7 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
                         if (room == 0) { 
                             handleLobbyInteraction(&player, &attackBought, &defenseBought, &maxHealthBought, &alreadyBoughtInSession);
                         } else {
-                            if (checkChestCollision(&player, mapRoom, mapFilename)) {
+                            if (checkChestCollision(&player, mapRoom, saveNumber, room)) {
                                 openChestWithPlugin(&player);
                                 playSong("./assets/music/sons/coffre.mp3");
                             }
@@ -618,8 +619,8 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 void initGame(int save_number, SDL_Renderer *renderer) {
     set_save_path(save_number);
 
-    supprimerEtage();
-    creerEtageEntier(1);
+    suppressionEtage();
+    initialiserEtage();
     printf("Génération de l'étage %hhd : OK\n", 2);
     printf("La seed est %d\n", lireSeed());
 

@@ -86,6 +86,12 @@ void handle_menu(SDL_Renderer *renderer) {
         return;
     }
 
+    void (*menu_options[])(SDL_Renderer *renderer) = {
+        start_game_mode,       
+        start_editor_mode,      
+        start_multiplayer_mode, 
+    };
+
     while (running) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -119,19 +125,11 @@ void handle_menu(SDL_Renderer *renderer) {
                             int btn_height = 50;
 
                             if (x >= btn_x && x <= btn_x + btn_width && y >= btn_y && y <= btn_y + btn_height) {
-                                switch (i) {
-                                    case 0:
-                                        start_game_mode(renderer);
-                                        break;
-                                    case 1:
-                                        start_editor_mode(renderer); 
-                                        break;
-                                    case 2:
-                                        start_multiplayer_mode(renderer); 
-                                        break;
-                                    case 3:
-                                        running = 0;
-                                        break;
+                                // Utilisation des pointeurs de fonction pour appeler la fonction correspondante
+                                if (i < 3) {
+                                    menu_options[i](renderer); // Appel de la fonction à partir du pointeur
+                                } else {
+                                    running = 0; // Quitter le jeu
                                 }
                             }
                         }
@@ -158,19 +156,11 @@ void handle_menu(SDL_Renderer *renderer) {
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         selected_option = (selected_option + 1) % 4;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
-                        switch (selected_option) {
-                            case 0:
-                                start_game_mode(renderer);
-                                break;
-                            case 1:
-                                start_editor_mode(renderer); 
-                                break;
-                            case 2:
-                                start_multiplayer_mode(renderer); 
-                                break;
-                            case 3:
-                                running = 0; 
-                                break;
+                        // Utilisation du pointeur de fonction pour appeler la fonction correspondante
+                        if (selected_option < 3) {
+                            menu_options[selected_option](renderer); // Appel de la fonction à partir du pointeur
+                        } else {
+                            running = 0; // Quitter le jeu
                         }
                     }
                     break;
@@ -184,4 +174,3 @@ void handle_menu(SDL_Renderer *renderer) {
     SDL_DestroyTexture(background);
     TTF_CloseFont(font);
 }
-
