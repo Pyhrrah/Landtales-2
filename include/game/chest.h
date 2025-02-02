@@ -15,7 +15,7 @@
  * @param mapRoom : la map
  * @param filename : le nom du fichier de la map
  */
-int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], const char *filename);
+int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], int saveNumber, int room);
 
 /**
  * Vérifie si le joueur est en collision avec un coffre

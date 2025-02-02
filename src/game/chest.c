@@ -37,6 +37,7 @@ int checkChestDirection(Player *player, int mapRoom[ROWS][COLS], int playerX, in
 }
 
 void updateMapFile(const char *filename) {
+    printf("Ouverture du fichier de stage. %s\n", filename);
     FILE *file = fopen(filename, "r+");
     if (file == NULL) {
         printf("Erreur d'ouverture du fichier de stage.\n");
@@ -77,9 +78,13 @@ void updateMapFile(const char *filename) {
     fclose(file);  
 }
 
-int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], const char *filename) {
+int checkChestCollision(Player* player, int mapRoom[ROWS][COLS], int saveNumber, int room) {
     int tileX = player->rect.x / TILE_SIZE;
     int tileY = player->rect.y / TILE_SIZE;
+
+    // Concaténation du nom du fichier
+    char filename[100];
+    snprintf(filename, sizeof(filename), "./data/game/save%d/map/Salle%02d/salle%02d.txt", saveNumber, room, room);
 
     if (tileX >= 0 && tileX < COLS && tileY >= 0 && tileY < ROWS) {
         if (checkChestDirection(player, mapRoom, tileX, tileY)) {
