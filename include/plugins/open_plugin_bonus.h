@@ -1,5 +1,5 @@
-#ifndef PLUGIN_LOADER_H
-#define PLUGIN_LOADER_H
+#ifndef PLUGIN_BONUS_H
+#define PLUGIN_BONUS_H
 
 #include <SDL2/SDL.h>
 #include "./../core/player.h"   
@@ -41,4 +41,4 @@ void renderBonuses(SDL_Renderer *renderer);
  */
 void openChestWithPlugin(Player *player);
 
-#endif // PLUGIN_LOADER_H
+#endif // PLUGIN_BONUS_H

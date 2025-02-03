@@ -11,6 +11,14 @@
 #define MAX_CLIENTS 2
 #define MOVE_DELAY 10 
 
+/**
+ * Structure pour représenter un client : un socket est un point de connexion entre deux machines
+ * TCPsocket socket : socket du client
+ * int id : identifiant du client
+ * int last_x, last_y : dernières coordonnées du joueur
+ * Uint32 last_move_time : temps du dernier mouvement
+ * char orientation : orientation du joueur (U, D, R, L)
+ */
 typedef struct {
     TCPsocket socket;
     int id;
@@ -21,6 +29,7 @@ typedef struct {
 
 Client clients[MAX_CLIENTS];
 
+// Fonction pour envoyer la grille à un client
 void send_grid(TCPsocket client_socket, int grid[ROWS][COLS], int client_id, char orientation) {
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -31,6 +40,7 @@ void send_grid(TCPsocket client_socket, int grid[ROWS][COLS], int client_id, cha
     SDLNet_TCP_Send(client_socket, &orientation, sizeof(char));
 }
 
+// Fonction pour démarrer le jeu
 void start_game(Client *clients) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         int start_game_signal = 1;
@@ -40,9 +50,13 @@ void start_game(Client *clients) {
     }
 }
 
+// Fonction pour gérer les mouvements des joueurs
 void handle_player_movements(Client *clients) {
+
+    // Pour chaque client, nous allons recevoir les données envoyées par le client et les traiter (mouvements + renvoi des données à l'autre joueur)
     for (int i = 0; i < MAX_CLIENTS; i++) {
         char buffer[BUFFER_SIZE];
+        // Réception des données du client
         int bytes_received = SDLNet_TCP_Recv(clients[i].socket, buffer, BUFFER_SIZE - 1);
 
         if (bytes_received > 0) {
@@ -50,18 +64,23 @@ void handle_player_movements(Client *clients) {
 
             int x, y;
             char orientation;
+            // Analyse du message reçu
             if (sscanf(buffer, "MOVE %d %d %c", &x, &y, &orientation) == 3) {
                 Uint32 current_time = SDL_GetTicks();
+                // Vérification du délai entre deux mouvements (si trop rapide, on ignore le mouvement, pour des raisons de performance)
                 if ((x != clients[i].last_x || y != clients[i].last_y) && (current_time - clients[i].last_move_time > MOVE_DELAY)) {
                     clients[i].last_x = x;
                     clients[i].last_y = y;
                     clients[i].last_move_time = current_time;
                     clients[i].orientation = orientation;
 
+                    // Envoi du mouvement à l'autre joueur
                     int other_player_id = (clients[i].id == 1) ? 2 : 1;
                     char move_message[BUFFER_SIZE];
+                    // Création du message de mouvement
                     snprintf(move_message, sizeof(move_message), "MOVE %d %d %c", x, y, orientation);
 
+                    // Envoi du message à l'autre joueur
                     if (clients[other_player_id - 1].socket) {
                         SDLNet_TCP_Send(clients[other_player_id - 1].socket, move_message, strlen(move_message) + 1);
                     }
@@ -73,6 +92,7 @@ void handle_player_movements(Client *clients) {
     }
 }
 
+// Fonction pour démarrer le serveur
 void start_server(int grid[ROWS][COLS]) {
     TCPsocket server_socket, client_socket[MAX_CLIENTS];
     IPaddress ip;
@@ -94,7 +114,7 @@ void start_server(int grid[ROWS][COLS]) {
         printf("Erreur SDLNet_ResolveHost : %s\n", SDLNet_GetError());
         exit(1);
     }
-
+    // Création du socket du serveur sur l'iP et le port spécifiés
     server_socket = SDLNet_TCP_Open(&ip);
     if (!server_socket) {
         printf("Erreur SDLNet_TCP_Open : %s\n", SDLNet_GetError());
@@ -103,20 +123,24 @@ void start_server(int grid[ROWS][COLS]) {
 
     printf("Serveur en attente de connexion sur le port %d...\n", PORT);
 
+    // Création du socket set pour gérer les sockets actifs
     socket_set = SDLNet_AllocSocketSet(MAX_CLIENTS + 1);
     if (!socket_set) {
         printf("Erreur SDLNet_AllocSocketSet : %s\n", SDLNet_GetError());
         exit(1);
     }
 
+    // Ajout du socket du serveur dans le socket set
     SDLNet_TCP_AddSocket(socket_set, server_socket);
 
     int running = 1;
 
     while (running) {
+        // Vérification des sockets actifs
         int active_sockets = SDLNet_CheckSockets(socket_set, 100);
 
         if (active_sockets > 0) {
+            // Vérification du socket du serveur
             if (SDLNet_SocketReady(server_socket)) {
                 if (client_count < MAX_CLIENTS) {
                     client_socket[client_count] = SDLNet_TCP_Accept(server_socket);
@@ -150,6 +174,7 @@ void start_server(int grid[ROWS][COLS]) {
         SDL_Delay(10);
     }
 
+    // Fermeture des sockets
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (clients[i].socket) {
             SDLNet_TCP_Close(clients[i].socket);

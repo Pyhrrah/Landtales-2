@@ -12,12 +12,19 @@
 #define KONAMI_LENGTH 7 
 
 
+/*
+Fichier menu.c, ce dernier contient les fonctions pour gérer le menu du jeu (affichage, gestion des événements, etc.)
+
+*/
+
+// Code Konami, stocké dans un tableau de SDL_Keycode
 const SDL_Keycode konami_code[KONAMI_LENGTH] = {
     SDLK_t, SDLK_r, SDLK_a, SDLK_n, SDLK_c, SDLK_h, SDLK_o
 };
 
 SDL_Keycode konami_input[KONAMI_LENGTH];
 
+// Fonction pour vérifier si le code Konami a été entré
 int check_konami_code() {
     for (int i = 0; i < KONAMI_LENGTH; i++) {
         if (konami_input[i] != konami_code[i]) {
@@ -27,7 +34,7 @@ int check_konami_code() {
     return 1;  
 }
 
-
+// Fonction pour afficher le menu
 void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *background, TTF_Font *font, int hover_link) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color black = {0, 0, 0, 255};
@@ -40,11 +47,13 @@ void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *backg
     int spacing = 60;
     const char *labels[] = {"Jouer", "Editeur", "Multijoueur", "Quitter"};
 
+    // On affiche les options du menu
     for (int i = 0; i < 4; i++) {
         SDL_Color color = (i == selected_option) ? white : black;
         render_text(renderer, labels[i], 50, start_y + i * spacing, font, color);
     }
 
+    // On charge la police pour les mentions légales
     TTF_Font *fontFooter = load_font("./assets/fonts/font.ttf", 18);
     if (!fontFooter) {
         fprintf(stderr, "Impossible de charger la police.\n");
@@ -52,6 +61,7 @@ void render_menu(SDL_Renderer *renderer, int selected_option, SDL_Texture *backg
         return;
     }
 
+    // On affiche les mentions légales
     render_text(renderer, "© Landtales 2 - Tous droits réservés.", 20, WINDOW_HEIGHT - 40, fontFooter, grey);
     render_text(renderer, "Lien du repo ici", 500, WINDOW_HEIGHT - 40, fontFooter, hover_link ? grey : white); 
 
@@ -63,7 +73,7 @@ void handle_menu(SDL_Renderer *renderer) {
     int selected_option = 0;
     SDL_Event event;
     int konami_index = 0;
-    int hover_link = 0;  // Indique si la souris est sur le lien
+    int hover_link = 0;  // On initialise la variable pour le lien du repo
 
     SDL_Texture *background = load_texture(renderer, "./assets/images/fond.png");
     if (!background) {
@@ -71,6 +81,7 @@ void handle_menu(SDL_Renderer *renderer) {
         return;
     }
 
+    // Nous chargeons la police pour le menu
     TTF_Font *font = load_font("./assets/fonts/font.ttf", 28);
     if (!font) {
         fprintf(stderr, "Impossible de charger la police.\n");
@@ -81,17 +92,20 @@ void handle_menu(SDL_Renderer *renderer) {
     int konami_did = 0;
     int music_played = 0;  
 
+    // Nous initialisons le son
     if (init_audio() < 0) {
         SDL_DestroyTexture(background);
         return;
     }
 
+    // Nous définissons les options du menu
     void (*menu_options[])(SDL_Renderer *renderer) = {
         start_game_mode,       
         start_editor_mode,      
         start_multiplayer_mode, 
     };
 
+    // Nous affichons le menu
     while (running) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -125,11 +139,10 @@ void handle_menu(SDL_Renderer *renderer) {
                             int btn_height = 50;
 
                             if (x >= btn_x && x <= btn_x + btn_width && y >= btn_y && y <= btn_y + btn_height) {
-                                // Utilisation des pointeurs de fonction pour appeler la fonction correspondante
                                 if (i < 3) {
-                                    menu_options[i](renderer); // Appel de la fonction à partir du pointeur
+                                    menu_options[i](renderer); 
                                 } else {
-                                    running = 0; // Quitter le jeu
+                                    running = 0; 
                                 }
                             }
                         }
@@ -156,17 +169,17 @@ void handle_menu(SDL_Renderer *renderer) {
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         selected_option = (selected_option + 1) % 4;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
-                        // Utilisation du pointeur de fonction pour appeler la fonction correspondante
                         if (selected_option < 3) {
-                            menu_options[selected_option](renderer); // Appel de la fonction à partir du pointeur
+                            menu_options[selected_option](renderer); 
                         } else {
-                            running = 0; // Quitter le jeu
+                            running = 0;
                         }
                     }
                     break;
             }
         }
 
+        // Nous affichons le menu
         render_menu(renderer, selected_option, background, font, hover_link);
         SDL_Delay(100);
     }

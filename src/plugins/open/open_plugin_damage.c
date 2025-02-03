@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "./../../../include/core/player.h"
+
 
 #ifdef _WIN32
     #include <windows.h>
@@ -7,7 +9,7 @@
     #define LancerPlugin(handle, symbol) GetProcAddress(handle, symbol)
     #define FermerPlugin(handle) FreeLibrary(handle)
 
-    const char *plugin_path = "./plugins/map_editor.dll";
+    const char *plugin_path = "./plugins/map_damage.dll";
 
     // Fonction pour obtenir les erreurs sur Windows
     #define getError() GetLastError()
@@ -19,28 +21,30 @@
     #define FermerPlugin(handle) dlclose(handle)
 
     // Fonction pour obtenir les erreurs sur Linux
-    const char *plugin_path = "./plugins/map_editor.so";
+    const char *chemin_plugin = "./plugins/plugin_damage.so";
 
     
     #define getError() dlerror()
 #endif
 
-// Fonction pour charger et exécuter le plugin pour charger une grid
-void load_and_run_plugin(int grid[15][21]) {
-    void *plugin = OuvrirPlugin(plugin_path);
+// Fonction pour calculer les dégâts infligés par le joueur en appelant la fonction du plugin
+int calculerDegats(int playerAttack, int ennemyDefense, ArmeType type) {
+    void *plugin = OuvrirPlugin(chemin_plugin);
     if (!plugin) {
         fprintf(stderr, "Erreur lors du chargement du plugin : %s\n", getError());
-        return;
+        return 10;
     }
 
-    void (*generate_grid)(int[15][21]) = LancerPlugin(plugin, "generate_grid");
-    if (!generate_grid) {
-        fprintf(stderr, "Erreur : fonction 'generate_grid' non trouvée dans le plugin\n");
+    int (*damage)(int playerAttack, int ennemyDefense, ArmeType type) = LancerPlugin(plugin, "calculateDamage");
+    if (!damage) {
+        fprintf(stderr, "Erreur : fonction 'calculateDamage' non trouvée dans le plugin\n");
         FermerPlugin(plugin);
-        return;
+        return 10;
     }
 
-    generate_grid(grid);  
+    int degat = damage(playerAttack, ennemyDefense, type);
 
     FermerPlugin(plugin);
+
+    return degat;
 }

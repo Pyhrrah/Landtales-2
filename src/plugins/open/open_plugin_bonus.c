@@ -54,19 +54,22 @@ int loadPlugin(const char *pluginPath) {
     return 1; 
 }
 
+// Création des fonctions pour appeler les fonctions du plugin
+
+// Fonction pour décharger le plugin
 void unloadPlugin() {
     if (pluginHandle) {
         FermerPlugin(pluginHandle);
         printf("Plugin déchargé.\n");
     }
 }
-
+// Fonction pour créer un bonus (coordonnées x et y de l'ennemi mort)
 void createBonus(int x, int y) {
     if (spawnBonus) {
         spawnBonus(x, y);
     }
 }
-
+// Fonction pour vérifier la collision entre le joueur et le bonus
 int checkPlayerBonusCollision(Player *player) {
     if (checkBonusCollision) {
         if(checkBonusCollision(player)){
@@ -78,13 +81,13 @@ int checkPlayerBonusCollision(Player *player) {
         return 0;
     }
 }
-
+// Fonction pour dessiner les bonus
 void renderBonuses(SDL_Renderer *renderer) {
     if (drawBonuses) {
         drawBonuses(renderer);
     }
 }
-
+// Fonction pour ouvrir un coffre
 void openChestWithPlugin(Player *player) {
     if (openChest) {
         openChest(player);

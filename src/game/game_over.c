@@ -11,12 +11,14 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
     const int screenWidth = 672;
     const int screenHeight = 544;
 
+    // Chargement de l'image de fond
     SDL_Surface *backgroundSurface = IMG_Load("./assets/images/fondGameOver.png");
     if (!backgroundSurface) {
         printf("Erreur de chargement de l'image de fond: %s\n", SDL_GetError());
         return;
     }
 
+    // Création de la texture de fond
     SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(renderer, backgroundSurface);
     SDL_FreeSurface(backgroundSurface);  
 
@@ -25,12 +27,14 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
         return;
     }
 
+    // Affichage de l'image de fond
     SDL_Rect backgroundRect = {0, 0, screenWidth, screenHeight};
     SDL_RenderCopy(renderer, backgroundTexture, NULL, &backgroundRect);  
 
     SDL_Rect yesButton = {screenWidth / 2 - 150, screenHeight / 2 + 100, 100, 50};
     SDL_Rect noButton = {screenWidth / 2 + 50, screenHeight / 2 + 100, 100, 50};
 
+    // Affichage des boutons
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
     SDL_RenderFillRect(renderer, &yesButton);
     SDL_RenderFillRect(renderer, &noButton);
@@ -41,6 +45,7 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
         return;
     }
 
+    // Affichage du texte des boutons
     SDL_Color textColor = {255, 255, 255, 255}; 
 
     const char *yesText = "Oui";
@@ -49,12 +54,14 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
     SDL_Rect yesTextRect = {yesButton.x + (yesButton.w - yesSurface->w) / 2, yesButton.y + (yesButton.h - yesSurface->h) / 2, yesSurface->w, yesSurface->h};
     SDL_RenderCopy(renderer, yesTexture, NULL, &yesTextRect);
 
+    // Affichage du texte "Non"
     const char *noText = "Non";
     SDL_Surface *noSurface = TTF_RenderUTF8_Solid(font, noText, textColor);
     SDL_Texture *noTexture = SDL_CreateTextureFromSurface(renderer, noSurface);
     SDL_Rect noTextRect = {noButton.x + (noButton.w - noSurface->w) / 2, noButton.y + (noButton.h - noSurface->h) / 2, noSurface->w, noSurface->h};
     SDL_RenderCopy(renderer, noTexture, NULL, &noTextRect);
 
+    // Nettoyage
     SDL_FreeSurface(yesSurface);
     SDL_DestroyTexture(yesTexture);
     SDL_FreeSurface(noSurface);
@@ -62,6 +69,7 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
 
     SDL_RenderPresent(renderer);
 
+    // Gestion des événements
     SDL_bool buttonClicked = SDL_FALSE;
     while (!buttonClicked) {
         while (SDL_PollEvent(event)) {
@@ -69,6 +77,7 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
                 *running = SDL_FALSE;
                 buttonClicked = SDL_TRUE;
             }
+                // Gestion des clics de souris
             if (event->type == SDL_MOUSEBUTTONDOWN) {
                 int x, y;
                 SDL_GetMouseState(&x, &y);
@@ -84,7 +93,7 @@ void displayGameOverScreen(SDL_Renderer *renderer, SDL_Event *event, int *runnin
             }
         }
     }
-
+    // Nettoyage
     SDL_DestroyTexture(backgroundTexture);
 
     TTF_CloseFont(font);
@@ -95,21 +104,27 @@ void gameOver(Player *player, SDL_Renderer *renderer, int saveNumber, int *room,
     if (player->vie <= 0) {
         displayGameOverScreen(renderer, event, running);
 
+        // Réinitialisation des données du joueur
         player->vie = player->max_vie;
 
         clearMapDirectory(saveNumber);
         creerEtageEntier(*etage);
         (*tentative) += 1;
 
+        // Réinitialisation des données du joueur
         *room = 0;
         *etage = 1;
 
+
+        // Sauvegarde des données du joueur
         saveGame(saveNumber, *tentative, player->vie, player->attaque, player->defense, *etage, player->argent, *room, player->max_vie);
         clearEnemies();
 
         player->rect.x = 320;
         player->rect.y = 224;
 
+
+        // Chargement de la salle du lobby
         loadMap(stageFilename, mapData);
 
         char roomFilename[100] = "./data/game/lobbyMap.txt";

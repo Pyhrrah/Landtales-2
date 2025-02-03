@@ -30,6 +30,9 @@
     Il ne peux y avoir qu'un seul SPAWN_PLAYER_1 et un seul SPAWN_PLAYER_2 sur la map.
     Si vous n'avez pas donné les deux tuiles, vous pourrez les ajoutes vous-même dans l'éditeur par la suite.
 
+    Les spawn 1 et 2 sont obligatoires pour l'enregistrement de la map.asm
+    Le code ci-dessous dessine une map classique, libre à vous de la modifier comme vous le souhaitez (algorithmes, génération procédurale, etc.)
+
 
     Vous pouvez personnaliser la map comme vous le souhaitez, mais il est important de respecter les valeurs de tuiles pour le bon fonctionnement du jeu.
 };

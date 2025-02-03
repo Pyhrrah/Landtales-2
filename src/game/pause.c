@@ -3,7 +3,7 @@
 
 // Fonction pour dessiner le menu de pause
 void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
-    int bossRoom = 2; // Toujours la salle 2 pour le boss
+    int bossRoom = 2; // Toujours la salle 2 pour le boss, pour vérifier si le joueur est dans la salle du boss
 
     // Charger l'image de fond avec render_texture
     SDL_Texture *backgroundTexture = load_texture(renderer, "./assets/images/fondPause.png");
@@ -37,13 +37,16 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
     int mapStartX = 50;
     int mapStartY = 150;
 
+    // Dessiner la carte en parcourant le tableau map
     for (int i = 0; i < mapSize; i++) {
         for (int j = 0; j < mapSize; j++) {
             SDL_Rect tileRect = {mapStartX + j * tileSize, mapStartY + i * tileSize, tileSize, tileSize};
             int currentRoom = map[i][j];
 
+            // Ignorer les salles spéciales
             if (currentRoom == -1 || currentRoom == -2) continue; 
 
+            // Dessiner les salles
             if (currentRoom >= 1 && currentRoom <= 36) {
                 SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);  
             } else if (currentRoom == 0) {
@@ -51,6 +54,7 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
             }
             SDL_RenderFillRect(renderer, &tileRect);
 
+            // Dessiner les portes
             if (currentRoom == 0) {
                 SDL_SetRenderDrawColor(renderer, 139, 69, 19, 255);  
                 if (j > 0 && map[i][j-1] >= 1 && map[i][j-1] <= 36 && map[i][j-1] != currentRoom) {
@@ -67,12 +71,14 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
                 }
             }
 
+            // Dessiner le joueur et le boss si la salle n'est pas la salle de départ ou du boss
             if (salle == currentRoom && salle != bossRoom && salle != 0 && salle != 100) {
                 SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); 
                 SDL_Rect playerRect = {tileRect.x + tileSize / 2 - 5, tileRect.y + tileSize / 2 - 5, 10, 10};
                 SDL_RenderFillRect(renderer, &playerRect);
             }
 
+            // Dessiner le boss
             if (currentRoom == bossRoom) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
                 SDL_Rect bossRect = {tileRect.x + tileSize / 2 - 5, tileRect.y + tileSize / 2 - 5, 10, 10};
@@ -90,6 +96,7 @@ void drawPauseMenu(SDL_Renderer *renderer, int map[11][11], int salle) {
 
 // Fonction pour gérer l'événement de pause
 int handlePauseMenu(SDL_Event *event, int *gamePaused) {
+    // Gérer l'appui sur la touche Echap pour mettre en pause le jeu
     if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
         *gamePaused = 1;
         return 1;
@@ -99,6 +106,7 @@ int handlePauseMenu(SDL_Event *event, int *gamePaused) {
 
 // Fonction pour gérer le clic sur les boutons du menu de pause
 int handleButtonClick(SDL_Event *event, SDL_Rect resumeButton, SDL_Rect quitButton, int *gamePaused, int *running) {
+    // Gérer le clic sur les boutons du menu de pause
     if (event->type == SDL_MOUSEBUTTONDOWN) {
         int x = event->button.x;
         int y = event->button.y;

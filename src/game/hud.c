@@ -4,6 +4,12 @@
 #include "./../../include/core/player.h"
 #include <stdio.h>
 
+/*
+
+Fichier hud.c, ce dernier contient les fonctions pour afficher le HUD du jeu (vie, pièces, etc.)
+
+*/
+
 // Fonction pour afficher le HUD avec les images de foudre et régénération
 void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
 
@@ -11,6 +17,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     const int screenHeight = 544;
     const int hudHeight = 544 - (32 * 15);
 
+    // Fond du HUD
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
     SDL_Rect hudRect = {0, screenHeight - hudHeight, screenWidth, hudHeight};
     SDL_RenderFillRect(renderer, &hudRect);
@@ -19,6 +26,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     char skin_path[512];
     load_skin_from_file("assets/skin_config.txt", skin_path);
 
+    // Affichage de l'image du joueur
     SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, skin_path);
     if (!leftImageTexture) {
         printf("Erreur lors du chargement de l'image : %s\n", IMG_GetError());
@@ -33,8 +41,10 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         SDL_DestroyTexture(leftImageTexture);
     }
 
+    // Couleur du texte
     SDL_Color textColor = {255, 255, 255, 255};
 
+    // Charger la police
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 16);
     if (!font) {
         printf("Erreur de chargement de la police: %s\n", TTF_GetError());
@@ -51,10 +61,12 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); 
     SDL_RenderFillRect(renderer, &healthBar);
 
+    // Barre de vie
     SDL_Rect healthFill = {healthBar.x, healthBar.y, (int)(barWidth * healthPercentage), barHeight};
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     SDL_RenderFillRect(renderer, &healthFill);
 
+    // Texte de la vie
     char healthText[50];
     sprintf(healthText, "Vie: %d / %d", player->vie, player->max_vie);
     SDL_Surface *healthSurface = TTF_RenderUTF8_Solid(font, healthText, textColor);
@@ -64,6 +76,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_FreeSurface(healthSurface);
     SDL_DestroyTexture(healthTexture);
 
+    // Texte des pièces
     char coinText[50];
     sprintf(coinText, "Pièces: %d", player->argent);
     SDL_Surface *coinSurface = TTF_RenderUTF8_Solid(font, coinText, textColor);
@@ -73,6 +86,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_FreeSurface(coinSurface);
     SDL_DestroyTexture(coinTexture);
 
+    // Texte des tentatives
     char attemptText[50];
     sprintf(attemptText, "Tentatives: %d", tentative);
     SDL_Surface *attemptSurface = TTF_RenderUTF8_Solid(font, attemptText, textColor);
@@ -82,6 +96,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
     SDL_FreeSurface(attemptSurface);
     SDL_DestroyTexture(attemptTexture);
 
+    // Affichage des images de foudre et régénération
     SDL_Texture *lightningTexture = NULL;
     if (getLightningCooldown(player) > 0) {
         lightningTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/foudre2.png"); 
@@ -89,10 +104,12 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         lightningTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/foudre1.png");
     }
 
+    // Affichage de l'image de la foudre
     if (lightningTexture) {
         SDL_Rect lightningRect = {screenWidth - 80, screenHeight - hudHeight + 10, 30, 30};
         SDL_RenderCopy(renderer, lightningTexture, NULL, &lightningRect);
         
+        // Affichage du texte du cooldown
         if (getLightningCooldown(player) > 0) {
             char lightningText[12];
             sprintf(lightningText, "%d", getLightningCooldown(player));
@@ -106,6 +123,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         SDL_DestroyTexture(lightningTexture); 
     }
 
+    // Affichage de l'image de régénération
     SDL_Texture *regenTexture = NULL;
     if (getRegenCooldown(player) > 0) {
         regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen2.png");
@@ -113,6 +131,7 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         regenTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/spell/regen1.png");
     }
 
+    // Affichage de l'image de régénération
     if (regenTexture) {
         SDL_Rect regenRect = {screenWidth - 40, screenHeight - hudHeight + 10, 30, 30};
         SDL_RenderCopy(renderer, regenTexture, NULL, &regenRect);
@@ -131,5 +150,6 @@ void renderHUD(SDL_Renderer *renderer, Player *player, int tentative) {
         SDL_DestroyTexture(regenTexture);
     }
 
+    // Nettoyage de la police
     TTF_CloseFont(font);
 }

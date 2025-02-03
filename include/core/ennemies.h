@@ -23,6 +23,19 @@ typedef struct {
     int id;
 } Enemy;
 
+
+/**
+ * Structure représentant la configuration d'un ennemi.
+ * - vie : points de vie de l'ennemi.
+ * - attaque : points d'attaque de l'ennemi.
+ * - defense : points de défense de l'ennemi.
+ */
+typedef struct {
+    int vie;
+    int attaque;
+    int defense;
+} EnemyConfig;
+
 /**
  * Structure représentant un bonus.
  * - rect : rectangle SDL définissant la position et la taille du bonus.

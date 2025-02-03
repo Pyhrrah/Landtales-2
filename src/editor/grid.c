@@ -19,6 +19,13 @@ int undoStack[UNDO_STACK_SIZE][GRID_HEIGHT][GRID_WIDTH];
 int undoIndex = -1;
 char *selectedFile = NULL;
 
+
+/*
+
+File grid.c, this file contains the functions to manage the grid of the game
+
+*/
+
 enum {
     SOL = 1,
     SOL_VARIANT_1,
@@ -37,7 +44,7 @@ enum {
 };
 
 extern TTF_Font *font;
-extern int currentObjectID;
+int currentMapNumber = 0;
 
 // Tentative de gestion pour Windows et Linux
 
@@ -69,21 +76,28 @@ void create_directory(const char *path) {
 // Initialisation de la grille 
 void init_grid(const char *file_path) {
     if (strcmp(file_path, "") == 0) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
-            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
+        // Si aucun fichier n'est spécifié, initialiser la grille vide
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
                 grid[y][x] = 0;
             }
         }
+        currentMapNumber = 0;  // Aucune map chargée
     } else {
+        if (sscanf(file_path, "./data/editor/map%d.txt", &currentMapNumber) != 1) {
+            fprintf(stderr, "Erreur : Impossible d'extraire le numéro de la map du fichier %s\n", file_path);
+            currentMapNumber = 0;  
+        }
+
         FILE *file = fopen(file_path, "r");
         if (!file) {
             perror("Erreur lors de l'ouverture du fichier");
             return;
         }
 
-        for (int y = 0; y < GRID_HEIGHT; y++) {  // Lignes
-            for (int x = 0; x < GRID_WIDTH; x++) {  // Colonnes
-                if (fscanf(file, "%d", &grid[y][x]) != 1) { // Inverser l'ordre de x et y
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                if (fscanf(file, "%d", &grid[y][x]) != 1) {
                     fprintf(stderr, "Erreur lors de la lecture de la grille\n");
                     fclose(file);
                     return;
@@ -99,48 +113,46 @@ void save_grid(SDL_Renderer *renderer) {
     if (test_map(renderer, grid)) {
         create_directory("./data/editor");
 
-        if (!selectedFile) {
+        char filename[256];
+
+        if (currentMapNumber > 0) {
+            // Réécrire le fichier existant
+            snprintf(filename, sizeof(filename), "./data/editor/map%d.txt", currentMapNumber);
+        } else {
+            // Trouver un nouveau numéro de map disponible
             int map_number = 1;
-            char new_filename[256];
             FILE *file_check;
 
             do {
-                snprintf(new_filename, sizeof(new_filename), "./data/editor/map%d.txt", map_number);
-                file_check = fopen(new_filename, "r");
+                snprintf(filename, sizeof(filename), "./data/editor/map%d.txt", map_number);
+                file_check = fopen(filename, "r");
                 if (file_check) {
                     fclose(file_check);
                     map_number++;
                 }
-            } while (file_check);            
+            } while (file_check);
 
-            selectedFile = malloc(strlen(new_filename) + 1);
-            if (selectedFile) {
-                strcpy(selectedFile, new_filename);
-            } else {
-                fprintf(stderr, "Erreur d'allocation mémoire pour le nom du fichier\n");
-                return;
-            }
+            currentMapNumber = map_number;  // Mettre à jour le numéro de la map
         }
 
-        FILE *file = fopen(selectedFile, "w");
+        FILE *file = fopen(filename, "w");
         if (!file) {
-            perror("Erreurs lors de l'ouverture du fichier");
+            perror("Erreur lors de l'ouverture du fichier");
             return;
         }
 
-        // Écriture du tableau grid dans le fichier
-        for (int i = 0; i < 15; i++) {
-            for (int j = 0; j < 21; j++) {
-                fprintf(file, "%d ", grid[i][j]); // Écrit chaque valeur suivie d'un espace
+        // Écrire la grille dans le fichier
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                fprintf(file, "%d ", grid[y][x]);
             }
-            fprintf(file, "\n"); // Nouvelle ligne après chaque ligne du tableau
+            fprintf(file, "\n");
         }
 
         fclose(file);
-        printf("Fichier sauvegardé avec succès : %s\n", selectedFile);
+        printf("Fichier sauvegardé avec succès : %s\n", filename);
     }
 }
-
 
 // Empile la grille actuelle dans la pile d'annulation
 void push_undo() {

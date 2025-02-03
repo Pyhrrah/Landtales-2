@@ -2,6 +2,12 @@
 #include <math.h>
 #include <stdio.h>
 
+/*
+
+Fichier projectile.c, ce dernier contient les fonctions pour gérer les projectiles du jeu
+
+*/
+
 // Tableau de projectiles
 Projectile projectiles[MAX_PROJECTILES];
 
@@ -15,6 +21,8 @@ void initProjectiles() {
 // Génération d'un projectile
 void spawnProjectile(SDL_Rect *sourceRect, SDL_Rect *targetRect, float speed) {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
+
+        // Si le projectile n'est pas actif
         if (!projectiles[i].active) {
             // Initialiser la position du projectile à celle de la source
             projectiles[i].rect.x = sourceRect->x + sourceRect->w / 2;
@@ -35,6 +43,8 @@ void spawnProjectile(SDL_Rect *sourceRect, SDL_Rect *targetRect, float speed) {
 
 // Mise à jour des projectiles
 void updateProjectiles(int mapRoom[ROWS][COLS]) {
+
+    // Mise à jour de la position des projectiles
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].active) {
             projectiles[i].rect.x += (int)projectiles[i].dx;
@@ -61,12 +71,14 @@ void updateProjectiles(int mapRoom[ROWS][COLS]) {
 
 // Vérification si un projectile est sorti de l'écran
 int isProjectileOutOfBounds(Projectile *proj) {
+    // Vérification des sorties d'écran, s'il est sorti de l'écran, on le désactive
     return proj->rect.x < 0 || proj->rect.y < 0 ||
            proj->rect.x >= COLS * TILE_SIZE || proj->rect.y >= ROWS * TILE_SIZE;
 }
 
 // Vérification des collisions entre les projectiles et le joueur
 void checkProjectileCollisions(Player *player) {
+    // Vérification des collisions entre les projectiles et le joueur, si un projectile touche le joueur, on réduit sa vie et on désactive le projectile
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].active && SDL_HasIntersection(&projectiles[i].rect, &player->rect)) {
             projectiles[i].active = 0;
@@ -78,7 +90,9 @@ void checkProjectileCollisions(Player *player) {
 
 // Rendu des projectiles
 void renderProjectiles(SDL_Renderer *renderer) {
+    // Rendu des projectiles
     for (int i = 0; i < MAX_PROJECTILES; i++) {
+        // Si le projectile est actif
         if (projectiles[i].active) {
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour les projectiles
             SDL_RenderFillRect(renderer, &projectiles[i].rect);
@@ -89,6 +103,7 @@ void renderProjectiles(SDL_Renderer *renderer) {
 // Supprimer les projectiles inactifs
 void clearInactiveProjectiles() {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
+        // Si le projectile est inactif, on réinitialise sa position
         if (!projectiles[i].active) {
             projectiles[i].rect.x = 0;
             projectiles[i].rect.y = 0;

@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "./../../include/core/player.h"
 #include "./../../include/utils/sdl_utils.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #define SOL 1
 #define SOL_VARIANT_1 2
@@ -31,8 +34,8 @@ char orientation = 'D';
 SDL_Texture *player_texture = NULL;  
 
 int load_player_texture(SDL_Renderer *renderer) {
-    char skin_path[512];
-    load_skin_from_file("assets/skin_config.txt", skin_path);
+    char skin_path[100] = "./assets/images/sprite/player/1.png";
+    
     player_texture = IMG_LoadTexture(renderer, skin_path);  
     if (!player_texture) {
         printf("Erreur lors du chargement de la texture du joueur : %s\n", SDL_GetError());
@@ -125,8 +128,7 @@ void draw_test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
             SDL_RenderFillRect(renderer, &cell);
         }
     }
-        char skin_path[512];
-        load_skin_from_file("assets/skin_config.txt", skin_path);
+        char skin_path[100] = "./assets/images/sprite/player/1.png";
         int leftImageY = screenHeight - hudHeight + 10;
 
         SDL_Texture *leftImageTexture = IMG_LoadTexture(renderer, skin_path);
@@ -238,6 +240,8 @@ int test_map(SDL_Renderer *renderer, int grid[GRID_HEIGHT][GRID_WIDTH]) {
         if (grid[player_y][player_x] == TARGET_SPAWN) {
             return 1;
         }
+
+        SDL_Delay(16);
     }
 
     return 0;

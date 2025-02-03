@@ -3,7 +3,16 @@
 #include "./../../include/game/map.h"
 #include "./../../include/utils/video.h"
 
+/*
+
+Fichier credit.c, ce dernier contient la fonction pour afficher les crédits du jeu
+
+*/
+
+// Fonction pour afficher les crédits
 void displayCredits(SDL_Renderer *renderer) {
+
+    // Initialisation de SDL_ttf
     if (TTF_Init() < 0) {
         SDL_Log("Impossible d'initialiser SDL_ttf: %s", TTF_GetError());
         return;
@@ -11,6 +20,7 @@ void displayCredits(SDL_Renderer *renderer) {
     init_audio();
     playSong("./assets/music/generique.mp3");
 
+    // Chargement de la police
     TTF_Font *font = TTF_OpenFont("./assets/fonts/DejaVuSans.ttf", 24);
     if (!font) {
         SDL_Log("Impossible de charger la police: %s", TTF_GetError());
@@ -54,6 +64,7 @@ void displayCredits(SDL_Renderer *renderer) {
         NULL
     };
 
+    // Couleurs
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color black = {0, 0, 0, 255};
 
@@ -70,6 +81,7 @@ void displayCredits(SDL_Renderer *renderer) {
     int running = 1;
     SDL_Event event;
 
+    // Boucle d'affichage des crédits 
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -77,31 +89,38 @@ void displayCredits(SDL_Renderer *renderer) {
             }
         }
 
+        // Nettoyage de l'écran
         SDL_SetRenderDrawColor(renderer, black.r, black.g, black.b, black.a);
         SDL_RenderClear(renderer);
 
+
+        // Affichage des crédits
         int current_y = y_position;
         for (int i = 0; credits[i] != NULL; i++) {
             textSurface = TTF_RenderUTF8_Blended(font, credits[i], white);
             if (!textSurface) continue;
 
+            // Création de la texture
             textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
             SDL_FreeSurface(textSurface);
 
             if (!textTexture) continue;
 
+            // Récupération de la taille du texte
             int text_width, text_height;
             SDL_QueryTexture(textTexture, NULL, NULL, &text_width, &text_height);
 
             SDL_Rect textRect = { (screen_width - text_width) / 2, current_y, text_width, text_height };
             SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
 
+            // Nettoyage de la texture
             SDL_DestroyTexture(textTexture);
             current_y += text_height + 10;
         }
 
         SDL_RenderPresent(renderer);
 
+        // Défilement des crédits
         y_position -= scroll_speed;
 
         if (current_y < 0) {
@@ -110,29 +129,34 @@ void displayCredits(SDL_Renderer *renderer) {
 
         SDL_Delay(16);
     }
+
+    // Nettoyage
     check_and_free_music();
     cleanup_audio();
     TTF_CloseFont(font);
     TTF_Quit();
 }
 
-
+// Fonction pour sauvegarder les données après une victoire
 void saveWinGame(int saveNumber, int tentative, int vie, int attaque, int defense, int etage, int piece, int room, int max_vie) {
     char playerFilename[100];
     sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
 
+    // Ouverture du fichier
     FILE *file = fopen(playerFilename, "w");
     if (!file) {
         printf("Erreur lors de l'ouverture du fichier %s pour la sauvegarde.\n", playerFilename);
         return;
     }
 
+    // Sauvegarde des données
     tentative += 1;
     vie = max_vie;
     etage = 1;
     piece = 0;
     room = 0;
 
+    // Écriture des données
     fprintf(file, "%d %d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room, max_vie);
     fclose(file);
 

@@ -12,15 +12,33 @@
 #define CELL_SIZE 32
 #define BUFFER_SIZE 1024 
 
+
+/*
+
+Fichier client.c, contient les fonctions pour le client du mode multijoueur
+
+Important : TCPsocket client_socket correspond à la connexion avec le serveur. 
+Exemple de valeur pour client_socket : TCPsocket client_socket = SDLNet_TCP_Open(&ip); soit l'adresse IP du serveur
+
+ */
+
+
+/**
+ * Structure pour représenter un joueur
+ * SDL_Rect rect : rectangle pour la position du joueur (x, y, w, h)
+ * char orientation : orientation du joueur (U, D, R, L)
+ */
 typedef struct {
     SDL_Rect rect;
     char orientation;
 } Player;
 
+// Fonctions pour vérifier les collisions avec les murs
 int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     if (new_x < 0 || new_x >= COLS || new_y < 0 || new_y >= ROWS) {
         return 0;
     }
+    // Tuiles bloquées (murs)
     int blocked_tiles[] = {5, 6, 7, 8, 9, 10, 11};
     int tile_value = grid[new_y][new_x];
     for (size_t i = 0; i < sizeof(blocked_tiles) / sizeof(blocked_tiles[0]); i++) {
@@ -31,11 +49,17 @@ int check_collision(int grid[ROWS][COLS], int new_x, int new_y) {
     return 1; 
 }
 
+// Fonctions pour envoyer et recevoir la grille, initialiser les joueurs et les adversaires
+// TCPsocket client_socket : socket du client, correspond à la connexion avec le serveur dans SDL_net
 void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id, char *orientation) {
+    // memset permet de remplir la grille avec des 0
     memset(grid, 0, sizeof(int) * ROWS * COLS);
+    // Réception de la grille
     size_t grid_size = ROWS * COLS * sizeof(int);
     size_t received = 0;
+    // Tant que la taille reçue est inférieure à la taille de la grille, on continue de recevoir
     while (received < grid_size) {
+        // SDLNet_TCP_Recv permet de recevoir des données sur le socket
         int bytes = SDLNet_TCP_Recv(client_socket, (char *)grid + received, grid_size - received);
         if (bytes <= 0) {
             fprintf(stderr, "Erreur de réception de la grille : %s\n", SDLNet_GetError());
@@ -45,7 +69,9 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id,
     }
     received = 0;
     size_t id_size = sizeof(int);
+    // Tant que la taille reçue est inférieure à la taille de l'identifiant, on continue de recevoir
     while (received < id_size) {
+        // Réception de l'identifiant du client
         int bytes = SDLNet_TCP_Recv(client_socket, (char *)client_id + received, id_size - received);
         if (bytes <= 0) {
             fprintf(stderr, "Erreur de réception de l'identifiant du client : %s\n", SDLNet_GetError());
@@ -57,6 +83,7 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id,
     received = 0;
     size_t orientation_size = sizeof(char);
     while (received < orientation_size) {
+        // Réception de l'orientation du joueur
         int bytes = SDLNet_TCP_Recv(client_socket, (char *)orientation + received, orientation_size - received);
         if (bytes <= 0) {
             fprintf(stderr, "Erreur de réception de l'orientation : %s\n", SDLNet_GetError());
@@ -68,6 +95,7 @@ void receive_grid(TCPsocket client_socket, int grid[ROWS][COLS], int *client_id,
     printf("Grille, identifiant client et orientation reçus avec succès.\n");
 }
 
+// Fonction pour dessiner la grille
 void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
     static int textures_loaded = 0;
     if (!textures_loaded) {
@@ -75,6 +103,7 @@ void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
         textures_loaded = 1;
     }
 
+    // Parcours de la grille pour dessiner les tuiles
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             SDL_Rect rect = {j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE};
@@ -97,10 +126,12 @@ void draw_grid(SDL_Renderer *renderer, int grid[ROWS][COLS]) {
     }
 }
 
+// Fonction pour initialiser le joueur et l'adversaire
 void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *opponent, int client_id) {
     int spawn_tile_player = (client_id == 1) ? 12 : 13;
     int spawn_tile_opponent = (client_id == 1) ? 13 : 12;
 
+    // Initialisation des positions des joueurs
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (grid[i][j] == spawn_tile_player) {
@@ -110,6 +141,7 @@ void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *op
         }
     }
 
+    // Initialisation des positions des adversaires
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (grid[i][j] == spawn_tile_opponent) {
@@ -119,17 +151,20 @@ void initialize_player_opponent(int grid[ROWS][COLS], Player *player, Player *op
         }
     }
 
+    // Vérification des positions de spawn
     if (player->rect.x == -1 || player->rect.y == -1) {
         fprintf(stderr, "Erreur : Position de spawn introuvable pour le joueur %d.\n", client_id);
         exit(EXIT_FAILURE);
     }
 
+    // Vérification des positions de spawn
     if (opponent->rect.x == -1 || opponent->rect.y == -1) {
         fprintf(stderr, "Erreur : Position de spawn introuvable pour l'adversaire.\n");
         exit(EXIT_FAILURE);
     }
 }
 
+// Fonction pour dessiner le joueur
 void draw_player(SDL_Renderer *renderer, Player *player, const char *image_path) {
     // Charger l'image du sprite
     SDL_Texture *sprite_texture = IMG_LoadTexture(renderer, image_path);
@@ -169,26 +204,37 @@ void draw_player(SDL_Renderer *renderer, Player *player, const char *image_path)
     SDL_DestroyTexture(sprite_texture);
 }
 
+// Fonction pour envoyer la position du joueur au serveur, TCPsocket client_socket : socket du client, Player *player : joueur
 void send_player_position(TCPsocket client_socket, Player *player) {
+    // Création du message à envoyer, BUFFER_SIZE est la taille du buffer, le buffer est un tableau de caractères
     char message[BUFFER_SIZE];
+    // snprintf permet de formater une chaîne de caractères
     snprintf(message, sizeof(message), "MOVE %d %d %c\n", player->rect.x / CELL_SIZE, player->rect.y / CELL_SIZE, player->orientation);
+    // SDLNet_TCP_Send permet d'envoyer des données sur le socket
     SDLNet_TCP_Send(client_socket, message, strlen(message));
 }
 
+// Fonction pour gérer les messages du serveur, TCPsocket client_socket : socket du client, Player *opponent : adversaire
 void handle_server_messages(TCPsocket client_socket, Player *opponent) {
     char buffer[BUFFER_SIZE];
 
+    // Initialisation du SocketSet
+    // SDLNet_SocketSet est une structure qui contient un ensemble de sockets
     static SDLNet_SocketSet socket_set = NULL;
     if (!socket_set) {
+        // SDLNet_AllocSocketSet permet d'allouer un SocketSet
         socket_set = SDLNet_AllocSocketSet(1);
         if (!socket_set) {
             fprintf(stderr, "Erreur lors de l'allocation du SocketSet : %s\n", SDLNet_GetError());
             return;
         }
+        // SDLNet_TCP_AddSocket permet d'ajouter un socket à un SocketSet
         SDLNet_TCP_AddSocket(socket_set, client_socket);
     }
 
+    // SDLNet_CheckSockets permet de vérifier si des données sont prêtes à être lues sur les sockets
     if (SDLNet_CheckSockets(socket_set, 0) > 0 && SDLNet_SocketReady(client_socket)) {
+        // SDLNet_TCP_Recv permet de recevoir des données sur le socket
         int bytes_received = SDLNet_TCP_Recv(client_socket, buffer, sizeof(buffer) - 1);
 
         if (bytes_received > 0) {
@@ -213,6 +259,7 @@ void handle_server_messages(TCPsocket client_socket, Player *opponent) {
     }
 }
 
+// Fonction pour démarrer le client, const char *server_ip : adresse IP du serveur, SDL_Renderer *renderer : renderer
 void start_client(const char *server_ip, SDL_Renderer *renderer) {
     if (SDLNet_Init() == -1) {
         fprintf(stderr, "Erreur d'initialisation de SDL_net : %s\n", SDLNet_GetError());

@@ -10,11 +10,11 @@
 #define COLS 21
 
 // Déclaration du tableau des textures global
-SDL_Texture* tileTextures[19];
+SDL_Texture* tileTextures[20];
 
 // Fonction pour charger les textures des sprites
 int loadTextures(SDL_Renderer *renderer) {
-    const char* tilePaths[19] = {
+    const char* tilePaths[20] = {
         "./assets/images/sprite/map/sol1.png",   // 1 : tile sol normal
         "./assets/images/sprite/map/sol2.png",   // 2 : tile sol variation 1
         "./assets/images/sprite/map/sol3.png",   // 3 : tile sol variation 2
@@ -34,16 +34,18 @@ int loadTextures(SDL_Renderer *renderer) {
         "./assets/images/sprite/map/pilier3.png",// 17: pilier bas droit (bd)
         "./assets/images/sprite/map/pilier4.png", // 18: pilier bas gauche (bg)
         "./assets/images/sprite/map/coffre.png",   // 19 : tile sol normal
+        "./assets/images/sprite/map/sol1.png",  // 20 : tile sol normal
     };
 
     // Charger toutes les images et créer les textures
-    for (int i = 0; i < 19; i++) {
+    for (int i = 0; i < 20; i++) {
         SDL_Surface* surface = IMG_Load(tilePaths[i]);
         if (!surface) {
             printf("Erreur de chargement de l'image %s: %s\n", tilePaths[i], SDL_GetError());
             return -1;
         }
 
+        // Créer la texture à partir de la surface
         tileTextures[i] = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface); 
 
@@ -70,7 +72,7 @@ void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
     }
 
     // Tableau des couleurs pour les tuiles sans sprites
-    SDL_Color colors[19] = {
+    SDL_Color colors[20] = {
         {50, 205, 50, 255},   // 1 : tile sol normal
         {60, 179, 113, 255},  // 2 : tile sol variation 1
         {34, 139, 34, 255},   // 3 : tile sol variation 2
@@ -89,16 +91,20 @@ void drawMap(int room[ROWS][COLS], SDL_Renderer *renderer) {
         {192, 192, 192, 255}, // 16: pilier haut droit (hd)
         {192, 192, 192, 255}, // 17: pilier bas droit (bd)
         {192, 192, 192, 255},  // 18: pilier bas gauche (bg)
-        {192, 192, 192, 255}  // 19: coffre
+        {192, 192, 192, 255},  // 19: coffre
+        {50, 205, 50, 255},  // 20: tile sol normal
     };
 
+    // Parcourir chaque tuile de la salle et la dessiner
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             int tileId = room[i][j];  
 
-            if (tileId > 0 && tileId <= 19) {
+            // Si l'ID de la tuile est valide, on la dessine
+            if (tileId > 0 && tileId <= 20) {
                 SDL_Rect tileRect = { j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE };
 
+                // Si une texture est disponible pour cette tuile, on l'utilise
                 if (tileTextures[tileId - 1]) {
                     SDL_RenderCopy(renderer, tileTextures[tileId - 1], NULL, &tileRect); 
                 } else {
@@ -121,9 +127,11 @@ void loadRoomData(const char* filename, int room[ROWS][COLS]) {
         return;
     }
 
+    // Lire les données de la salle
     int x, y, value;
     int i = 0, j = 0;
     
+    // Lire les données de la salle
     while (fscanf(file, "%d %d %d", &x, &y, &value) == 3) {
         if (i < ROWS && j < COLS) {
             room[i][j] = value;
@@ -146,7 +154,9 @@ int loadMap(const char* filename, int data[11][11]) {
         return -1;
     }
 
+    // Lire les données de la map
     int i = 0, j = 0;
+    // Tant qu'on peut lire un entier, on le stocke dans le tableau
     while (fscanf(file, "%d", &data[i][j]) == 1) {
         j++;
         if (j >= 11) {
@@ -160,14 +170,6 @@ int loadMap(const char* filename, int data[11][11]) {
         }
     }
 
-    printf("Données de la map chargées avec succès !\n");
-    for (int i = 0; i < 11; i++) {
-        for (int j = 0; j < 11; j++) {
-            printf("%4d ", data[i][j]);
-        }
-        printf("\n");
-    }
-
     fclose(file);
     return (i * 11 + j); 
 }
@@ -177,6 +179,7 @@ void saveGame(int saveNumber, int tentative, int vie, int attaque, int defense, 
     char playerFilename[100];
     sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
 
+    // Sauvegarde des données du joueur dans un fichier
     FILE *file = fopen(playerFilename, "w");
     if (!file) {
         printf("Erreur lors de l'ouverture du fichier %s pour la sauvegarde.\n", playerFilename);
@@ -185,6 +188,7 @@ void saveGame(int saveNumber, int tentative, int vie, int attaque, int defense, 
 
     room = (room == 100) ? 0 : room;
 
+    // Écriture des données dans le fichier
     fprintf(file, "%d %d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room, max_vie);
     fclose(file);
 
@@ -194,6 +198,7 @@ void saveGame(int saveNumber, int tentative, int vie, int attaque, int defense, 
 
 // Fonction pour effacer les fichiers de sauvegarde de l'étage (après mort ou changement d'étage)
 void clearMapDirectory(int saveNumber) {
+    // Suppression du dossier de sauvegarde de l'étage
     char dirCommand[150];
     sprintf(dirCommand, "rm -rf ./data/game/save%d/map", saveNumber);
     system(dirCommand);
@@ -201,9 +206,11 @@ void clearMapDirectory(int saveNumber) {
 
 // Fonction pour charger les données du joueur depuis un fichier
 void loadPlayerData(int saveNumber, int *tentative, int *vie, int *attaque, int *defense, int *etage, int *piece, int *room) {
+    // Chargement des données du joueur depuis un fichier
     char playerFilename[100];
     sprintf(playerFilename, "./data/game/save%d/savePlayer.txt", saveNumber);
 
+    // Ouverture du fichier en mode lecture
     FILE *file = fopen(playerFilename, "r");
     if (file) {
         fscanf(file, "%d %d %d %d %d %d %d", tentative, vie, attaque, defense, etage, piece, room);
@@ -219,9 +226,11 @@ void loadPlayerData(int saveNumber, int *tentative, int *vie, int *attaque, int 
 void loadMapAndRoom(int saveNumber, int room, int dataMap[11][11], int mapRoom[ROWS][COLS]) {
     char mapFilename[100];
 
+    // Charger les données de la map
     sprintf(mapFilename, "./data/game/save%d/map/map.txt", saveNumber);
     loadMap(mapFilename, dataMap);
 
+    // Charger les données de la salle
     if (room == 0) {
         sprintf(mapFilename, "./data/game/lobbyMap.txt");
     } else {

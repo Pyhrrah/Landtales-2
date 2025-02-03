@@ -1,6 +1,11 @@
 #include "./../../include/editor/colors.h"
 #include <SDL2/SDL_image.h>
 
+
+/*
+Fichier colors.c, ce dernier contient les couleurs des tuiles du jeu
+*/
+
 // Couleurs des tuiles
 
 SDL_Color colors[] = {
@@ -21,6 +26,7 @@ SDL_Color colors[] = {
 };
 
 size_t get_colors_count() {
+    // Retourne le nombre de couleurs
     return sizeof(colors) / sizeof(colors[0]);
 }
 
@@ -44,9 +50,12 @@ void load_textures(SDL_Renderer *renderer) {
         "assets/images/sprite/map/spawn2.png",  // SPAWN_PLAYER_2
     };
 
+    // Nombre de textures
     size_t texture_count = sizeof(texture_paths) / sizeof(texture_paths[0]);
 
+    // Chargement des textures
     for (size_t i = 0; i < texture_count; i++) {
+        // Chargement de la texture
         textures[i] = IMG_LoadTexture(renderer, texture_paths[i]);
     }
 }

@@ -25,6 +25,14 @@ SDL_Rect bossDoor = {0, 0, 0, 0};
 time_t timestampLastSong = 0;
 const char *lastSong = NULL;
 
+
+
+/*
+
+Fichier boss.c, ce dernier contient les fonctions pour gérer le boss du jeu (initialisation, affichage, mise à jour, etc.)
+
+*/
+
 void playRandomSound() {
     const char *sounds[] = {
         "assets/music/sons/Edusign.mp3",
@@ -127,6 +135,7 @@ void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect,
                              int tentative, int *etage, Player *player, int mapData[11][11], char *stageFilename) {
     static SDL_Texture *bossDoorTexture = NULL;
 
+    // Charger la texture de la porte du boss si ce n'est pas déjà fait
     if (bossDoorTexture == NULL) {
         bossDoorTexture = IMG_LoadTexture(renderer, "./assets/images/sprite/map/spawn1.png");
         if (!bossDoorTexture) {
@@ -135,30 +144,36 @@ void handleBossDoorCollision(SDL_Renderer *renderer, SDL_Rect *playerRect,
         }
     }
 
+    // Afficher la porte du boss si elle est active
     if (bossDoor.w > 0 && bossDoor.h > 0) {
         SDL_RenderCopy(renderer, bossDoorTexture, NULL, &bossDoor);
 
         if (SDL_HasIntersection(playerRect, &bossDoor)) {
             printf("Joueur entre dans la porte, retour au lobby.\n");
             
+            // Charger la salle du lobby
             *room = 0;
             sprintf(mapFilename, "./data/game/lobbyMap.txt");
             loadRoomData(mapFilename, mapRoom);
 
             (*etage) += 1;
 
+            // On reset la porte du boss
             bossDoor.w = 0;
             bossDoor.h = 0;
 
             clearEnemies();
 
+            // On efface le dossier de sauvegarde de l'étage
             clearMapDirectory(saveNumber);
 
+            // On sauvegarde les données du joueur
             if (*etage != 4) {
                 creerEtageEntier(*etage);
                 loadMap(stageFilename, mapData);
             }
 
+            // On sauvegarde les données du joueur
             saveGame(saveNumber, tentative, player->vie, player->attaque, player->defense, *etage, player->argent, *room, player->max_vie);
         }
     }
@@ -169,6 +184,7 @@ void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) 
     static Uint32 lastProjectileTime = 0;
     Uint32 currentTime = SDL_GetTicks();
 
+    // Vérifier le cooldown
     if (currentTime > lastProjectileTime + 3000) { // 3 secondes d'intervalle
         spawnBossProjectile(bossRect, playerRect);
         lastProjectileTime = currentTime;

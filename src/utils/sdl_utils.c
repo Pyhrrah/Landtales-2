@@ -1,6 +1,17 @@
 #include "./../../include/utils/sdl_utils.h"
 #include <stdio.h>
 
+
+/*
+
+Fichier contenant les fonctions utilitaires pour SDL
+
+Son but était de simplifier l'entièreté du code en regroupant les fonctions de base de SDL2 et SDL_ttf
+Mais par manque de temps, il ne s'applique qu'à quelques fonctions
+
+*/
+
+
 // Initialisation de SDL, TTF, création de la fenêtre et du renderer
 int initSDL(SDL_Window **window, SDL_Renderer **renderer, const char *title, int width, int height) {
     // Initialisation de SDL

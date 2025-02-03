@@ -7,13 +7,20 @@
 #include "./../../include/multiplayer/server.h"
 #include "./../../include/utils/sdl_utils.h"
 
-// Structure pour les données du client
+/**
+ * Structure pour les données du client
+ * const char *server_ip : adresse IP du serveur
+ * SDL_Renderer *renderer : renderer
+ */
 typedef struct {
     const char *server_ip; 
     SDL_Renderer *renderer; 
 } ClientData;
 
-/// Structure pour les données du serveur
+/**
+ * Structure pour les données du serveur
+ * int grid[ROWS][COLS] : grille
+ */
 typedef struct {
     int grid[ROWS][COLS]; 
 } ServerData;
@@ -44,6 +51,7 @@ void draw_button(SDL_Renderer *renderer, SDL_Rect rect, const char *text, TTF_Fo
         return;
     }
 
+    // Centrer le texte dans le bouton
     int text_width = textSurface->w;
     int text_height = textSurface->h;
     SDL_Rect textRect = {
@@ -85,6 +93,7 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
         return;
     }
 
+    // Lire les noms de fichiers avec un scroll (offset)
     char filename[256];
     while (fgets(filename, sizeof(filename), fp) != NULL && fileCount < 100) {
         filename[strcspn(filename, "\n")] = 0; 
@@ -119,6 +128,7 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                 int x = event.button.x;
                 int y = event.button.y;
 
+                // Vérifier si un fichier a été cliqué, si oui on charge la grille pour checker si elle est solvable
                 for (int i = 0; i < fileCount; i++) {
                     if (x > fileRects[i].x && x < fileRects[i].x + fileRects[i].w &&
                         y > fileRects[i].y && y < fileRects[i].y + fileRects[i].h) {
@@ -126,25 +136,33 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
                         if (!load_grid(fileNames[i], grid)) {
                             printf("Erreur lors du chargement de la grille\n");
                         } else {
+                            // Vérifier si le labyrinthe est solvable
                             if (is_maze_solvable(grid)) {
+                                // Si oui, on lance le serveur et le client (le serveur en thread à part)
                                 ServerData serverData;
+                                // Copie de la grille pour le thread serveur
                                 memcpy(serverData.grid, grid, sizeof(serverData.grid)); 
 
+                                // Création du thread serveur, cela signifie que le serveur va tourner en parallèle du client.
+                                // Un thread est un processus léger qui partage le même espace mémoire que le processus principal.
                                 SDL_Thread *serverThread = SDL_CreateThread(server_thread, "ServerThread", &serverData);
                                 if (!serverThread) {
                                     printf("Erreur lors de la création du thread serveur : %s\n", SDL_GetError());
                                     exit(EXIT_FAILURE);
                                 }
 
+                                // Ajout d'un délai de 2 secondes pour laisser le temps au serveur de démarrer
                                 SDL_Delay(2000);
 
+                                // Données du client (ip locale et renderer)
                                 ClientData clientData = { 
                                     "127.0.0.1",
                                     renderer     
                                 };
 
+                                // Démarrage du client
                                 start_client(clientData.server_ip, clientData.renderer); 
-
+                                // Attente de la fin du thread serveur
                                 SDL_WaitThread(serverThread, NULL);
                             } else {
                                 printf("Le labyrinthe n'est pas solvable\n");
@@ -197,11 +215,15 @@ void display_file_list(SDL_Renderer *renderer, TTF_Font *font) {
 void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
     char inputText[256] = "";
     int running = 1;
+    // Démarrer la saisie de texte
     SDL_StartTextInput();
+
+
 
     int screen_width = 672;
     int screen_height = 544;
 
+    // Rectangle pour la saisie de texte (faux input)
     SDL_Rect inputRect = {0, 0, 400, 50};
     SDL_Color bgColor = {50, 50, 50, 255};   
     SDL_Color borderColor = {255, 255, 255, 255}; 
@@ -222,22 +244,28 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         return;
     }
 
+    // Boucle principale
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = 0;
+                // Arrêter la saisie de texte
             } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
                 printf("IP saisie : %s\n", inputText);
+                // Vérifier si l'IP est valide
                 if (strlen(inputText) > 0) {
                     start_client(inputText, renderer);
                 }
             } else if (event.type == SDL_TEXTINPUT) {
+                // Ajouter le texte saisi à la chaîne de texte
                 if (strlen(inputText) + strlen(event.text.text) < sizeof(inputText) - 1) {
                     strcat(inputText, event.text.text);
                 }
             } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKSPACE) {
+                // Supprimer le dernier caractère
                 size_t len = strlen(inputText);
+                // Vérifier si la chaîne n'est pas vide
                 if (len > 0) {
                     inputText[len - 1] = '\0';
                 }
@@ -253,6 +281,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
 
         SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
 
+        // Afficher le message de saisie
         SDL_Surface *messageSurface = TTF_RenderUTF8_Solid(font, "Renseignez l'IP de l'hôte :", textColor);
         if (messageSurface) {
             SDL_Texture *messageTexture = SDL_CreateTextureFromSurface(renderer, messageSurface);
@@ -273,6 +302,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
         SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         SDL_RenderDrawRect(renderer, &inputRect);
 
+        // Afficher le texte saisi si la chaîne n'est pas vide
         if (strlen(inputText) > 0) {
             SDL_Surface *inputSurface = TTF_RenderUTF8_Solid(font, inputText, textColor);
             if (inputSurface) {
@@ -318,6 +348,7 @@ void client_mode_input(SDL_Renderer *renderer, TTF_Font *font) {
     SDL_StopTextInput();
 }
 
+// Fonction pour dessiner le texte d'un bouton
 void draw_button_text(SDL_Renderer *renderer, SDL_Rect button, const char *text, TTF_Font *font, SDL_Color color) {
     SDL_Surface *textSurface = TTF_RenderUTF8_Solid(font, text, color);
     if (textSurface) {
@@ -333,6 +364,7 @@ void draw_button_text(SDL_Renderer *renderer, SDL_Rect button, const char *text,
     }
 }
 
+// Fonction pour démarrer le mode multijoueur
 void start_multiplayer_mode(SDL_Renderer *renderer) {
     SDL_Rect joinButton = {0, 0, 200, 100};  
     SDL_Rect hostButton = {0, 0, 200, 100};  

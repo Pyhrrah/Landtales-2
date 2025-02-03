@@ -16,6 +16,13 @@
 #define UNDO_STACK_SIZE 100
 #define EMPTY -1  
 
+
+/*
+
+Fichier map_test.c, ce dernier contient les fonctions pour tester la carte du jeu
+
+*/
+
 // Initialisation de la grille
 enum {
     SOL = 1,
@@ -47,6 +54,7 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
         int x = event.button.x / CELL_SIZE;  
         int y = event.button.y / CELL_SIZE;
 
+        // Gestion des événements
         if (event.type == SDL_QUIT) {
             *running = 0;
         } else if (event.type == SDL_KEYDOWN) {
@@ -62,6 +70,9 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
                 SDL_Rect save_button = {WINDOW_WIDTH - 100, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
                 SDL_Rect reset_button = {WINDOW_WIDTH - 200, WINDOW_HEIGHT - CAROUSEL_HEIGHT, 80, CAROUSEL_HEIGHT - 10};
 
+                // Gestion des clics sur les boutons
+                // Si le clic est dans la zone des boutons
+
                 if (event.button.y > WINDOW_HEIGHT - CAROUSEL_HEIGHT) {
                     if (event.button.x >= save_button.x && event.button.x <= save_button.x + save_button.w) {
                         save_grid(renderer);
@@ -70,10 +81,12 @@ void handle_editor_events(SDL_Renderer *renderer, int *running) {
                     } else {
                         currentObjectID = event.button.x / CELL_SIZE; 
                     }
+                    // Si le clic est dans la grille
                 } else {
                     int found_player1 = 0, found_player2 = 0;
                     int found_block_12 = 0, found_block_13 = 0;
 
+                    // Vérification de la présence des joueurs
                     for (int i = 0; i < GRID_HEIGHT; i++) {
                         for (int j = 0; j < GRID_WIDTH; j++) {
                             if (grid[i][j] == SPAWN_PLAYER_1) found_player1 = 1;
@@ -326,6 +339,8 @@ char* handle_menu_events(SDL_Renderer *renderer, SDL_Rect *new_room_button, SDL_
                 *fileCount = render_file_list(renderer, font, fileRects, deleteButtons, fileNames, &scrollOffset);
             }
         }
+
+        SDL_Delay(16);
     }
 
     SDL_DestroyTexture(newRoomButtonTexture);
