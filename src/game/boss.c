@@ -89,8 +89,8 @@ void checkBossProjectileCollisions(Player *player) {
 }
 
 // Afficher les projectiles du boss à l'écran
-void renderBossProjectiles(SDL_Renderer *renderer) {
-    renderProjectiles(renderer); // Utiliser la fonction générique pour afficher les projectiles
+void renderBossProjectiles(SDL_Renderer *renderer, SDL_Texture *projectileTexture) {
+    renderProjectiles(renderer, projectileTexture); // Utiliser la fonction générique pour afficher les projectiles
 }
 
 // Vérifie si le boss est en vie
@@ -192,7 +192,7 @@ void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect) 
 }
 
 // Gérer tous les projectiles du boss
-void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player) {
+void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player, SDL_Texture *projectileTexture) {
     // Mettre à jour les projectiles
     updateBossProjectiles(mapRoom);
 
@@ -200,6 +200,6 @@ void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Play
     checkBossProjectileCollisions(player);
 
     // Afficher les projectiles à l'écran
-    renderBossProjectiles(renderer);
+    renderBossProjectiles(renderer, projectileTexture);
     playRandomSound();
 }

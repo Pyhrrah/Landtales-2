@@ -82,20 +82,17 @@ void checkProjectileCollisions(Player *player) {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].active && SDL_HasIntersection(&projectiles[i].rect, &player->rect)) {
             projectiles[i].active = 0;
-            player->vie -= 10; // Réduit la vie du joueur de 10
+            player->vie -= 10 * (1 - player->defense / 100); 
             printf("Projectile touche le joueur ! Vie restante : %d\n", player->vie);
         }
     }
 }
 
 // Rendu des projectiles
-void renderProjectiles(SDL_Renderer *renderer) {
-    // Rendu des projectiles
+void renderProjectiles(SDL_Renderer *renderer, SDL_Texture *projectileTexture) {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        // Si le projectile est actif
         if (projectiles[i].active) {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour les projectiles
-            SDL_RenderFillRect(renderer, &projectiles[i].rect);
+            SDL_RenderCopy(renderer, projectileTexture, NULL, &projectiles[i].rect);
         }
     }
 }

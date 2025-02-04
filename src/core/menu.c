@@ -92,12 +92,6 @@ void handle_menu(SDL_Renderer *renderer) {
     int konami_did = 0;
     int music_played = 0;  
 
-    // Nous initialisons le son
-    if (init_audio() < 0) {
-        SDL_DestroyTexture(background);
-        return;
-    }
-
     // Nous définissons les options du menu
     void (*menu_options[])(SDL_Renderer *renderer) = {
         start_game_mode,       
@@ -153,6 +147,7 @@ void handle_menu(SDL_Renderer *renderer) {
                     konami_index = (konami_index + 1) % KONAMI_LENGTH;
 
                     if (check_konami_code() && konami_did == 0) {
+                        init_audio();
                         if (!music_played) {
                             play_audio("./assets/music/audio_video.mp3"); 
                             music_played = 1;

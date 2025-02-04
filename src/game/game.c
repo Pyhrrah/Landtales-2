@@ -1,9 +1,6 @@
-#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
 #include <unistd.h> 
 #include "./../../include/game/game.h"
 #include "./../../include/game/map.h"
@@ -18,10 +15,10 @@
 #include "./../../include/game/chest.h"
 #include "./../../include/plugins/open_plugin_bonus.h"
 #include "./../../include/utils/video.h"
+#include "./../../include/utils/sdl_utils.h"
 
 #define initialiserEtage() creerEtageEntier(1);
 #define suppressionEtage() supprimerEtage();
-
 
 #define TILE_SIZE 32
 #define ROWS 15
@@ -388,6 +385,11 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
 
     loadRoomData(mapFilename, mapRoom);
 
+    SDL_Texture *projectileTexture = load_texture(renderer, "./assets/images/sprite/projectile.png");
+    if (!projectileTexture) {
+        printf("Impossible de charger la texture du projectile\n");
+    }
+
 
 // Appel à initPlayer           
     Player  player;
@@ -580,13 +582,13 @@ void allGame(int saveNumber, SDL_Renderer *renderer) {
             launchProjectileWithCooldownEnnemies(&player.rect);
             updateProjectiles(mapRoom);
             checkProjectileCollisions(&player);
-            renderProjectiles(renderer);
+            renderProjectiles(renderer, projectileTexture);
 
         }    
 
         if (room == 100){
             launchProjectileWithCooldownBoss(&enemies[0].rect, &player.rect);
-            handleProjectilesBoss(renderer, mapRoom, &player);
+            handleProjectilesBoss(renderer, mapRoom, &player, projectileTexture);
         }
 
 

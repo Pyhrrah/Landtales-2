@@ -55,8 +55,9 @@ void checkProjectileCollisions(Player *player);
 /**
  * Rendre les projectiles
  * @param renderer : le renderer
+ * @param projectileTexture : la texture du projectile
  */
-void renderProjectiles(SDL_Renderer *renderer);
+void renderProjectiles(SDL_Renderer *renderer, SDL_Texture *projectileTexture);
 
 
 /**

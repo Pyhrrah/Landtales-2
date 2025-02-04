@@ -456,6 +456,8 @@ void start_multiplayer_mode(SDL_Renderer *renderer) {
         draw_button_text(renderer, backButton, "Retour", font, textColor);
 
         SDL_RenderPresent(renderer);
+
+        SDL_Delay(16);
     }
 
     SDL_DestroyTexture(bgTexture);

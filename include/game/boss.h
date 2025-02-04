@@ -58,13 +58,19 @@ void initProjectilesBoss();
 
 /**
  * Lance un projectile avec un cooldown pour le boss.
+ * @param bossRect : le rectangle du boss.
+ * @param playerRect : le rectangle du joueur.
  */
 void launchProjectileWithCooldownBoss(SDL_Rect *bossRect, SDL_Rect *playerRect);
 
 /**
  * Gère les projectiles du boss.
+ * @param renderer : le renderer.
+ * @param mapRoom : la carte de la salle.  
+ * @param player : le joueur.
+ * @param projectileTexture : la texture du projectile.
  */
-void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player);
+void handleProjectilesBoss(SDL_Renderer *renderer, int mapRoom[ROWS][COLS], Player *player, SDL_Texture *projectileTexture);
 
 
 #endif // BOSS_HANDLER_H
