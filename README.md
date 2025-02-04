@@ -51,7 +51,7 @@ Avant de pouvoir utiliser **Landtales 2**, assurez-vous d'avoir installé les pr
 - **make** : L'outil permettant la compilation et le build du programme à partir de plusieurs fichiers de codes.
 
 #### Installation des dépendances
-Voici les commandes pour installer les dépendances sur **Ubuntu** et **Fedora**.
+Voici les commandes pour installer les dépendances sur **Ubuntu**.
 
 - **Pour Ubuntu :**
 ```bash
@@ -92,7 +92,9 @@ Landtales 2 propose différents plugins pour customiser votre façon de jouer :
 
 - Un plugin pour s'amuser à générer une map comme bon nous semble. 
 
-- Un plugin pour ajouter de nouveaux bonus 
+- Un plugin pour ajouter de nouveaux bonus et générer les bonus dans les coffres.
+
+- Un plugin pour calculer les taux de dégâts du joueur sur les ennemis.
 
 Une fois que vous avez apporté vos modifications aux plugins, vous pouvez les compiler grâce à la commande suivante : 
 
